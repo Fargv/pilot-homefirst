@@ -1,34 +1,47 @@
 /**
  * guidedTourSteps.js
  *
- * Declarative config for the interactive guided onboarding. The user learns
- * BY DOING: action steps advance only when the app emits the step's
- * completionEvent (see guidedOnboardingEvents.js) — never by pressing
- * "Siguiente". Rewards ride the completion, and only for real actions.
+ * Declarative state machine for the guided TUTORIAL. It teaches the app by
+ * making the user perform every real action — it NEVER grants bites (the
+ * challenge onboarding is the reward system; the finish screen hands off to
+ * it). Copy is coach-mark style: one short title + one direct command.
  *
  * Step model:
- *   id              – stable id (resume/analytics)
+ *   id              – stable id (resume/analytics/stall tracking)
  *   kind            – "welcome" | "finish" | undefined (coach bubble step)
- *   route           – auto-navigate here before showing (null = stay put)
- *   target          – data-tour-id string, or (ctx) => selector for dynamic
- *                     targets (ctx = { demoRecipe }); null → floating panel
- *   title/body      – short Spanish copy
- *   hint            – the action line ("Ahora pulsa…") shown emphasized
- *   why             – optional "por qué importa" expandable line
+ *   route           – auto-navigate here before showing (null = stay put;
+ *                     navigation steps stay null — the USER taps the nav)
+ *   completeIfRoute – navigation step is silently satisfied when the user is
+ *                     already on this route when the step starts
+ *   prepare         – TOUR_PREPARE action asking the page to expose the target
+ *                     (e.g. move the planning carousel to an empty day)
+ *   target          – data-tour-id string, or (ctx) => selector | selector[]
+ *                     (fallback chain, tried in order); null → floating panel
+ *   title           – 2–4 words
+ *   command         – ONE direct instruction ("Pulsa Lista.") — the only body
  *   completionEvent – event(s) that complete the step; absence = info step
- *                     (info steps are the only ones with a "Siguiente" button)
- *   rewardStep      – backend TOUR_STEP_REWARDS key sent on completion
- *   fallbackBody    – copy when the target can't be found (empty data, gates)
- *   skipIf          – (ctx) => true to drop the step entirely (e.g. no recipe)
+ *   matchesDetail   – optional (ctx, detail) => bool; scopes completion to an
+ *                     entity (e.g. dish_selected for "pollo al horno")
+ *   fallbackBody    – ONE short line when the target can't be found
+ *   skipIf          – (ctx) => true to drop the step entirely
  *   placement       – preferred bubble side on wide screens
- *
- * Targets are stable [data-tour-id] anchors; the dynamic recipe step targets
- * [data-dish-id="…"] for the auto-picked demo recipe.
+ *   blockOutside    – default true on single-tap action steps; false when the
+ *                     user needs follow-up UI (pickers, menus, typing)
  */
 
-import { ONBOARDING_EVENTS as EV } from "./guidedOnboardingEvents.js";
+import { ONBOARDING_EVENTS as EV, TOUR_PREPARE } from "./guidedOnboardingEvents.js";
+import { normalizeDishName, ONBOARDING_RECIPE_NAME } from "./onboardingRecipe.js";
 
-export const TOUR_VERSION = 2;
+export const TOUR_VERSION = 3;
+
+// Matches the onboarding dish by id when known, else by normalized name.
+function matchesOnboardingDish(ctx, detail) {
+  if (ctx?.demoRecipe && detail?.dishId === String(ctx.demoRecipe._id)) return true;
+  if (detail?.dishName) {
+    return normalizeDishName(detail.dishName).includes(normalizeDishName(ONBOARDING_RECIPE_NAME));
+  }
+  return false;
+}
 
 export const TOUR_STEPS = [
   {
@@ -36,172 +49,239 @@ export const TOUR_STEPS = [
     kind: "welcome",
     route: "/kitchen/semana",
     target: null,
-    title: "¡Bienvenido a Lunchfy!",
-    body: "Aprende lo esencial haciendo, no leyendo:",
-    bullets: [
-      { icon: "📅", text: "Planifica tu semana" },
-      { icon: "🛒", text: "Compra con lista automática" },
-      { icon: "🍳", text: "Cocina paso a paso" },
-      { icon: "🍪", text: "Gana Bites con cada acción" }
-    ]
+    title: "Vamos al grano",
+    command: "Te enseño lo básico en 2 minutos."
   },
   {
-    id: "plan-choose",
+    id: "nav-planning",
+    route: null,
+    completeIfRoute: "/kitchen/semana",
+    target: "nav-semana",
+    placement: "top",
+    title: "Planificación",
+    command: "Pulsa Planificación.",
+    completionEvent: EV.PLANNING_OPENED,
+    fallbackBody: "Planificación está en la barra inferior."
+  },
+  {
+    id: "plan-pollo",
     route: "/kitchen/semana",
+    prepare: TOUR_PREPARE.REVEAL_EMPTY_PLANNING_DAY,
     target: "planning-add-dish",
     placement: "bottom",
-    title: "Planifica tu primera comida",
-    body: "Cada día tiene su comida. Los platos que planificas alimentan tu lista de la compra.",
-    hint: "Pulsa «+ Añadir plato» y elige un plato para este día.",
-    why: "Planificar es el corazón de Lunchfy: de aquí sale tu lista de la compra automática.",
-    completionEvent: [EV.DISH_SELECTED, EV.DAY_RANDOMIZED],
-    rewardStep: "plan_dish",
-    fallbackBody: "Parece que esta semana ya está completa. Puedes saltar este paso — asignar platos funciona igual en cualquier día vacío."
+    title: "Programa un plato",
+    command: "Elige «Pollo al horno» para este día.",
+    completionEvent: EV.DISH_SELECTED,
+    // Prefer the onboarding dish; if it's unavailable, any dish teaches the flow.
+    matchesDetail: (ctx, detail) => (ctx.demoRecipe ? matchesOnboardingDish(ctx, detail) : true),
+    blockOutside: false, // needs the dish picker after the tap
+    fallbackBody: "La semana ya está completa. Omite este paso."
   },
   {
     id: "plan-random",
     route: "/kitchen/semana",
+    prepare: TOUR_PREPARE.REVEAL_EMPTY_PLANNING_DAY,
     target: "planning-randomize",
     placement: "bottom",
-    title: "¿Sin ideas? Deja que Lunchfy elija",
-    body: "El dado asigna un plato al azar entre tus platos disponibles.",
-    hint: "Ahora pulsa el dado para randomizar un día.",
-    why: "La randomización rellena tu semana en segundos cuando no quieres pensar.",
+    title: "Randomiza un día",
+    command: "Pulsa el dado.",
     completionEvent: EV.DAY_RANDOMIZED,
-    rewardStep: "randomize_day",
-    fallbackBody: "Cuando un día esté vacío verás un dado para randomizarlo. Puedes saltar este paso."
+    fallbackBody: "Sin días vacíos no hay dado. Omite este paso."
+  },
+  {
+    id: "nav-shopping",
+    route: null,
+    target: "nav-compra",
+    placement: "top",
+    title: "Tu lista",
+    command: "Pulsa Lista.",
+    completionEvent: EV.SHOPPING_OPENED,
+    completeIfRoute: "/kitchen/compra",
+    fallbackBody: "Lista está en la barra inferior."
   },
   {
     id: "shopping-check",
     route: "/kitchen/compra",
     target: "shopping-item",
     placement: "bottom",
-    title: "Tu lista se crea sola",
-    body: "Estos productos vienen de los platos que acabas de planificar.",
-    hint: "Marca este producto como comprado tocando el círculo.",
-    why: "En el súper, marcar lo comprado te dice en tiempo real qué falta.",
+    title: "Marca lo comprado",
+    command: "Marca este producto.",
     completionEvent: EV.ITEM_MARKED_BOUGHT,
-    rewardStep: "mark_bought",
-    fallbackBody: "Tu lista está vacía todavía — se llenará con los ingredientes de tus platos planificados. Puedes saltar este paso."
+    fallbackBody: "Tu lista está vacía. Omite este paso."
   },
   {
-    id: "kitchen-create",
+    id: "nav-kitchen",
+    route: null,
+    target: "nav-platos",
+    placement: "top",
+    title: "Mi Cocina",
+    command: "Pulsa Mi Cocina.",
+    completionEvent: EV.KITCHEN_OPENED,
+    completeIfRoute: "/kitchen/platos",
+    fallbackBody: "Mi Cocina está en la barra inferior."
+  },
+  {
+    id: "create-open",
     route: "/kitchen/platos",
     target: "kitchen-create",
     placement: "bottom",
-    title: "Mi Cocina: tus platos y productos",
-    body: "Aquí creas tus propios platos. Un plato con ingredientes genera su compra automáticamente.",
-    hint: "Pulsa + para abrir la creación. Después puedes cerrarla sin guardar.",
-    why: "Tus platos de siempre, una vez creados, se planifican con un toque.",
+    title: "Crea un plato",
+    command: "Pulsa + para crear un plato de prueba.",
     completionEvent: EV.CREATE_DISH_OPENED,
-    rewardStep: "create_dish_opened",
-    fallbackBody: "El botón + de Mi Cocina abre la creación de platos y productos. Puedes saltar este paso."
+    fallbackBody: "El botón + crea platos. Omite este paso."
+  },
+  {
+    id: "create-name",
+    target: "dish-name-input",
+    placement: "bottom",
+    title: "El nombre",
+    command: "Escribe el nombre. Ej: «Plato de prueba».",
+    completionEvent: EV.DISH_NAME_ENTERED,
+    blockOutside: false, // typing
+    fallbackBody: "Abre la creación con + y escribe un nombre."
+  },
+  {
+    id: "create-ingredient",
+    target: "dish-add-ingredient",
+    placement: "top",
+    title: "Un ingrediente",
+    command: "Añade un ingrediente.",
+    completionEvent: EV.DISH_INGREDIENT_ADDED,
+    blockOutside: false, // search/picker interaction
+    fallbackBody: "Busca el campo Ingredientes en el formulario."
+  },
+  {
+    id: "create-save",
+    target: "dish-save",
+    placement: "top",
+    title: "Guárdalo",
+    command: "Guarda el plato.",
+    completionEvent: EV.DISH_CREATED,
+    blockOutside: false, // form may need scrolling
+    fallbackBody: "Pulsa Guardar al final del formulario."
   },
   {
     id: "recipe-open",
     route: "/kitchen/platos",
-    target: (ctx) => (ctx.demoRecipe ? `[data-dish-id="${ctx.demoRecipe._id}"]` : null),
+    // Fallback chain: the "Cocinar ahora" action of the found dish, else its card.
+    target: (ctx) => (ctx.demoRecipe
+      ? [
+        `[data-dish-id="${ctx.demoRecipe._id}"] [data-tour-id="dish-cook"]`,
+        `[data-dish-id="${ctx.demoRecipe._id}"]`
+      ]
+      : null),
     placement: "bottom",
-    title: "Este plato tiene receta",
-    body: (ctx) => (ctx.demoRecipe
-      ? `«${ctx.demoRecipe.name}» tiene pasos y temporizadores.`
-      : ""),
-    hint: "Ábrelo y toca «Ver receta» para ver su elaboración.",
+    title: (ctx) => (ctx.demoRecipe ? `Abre «${ctx.demoRecipe.name}»` : "Recetas"),
+    command: "Pulsa «Cocinar ahora».",
     completionEvent: EV.RECIPE_OPENED,
-    fallbackBody: "Aún no tienes platos con receta completa. Cuando instales un pack del catálogo o crees una receta con pasos, podrás cocinar en modo guiado con temporizadores. Te lo enseñamos en otro momento."
+    // Only the onboarding recipe counts — opening another dish doesn't advance.
+    matchesDetail: (ctx, detail) => Boolean(
+      ctx.demoRecipe && detail?.dishId === String(ctx.demoRecipe._id)
+    ),
+    fallbackBody: "Sin recetas completas aún. Las verás al instalar packs del catálogo."
   },
   {
     id: "recipe-servings",
     target: "recipe-servings",
     placement: "bottom",
-    title: "Ajusta los comensales",
-    body: "Las cantidades de todos los ingredientes se recalculan solas.",
-    hint: "Cambia los comensales con + o −.",
+    title: "Comensales",
+    command: "Cambia los comensales.",
     completionEvent: EV.SERVINGS_CHANGED,
-    rewardStep: "recipe_servings",
     skipIf: (ctx) => !ctx.demoRecipe,
-    fallbackBody: "Dentro de una receta puedes ajustar los comensales y las cantidades se recalculan. Puedes saltar este paso."
+    fallbackBody: "Dentro de una receta puedes ajustar comensales."
   },
   {
     id: "recipe-execute",
     target: "recipe-cook",
     placement: "top",
-    title: "Cocina en modo guiado",
-    body: "El modo cocina te lleva paso a paso, con los ingredientes de cada paso.",
-    hint: "Pulsa «Ejecutar receta».",
+    title: "Modo cocina",
+    command: "Pulsa Ejecutar receta.",
     completionEvent: EV.EXECUTOR_STARTED,
-    rewardStep: "recipe_execution",
     skipIf: (ctx) => !ctx.demoRecipe,
-    fallbackBody: "El botón «Ejecutar receta» inicia el modo cocina paso a paso. Puedes saltar este paso."
+    fallbackBody: "«Ejecutar receta» inicia el modo cocina."
   },
   {
     id: "recipe-step",
     target: "recipe-step-next",
     placement: "top",
-    title: "Avanza por los pasos",
-    body: "Cada paso muestra solo lo que necesitas en ese momento.",
-    hint: "Pulsa «Siguiente» para avanzar un paso.",
+    title: "Paso a paso",
+    command: "Avanza un paso.",
     completionEvent: EV.STEP_NEXT,
     skipIf: (ctx) => !ctx.demoRecipe,
-    fallbackBody: "En el modo cocina, «Siguiente» avanza de paso. Puedes saltar este paso."
+    fallbackBody: "«Siguiente» avanza de paso."
   },
   {
     id: "recipe-timer",
     target: "recipe-timer",
     placement: "top",
-    title: "Temporizadores integrados",
-    body: "Puedes tener varios a la vez y siguen contando aunque salgas de la receta.",
-    hint: "Inicia el temporizador de este paso.",
+    title: "Temporizador",
+    command: "Inicia el temporizador.",
     completionEvent: EV.TIMER_STARTED,
-    rewardStep: "recipe_timer",
     skipIf: (ctx) => !ctx.demoRecipe || !ctx.demoRecipeHasTimer,
-    fallbackBody: "Los pasos con tiempo traen temporizador integrado. Busca uno más adelante — puedes saltar este paso."
+    fallbackBody: "Los pasos con tiempo traen temporizador."
   },
   {
     id: "recipe-minimize",
     target: "recipe-minimize",
     placement: "bottom",
-    title: "La cocina sigue en segundo plano",
-    body: "Minimiza el modo cocina: los temporizadores siguen y puedes volver cuando quieras.",
-    hint: "Pulsa minimizar para continuar el tour.",
+    title: "En segundo plano",
+    command: "Minimiza el modo cocina.",
     completionEvent: EV.EXECUTOR_MINIMIZED,
     skipIf: (ctx) => !ctx.demoRecipe,
-    fallbackBody: "Con el botón de minimizar, la receta queda en una barra inferior sin perder los temporizadores. Puedes saltar este paso."
+    fallbackBody: "El botón de minimizar deja la receta en una barra."
   },
   {
-    id: "catalog",
-    route: null, // the user navigates: tapping Catálogo IS the action
+    id: "nav-catalog",
+    route: null,
     target: "nav-catalogo",
     placement: "top",
-    title: "Bites y catálogo",
-    body: "Los Bites que ganas con acciones útiles se gastan en packs de platos listos para usar.",
-    hint: "Pulsa «Catálogo» para verlo.",
-    why: "Cada pack instala platos con receta en tu cocina al instante.",
+    title: "Catálogo",
+    command: "Pulsa Catálogo.",
     completionEvent: EV.CATALOG_OPENED,
-    fallbackBody: "Encontrarás el Catálogo en la barra de navegación: packs de platos que se desbloquean con Bites."
+    completeIfRoute: "/kitchen/catalogo",
+    fallbackBody: "Catálogo está en la barra inferior."
   },
   {
-    id: "settings",
+    id: "catalog-explore",
+    route: "/kitchen/catalogo",
+    target: "catalog-wallet",
+    placement: "bottom",
+    title: "Bites",
+    command: "Con Bites desbloqueas packs de platos. Se ganan en los retos.",
+    fallbackBody: "Aquí verás tus Bites y packs para instalar."
+  },
+  {
+    id: "menu-open",
     route: null,
     target: "user-menu",
     placement: "bottom",
-    title: "Tu perfil y ajustes",
-    body: "Hogar, miembros, tema y preferencias que afectan a la planificación.",
-    hint: "Abre tu menú y entra en «Configuración».",
+    title: "Tu menú",
+    command: "Abre tu menú.",
+    completionEvent: EV.MENU_OPENED,
+    fallbackBody: "Tu avatar está arriba a la derecha."
+  },
+  {
+    id: "settings-link",
+    route: null,
+    target: "settings-link",
+    placement: "left",
+    title: "Configuración",
+    command: "Pulsa Configuración.",
     completionEvent: EV.SETTINGS_OPENED,
-    fallbackBody: "En el menú de tu avatar (arriba a la derecha) está la Configuración de tu hogar."
+    blockOutside: false, // clicking elsewhere would close the menu
+    fallbackBody: "Abre tu menú y pulsa Configuración."
   },
   {
     id: "finish",
     kind: "finish",
     route: null,
     target: null,
-    title: "Listo. Ya sabes moverte por Lunchfy",
-    body: "Tu siguiente paso recomendado:"
+    title: "Listo",
+    command: "Ahora abre el onboarding y completa los retos para ganar Bites."
   }
 ];
 
-// Steps counted in the "3/9" progress indicator (welcome + finish excluded),
+// Steps counted in the "3/12" progress indicator (welcome + finish excluded),
 // after applying skipIf against the runtime context.
 export function getActiveSteps(ctx = {}) {
   return TOUR_STEPS.filter((s) => !(typeof s.skipIf === "function" && s.skipIf(ctx)));
@@ -214,17 +294,26 @@ export function progressLabelFor(activeSteps, index) {
   return `${progressSteps.indexOf(step) + 1}/${progressSteps.length}`;
 }
 
-export function resolveStepTarget(step, ctx = {}) {
-  if (!step?.target) return null;
-  if (typeof step.target === "function") return step.target(ctx);
-  return `[data-tour-id="${step.target}"]`;
+/** Returns an ordered selector fallback chain (first match wins), or []. */
+export function resolveStepTargets(step, ctx = {}) {
+  if (!step?.target) return [];
+  const raw = typeof step.target === "function" ? step.target(ctx) : `[data-tour-id="${step.target}"]`;
+  if (!raw) return [];
+  return Array.isArray(raw) ? raw.filter(Boolean) : [raw];
 }
 
-export function resolveStepBody(step, ctx = {}) {
-  return typeof step.body === "function" ? step.body(ctx) : step.body;
+export function resolveStepTitle(step, ctx = {}) {
+  return typeof step.title === "function" ? step.title(ctx) : step.title;
 }
 
 export function stepCompletionEvents(step) {
   if (!step?.completionEvent) return [];
   return Array.isArray(step.completionEvent) ? step.completionEvent : [step.completionEvent];
+}
+
+/** True when clicks outside the spotlight should be blocked for this step. */
+export function stepBlocksOutside(step) {
+  if (!step || step.kind) return true;
+  if (stepCompletionEvents(step).length === 0) return true;
+  return step.blockOutside !== false;
 }

@@ -255,7 +255,10 @@ export default function ShoppingPage() {
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { notifyOnboarding("visit_shopping"); }, []);
+  useEffect(() => {
+    notifyOnboarding("visit_shopping");
+    emitOnboardingEvent(ONBOARDING_EVENTS.SHOPPING_OPENED);
+  }, []);
 
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();

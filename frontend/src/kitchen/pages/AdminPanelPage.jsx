@@ -523,10 +523,11 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
         setMsg("Onboarding desactivado.");
       } else if (type === "resend-tour") {
         const data = await apiRequest(`/api/kitchen/onboarding/admin/households/${household.id}/guided-tour/resend`, {
-          method: "POST",
-          body: JSON.stringify({ testMode: Boolean(extra.testMode) })
+          method: "POST"
         });
-        setMsg(data.warning ? `Tour reenviado. ${data.warning}` : `Tour reenviado${extra.testMode ? " en modo test (sin recompensas)" : ""}. Se mostrará en la próxima carga.`);
+        setMsg(data.warning
+          ? `Tutorial reenviado. ${data.warning}`
+          : "Tutorial reenviado. Se mostrará en la próxima carga. No afecta a los Bites ni a los retos.");
       } else if (type === "reset-weekly") {
         if (!window.confirm("Resetear el progreso semanal actual?")) return;
         await apiRequest(`/api/kitchen/weekly/admin/households/${household.id}/reset`, { method: "POST" });
@@ -639,22 +640,34 @@ function HouseholdControlCenter({ household, onClose, onNavigate, onRefresh }) {
                     <AdminPill tone={GUIDED_TOUR_STATUS_TONES[detail?.onboarding?.guidedTour?.status] || "slate"}>
                       {GUIDED_TOUR_STATUS_LABELS[detail?.onboarding?.guidedTour?.status] || "Sin tour"}
                     </AdminPill>
-                    {detail?.onboarding?.guidedTour?.testMode ? <AdminPill tone="amber">Modo test</AdminPill> : null}
-                    {detail?.onboarding?.guidedTour?.totalTourBites > 0 ? (
-                      <AdminPill>{detail.onboarding.guidedTour.totalTourBites} bites del tour</AdminPill>
+                    {detail?.onboarding?.guidedTour?.currentStepId ? (
+                      <AdminPill tone="indigo">paso: {detail.onboarding.guidedTour.currentStepId}</AdminPill>
+                    ) : null}
+                    {(detail?.onboarding?.guidedTour?.completedStepIds?.length || 0) > 0 ? (
+                      <AdminPill>{detail.onboarding.guidedTour.completedStepIds.length} pasos hechos</AdminPill>
+                    ) : null}
+                    {(detail?.onboarding?.guidedTour?.skippedStepIds?.length || 0) > 0 ? (
+                      <AdminPill tone="amber">{detail.onboarding.guidedTour.skippedStepIds.length} omitidos</AdminPill>
+                    ) : null}
+                    {detail?.onboarding?.guidedTour?.stalledStepId ? (
+                      <AdminPill tone="red">abandonó en: {detail.onboarding.guidedTour.stalledStepId}</AdminPill>
                     ) : null}
                   </div>
+                  {detail?.onboarding?.guidedTour?.lastMissingTarget ? (
+                    <div style={{ fontSize: 11, color: "#b45309", marginBottom: 8 }}>
+                      ⚠ Target/receta no encontrado: <code style={{ fontSize: 10 }}>{detail.onboarding.guidedTour.lastMissingTarget}</code>
+                    </div>
+                  ) : null}
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 8 }}>
                     {detail?.onboarding?.guidedTour?.lastSentAt ? <>Enviado: {formatDateTime(detail.onboarding.guidedTour.lastSentAt)} · </> : null}
                     {detail?.onboarding?.guidedTour?.completedAt ? <>Completado: {formatDateTime(detail.onboarding.guidedTour.completedAt)}</> : null}
                     {detail?.onboarding?.guidedTour?.skippedAt ? <>Saltado: {formatDateTime(detail.onboarding.guidedTour.skippedAt)}</> : null}
                   </div>
                   <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                    <button type="button" style={ABT.green} disabled={saving} onClick={() => runAction("resend-tour")}>Reenviar tour</button>
-                    <button type="button" style={ABT.edit} disabled={saving} title="El tour se muestra pero no concede Bites" onClick={() => runAction("resend-tour", { testMode: true })}>Reenviar (test)</button>
+                    <button type="button" style={ABT.green} disabled={saving} onClick={() => runAction("resend-tour")}>Reenviar tutorial</button>
                   </div>
                   <p style={{ fontSize: 11, color: "#94a3b8", margin: "8px 0 0" }}>
-                    Las recompensas de pasos solo se conceden una vez por hogar, aunque se reenvíe.
+                    El tutorial solo enseña la app: no concede Bites. Los Bites viven en los retos del onboarding. Reenviarlo nunca toca recompensas.
                   </p>
                 </div>
               </Card>
@@ -5379,16 +5392,13 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
     finally { setTourConfigSaving(false); }
   };
 
-  const resendTour = async (householdId, testMode = false) => {
+  const resendTour = async (householdId) => {
     setTourMsg("");
     try {
       const data = await apiRequest(`/api/kitchen/onboarding/admin/households/${householdId}/guided-tour/resend`, {
-        method: "POST",
-        body: JSON.stringify({ testMode })
+        method: "POST"
       });
-      setTourMsg(data.warning
-        ? `Tour reenviado. ${data.warning}`
-        : `Tour reenviado${testMode ? " en modo test (sin recompensas)" : ""}.`);
+      setTourMsg(data.warning ? `Tutorial reenviado. ${data.warning}` : "Tutorial reenviado.");
       await load();
     } catch (e) { setError(e.message); }
   };
@@ -5542,7 +5552,7 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
           </div>
         )}
         <p style={{ margin: "10px 0 0", fontSize: 11, color: "#94a3b8" }}>
-          Reenvío por hogar: columna «Tour» abajo, o desde el control center del hogar. Las recompensas de pasos (+5 Bites) se conceden una sola vez por hogar aunque se reenvíe.
+          El tutorial solo enseña la app y NO concede Bites — los Bites viven en los retos del onboarding. Reenvío por hogar: columna «Tour» abajo, o desde el control center del hogar.
         </p>
       </Card>
 
@@ -5731,8 +5741,7 @@ function OnboardingSection({ householdContext, onClearHouseholdContext }) {
                       {h.status !== "completed" && <button type="button" style={ABT.green} onClick={() => householdAction(h.householdId, "complete")}>Completar</button>}
                       {h.status !== "active" && <button type="button" style={ABT.edit} onClick={() => householdAction(h.householdId, "enable")}>Activar</button>}
                       {h.status !== "disabled" && <button type="button" style={ABT.del} onClick={() => householdAction(h.householdId, "disable")}>Desactivar</button>}
-                      <button type="button" style={ABT.green} title="Reenviar tour guiado" onClick={() => resendTour(h.householdId)}>Tour</button>
-                      <button type="button" style={ABT.edit} title="Reenviar tour en modo test (sin recompensas)" onClick={() => resendTour(h.householdId, true)}>Tour test</button>
+                      <button type="button" style={ABT.green} title="Reenviar tutorial guiado (no toca Bites ni retos)" onClick={() => resendTour(h.householdId)}>Tutorial</button>
                     </div>
                   </td>
                 </tr>

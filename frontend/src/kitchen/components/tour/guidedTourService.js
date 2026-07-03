@@ -13,13 +13,15 @@ export async function startTourApi() {
   }
 }
 
-// Persists resume position; when stepId matches a rewarded step key the backend
-// grants bites (once per household, ever) and reports { awarded, amount }.
-export async function progressTourApi({ stepIndex, stepId } = {}) {
+// Persists resume position + stall telemetry; when stepId matches a rewarded
+// action key the backend grants bites (once per household, ever) and reports
+// { awarded, amount }. currentStepId/completedStepId/missingTarget feed the
+// admin-visible debug info about where users stall.
+export async function progressTourApi({ stepIndex, stepId, currentStepId, completedStepId, missingTarget } = {}) {
   try {
     return await apiRequest("/api/kitchen/onboarding/guided-tour/progress", {
       method: "POST",
-      body: JSON.stringify({ stepIndex, stepId })
+      body: JSON.stringify({ stepIndex, stepId, currentStepId, completedStepId, missingTarget })
     });
   } catch {
     return null;
@@ -34,46 +36,27 @@ export async function completeTourApi() {
   }
 }
 
-export async function skipTourApi() {
+export async function skipTourApi({ stalledStepId } = {}) {
   try {
-    return await apiRequest("/api/kitchen/onboarding/guided-tour/skip", { method: "POST" });
+    return await apiRequest("/api/kitchen/onboarding/guided-tour/skip", {
+      method: "POST",
+      body: JSON.stringify({ stalledStepId })
+    });
   } catch {
     return null;
   }
 }
 
-export async function fetchWalletApi() {
-  try {
-    const data = await apiRequest("/api/kitchen/bites/wallet");
-    return data?.wallet ?? null;
-  } catch {
-    return null;
-  }
-}
+// ─── Onboarding recipe lookup ────────────────────────────────────────────────
+// Pure logic lives in onboardingRecipe.js (node:test-able, no api import).
 
-// Picks a demo-worthy recipe for the interactive recipe steps. Prefers a dish
-// with structured steps + a timer + ingredients; falls back to one without a
-// timer (the timer step is then skipped). Returns { dish, hasTimer } or null —
-// the recipe block degrades to a short explanation when nothing qualifies.
-export async function findDemoRecipeApi() {
+export { ONBOARDING_RECIPE_NAME, normalizeDishName, pickOnboardingRecipe } from "./onboardingRecipe.js";
+import { pickOnboardingRecipe as _pickOnboardingRecipe } from "./onboardingRecipe.js";
+
+export async function findOnboardingRecipeApi({ preferredName } = {}) {
   try {
     const data = await apiRequest("/api/kitchen/dishes");
-    const dishes = data?.dishes || data || [];
-    if (!Array.isArray(dishes)) return null;
-
-    const describe = (d) => {
-      const steps = d?.recipe?.steps;
-      if (!Array.isArray(steps) || steps.length < 2) return null;
-      const hasIngredients =
-        (Array.isArray(d?.ingredients) && d.ingredients.length > 0) ||
-        (Array.isArray(d?.recipe?.ingredients) && d.recipe.ingredients.length > 0);
-      if (!hasIngredients) return null;
-      const hasTimer = steps.some((s) => s?.hasTimer || Number(s?.durationSeconds) > 0);
-      return { dish: d, hasTimer };
-    };
-
-    const candidates = dishes.map(describe).filter(Boolean);
-    return candidates.find((c) => c.hasTimer) ?? candidates[0] ?? null;
+    return _pickOnboardingRecipe(data?.dishes || data || [], { preferredName });
   } catch {
     return null;
   }

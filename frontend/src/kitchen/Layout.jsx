@@ -462,7 +462,12 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
               className="kitchen-user-chip"
               type="button"
               data-tour-id="user-menu"
-              onClick={() => setUserMenuOpen((open) => !open)}
+              onClick={() => {
+                setUserMenuOpen((open) => {
+                  if (!open) emitOnboardingEvent(ONBOARDING_EVENTS.MENU_OPENED);
+                  return !open;
+                });
+              }}
               aria-expanded={userMenuOpen}
               aria-haspopup="menu"
             >
@@ -525,7 +530,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                     Compartir
                   </button>
                 ) : null}
-                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/configuracion"); onNavigate(); }}>
+                <button type="button" role="menuitem" data-tour-id="settings-link" onClick={() => { navigate("/kitchen/configuracion"); onNavigate(); }}>
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración
                 </button>

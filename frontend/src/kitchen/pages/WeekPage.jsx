@@ -27,7 +27,7 @@ import { ProGateButton } from "../components/ui/ProBadge.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
-import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
+import { emitOnboardingEvent, onTourPrepare, ONBOARDING_EVENTS, TOUR_PREPARE } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 
 const CATEGORY_EMOJI_BY_CODE = {
@@ -298,7 +298,20 @@ export default function WeekPage() {
   const [householdPlanSource, setHouseholdPlanSource] = useState("");
   const [householdBetaProActive, setHouseholdBetaProActive] = useState(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { notifyOnboarding("visit_week"); }, []);
+  useEffect(() => {
+    notifyOnboarding("visit_week");
+    emitOnboardingEvent(ONBOARDING_EVENTS.PLANNING_OPENED);
+  }, []);
+
+  // Guided tutorial prepare hook: expose an empty day so the choose-dish and
+  // randomize targets are visible (moves the mobile carousel; desktop grids
+  // just rely on scrollIntoView).
+  useEffect(() => onTourPrepare((action) => {
+    if (action !== TOUR_PREPARE.REVEAL_EMPTY_PLANNING_DAY) return;
+    const days = visibleDaysRef.current || [];
+    const emptyIndex = days.findIndex((day) => !day?.mainDishId);
+    if (emptyIndex >= 0) setActiveIndex(emptyIndex);
+  }), []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { notifyWeekly("app_activity"); }, []);
   const [mealTab, setMealTab] = useState(() => {
@@ -1138,10 +1151,16 @@ export default function WeekPage() {
       }, 2000);
       // Guided onboarding: real assignment success — distinguishes manual pick
       // from randomize via options.source so each tour step gets its own event.
+      // detail carries dish id + name so entity-scoped steps (program "Pollo
+      // al horno") can match the exact dish the user picked.
       if ("mainDishId" in requestUpdates && requestUpdates.mainDishId) {
-        emitOnboardingEvent(options.source === "random"
-          ? ONBOARDING_EVENTS.DAY_RANDOMIZED
-          : ONBOARDING_EVENTS.DISH_SELECTED);
+        const assignedDish = (dishesRef.current || []).find(
+          (d) => String(d._id) === String(requestUpdates.mainDishId)
+        );
+        emitOnboardingEvent(
+          options.source === "random" ? ONBOARDING_EVENTS.DAY_RANDOMIZED : ONBOARDING_EVENTS.DISH_SELECTED,
+          { dishId: String(requestUpdates.mainDishId), dishName: assignedDish?.name || "" }
+        );
       }
       // Onboarding: trigger plan_meal when a lunch dish is assigned (meals only, not dinners)
       if ("mainDishId" in requestUpdates && requestUpdates.mainDishId && mealType === "lunch") {

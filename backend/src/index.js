@@ -20,6 +20,7 @@ import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
 import { deactivateExpiredSubscriptions } from "./kitchen/subscriptionCron.js";
 import { seedOnboardingChallenges, seedOnboardingSuggestions, cleanupOldChallenges } from "./kitchen/onboardingEngine.js";
 import { seedWeeklyChallengeDefs } from "./kitchen/weeklyEngine.js";
+import { seedOnboardingRecipe } from "./kitchen/guidedTourService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,6 +99,7 @@ app.listen(PORT, () => {
     seedOnboardingSuggestions().catch((e) => console.error("[onboarding] Suggestions seed failed:", e.message));
     cleanupOldChallenges().catch((e) => console.error("[onboarding] Cleanup failed:", e.message));
     seedWeeklyChallengeDefs().catch((e) => console.error("[weekly] Seed failed:", e.message));
+    seedOnboardingRecipe().catch((e) => console.error("[guided-tour] Recipe seed failed:", e.message));
 
     // O-6: Deactivate expired subscriptions hourly
     deactivateExpiredSubscriptions();

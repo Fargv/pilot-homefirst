@@ -65,10 +65,10 @@ router.post("/trigger", requireAuth, async (req, res) => {
   }
 });
 
-// ─── User: guided tour ────────────────────────────────────────────────────────
-// Tour state travels inside GET /state (guidedTour + guidedTourEnabled); these
-// endpoints only persist transitions. Step rewards are whitelisted server-side
-// in guidedTourService.TOUR_STEP_REWARDS and granted at most once per household.
+// ─── User: guided tutorial ────────────────────────────────────────────────────
+// Tutorial state travels inside GET /state (guidedTour + guidedTourEnabled);
+// these endpoints only persist transitions + stall telemetry. The tutorial
+// grants NO bites — challenge onboarding is the only reward system.
 
 router.post("/guided-tour/start", requireAuth, async (req, res) => {
   try {
@@ -83,8 +83,10 @@ router.post("/guided-tour/start", requireAuth, async (req, res) => {
 router.post("/guided-tour/progress", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);
-    const { stepIndex, stepId } = req.body || {};
-    const result = await progressGuidedTour(householdId, { stepIndex, stepId });
+    const { stepIndex, currentStepId, completedStepId, skippedStepId, missingTarget } = req.body || {};
+    const result = await progressGuidedTour(householdId, {
+      stepIndex, currentStepId, completedStepId, skippedStepId, missingTarget
+    });
     return res.json({ ok: true, ...result });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
@@ -104,7 +106,8 @@ router.post("/guided-tour/complete", requireAuth, async (req, res) => {
 router.post("/guided-tour/skip", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);
-    const tour = await skipGuidedTour(householdId);
+    const { stalledStepId } = req.body || {};
+    const tour = await skipGuidedTour(householdId, { stalledStepId });
     return res.json({ ok: true, tour });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
@@ -150,8 +153,7 @@ router.post("/admin/households/:householdId/guided-tour/resend", requireAuth, re
     if (!mongoose.isValidObjectId(req.params.householdId)) {
       return res.status(400).json({ ok: false, error: "householdId inválido." });
     }
-    const { testMode } = req.body || {};
-    const result = await resendGuidedTour(req.params.householdId, { testMode: Boolean(testMode) });
+    const result = await resendGuidedTour(req.params.householdId);
     return res.json({
       ok: true,
       ...result,

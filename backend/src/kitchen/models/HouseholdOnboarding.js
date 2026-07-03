@@ -38,7 +38,16 @@ const GuidedTourSchema = new mongoose.Schema(
     completedAt: { type: Date, default: null },
     skippedAt: { type: Date, default: null },
     // Admin resend can flag test mode: tour runs but never grants bites.
-    testMode: { type: Boolean, default: false }
+    testMode: { type: Boolean, default: false },
+    // ── Stall/debug telemetry ──
+    currentStepId: { type: String, default: "" },
+    stepStartedAt: { type: Date, default: null },
+    completedStepIds: { type: [String], default: [] },
+    skippedStepIds: { type: [String], default: [] },
+    // Step the user was on when they skipped/abandoned — where users stall.
+    stalledStepId: { type: String, default: "" },
+    // Last "target/recipe not found" report (onboarding data issues).
+    lastMissingTarget: { type: String, default: "" }
   },
   { _id: false }
 );

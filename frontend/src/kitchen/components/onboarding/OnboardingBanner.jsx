@@ -7,6 +7,7 @@ import { canUseDinnersFeature } from "../../subscription.js";
 import OnboardingPanel from "./OnboardingPanel.jsx";
 import BitesIcon from "../BitesIcon.jsx";
 import { useGuidedTour } from "../tour/GuidedTourProvider.jsx";
+import { onOpenOnboardingPanelRequest } from "../tour/guidedOnboardingEvents.js";
 
 const COLLAPSED_KEY = "lunchfy_onboarding_banner_collapsed";
 
@@ -176,6 +177,14 @@ export default function OnboardingBanner({ suppressEvents = false, closeOnRouteC
     writeCollapsedPref(next);
     setCollapsed(next);
   };
+
+  // Tutorial finish handoff: "Abrir onboarding" expands the banner and opens
+  // the challenge panel — the retos are where bites are earned.
+  useEffect(() => onOpenOnboardingPanelRequest(() => {
+    writeCollapsedPref(false);
+    setCollapsed(false);
+    setPanelOpen(true);
+  }), []);
 
   useEffect(() => {
     if (!closeOnRouteChange) return;

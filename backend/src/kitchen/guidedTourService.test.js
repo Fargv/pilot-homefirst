@@ -1,135 +1,161 @@
 /**
- * Guided onboarding — pure-logic tests (no DB required).
+ * Guided tutorial — pure-logic tests (no DB required).
  * Run: cd backend && node --test src/kitchen/guidedTourService.test.js
  *
  * DB-backed transitions (start/progress/complete/skip/resend) require a live
  * Mongo instance and are exercised manually; these tests pin down the parts
- * that silently break: legacy-doc normalization, the action-only reward
- * contract between frontend steps and backend whitelist, and the coach-bubble
- * placement math (never off-screen).
+ * that silently break: the NO-BITES product rule, the deterministic flow
+ * (user-driven navigation, creation gating, Pollo al horno thread), coach
+ * copy discipline, and bubble placement (never covers the target, never
+ * off-screen).
  */
 
 import assert from "node:assert/strict";
 import test from "node:test";
-import { normalizeGuidedTour, TOUR_STEP_REWARDS } from "./guidedTourService.js";
+import {
+  normalizeGuidedTour,
+  normalizeDishName as normalizeDishNameBackend
+} from "./guidedTourService.js";
 import {
   TOUR_STEPS,
   getActiveSteps,
   progressLabelFor,
-  stepCompletionEvents
+  stepCompletionEvents,
+  stepBlocksOutside,
+  resolveStepTargets
 } from "../../../frontend/src/kitchen/components/tour/guidedTourSteps.js";
 import { computeBubblePosition } from "../../../frontend/src/kitchen/components/tour/bubblePosition.js";
+import {
+  normalizeDishName,
+  pickOnboardingRecipe
+} from "../../../frontend/src/kitchen/components/tour/onboardingRecipe.js";
 
-// ─── Tour state normalization ────────────────────────────────────────────────
+// ─── Tutorial state normalization ────────────────────────────────────────────
 
 test("legacy onboarding docs (no guidedTour) normalize to status none — never auto-launch", () => {
   const tour = normalizeGuidedTour(null);
   assert.equal(tour.status, "none");
   assert.equal(tour.currentStepIndex, 0);
-  assert.deepEqual(tour.rewardedSteps, []);
-  assert.equal(tour.testMode, false);
+  assert.deepEqual(tour.completedStepIds, []);
+  assert.deepEqual(tour.skippedStepIds, []);
 });
 
-test("normalize preserves rewardedSteps so resends cannot farm bites", () => {
+test("telemetry fields survive normalization", () => {
   const tour = normalizeGuidedTour({
-    status: "completed",
-    rewardedSteps: ["plan_dish", "mark_bought", "finish"],
-    totalTourBites: 20
+    status: "skipped",
+    currentStepId: "shopping-check",
+    stalledStepId: "shopping-check",
+    skippedStepIds: ["plan-random"],
+    completedStepIds: ["nav-planning"]
   });
-  assert.deepEqual(tour.rewardedSteps, ["plan_dish", "mark_bought", "finish"]);
-  assert.equal(tour.totalTourBites, 20);
+  assert.equal(tour.stalledStepId, "shopping-check");
+  assert.deepEqual(tour.skippedStepIds, ["plan-random"]);
+  assert.deepEqual(tour.completedStepIds, ["nav-planning"]);
 });
 
-// ─── Rewards: actions only ───────────────────────────────────────────────────
+// ─── PRODUCT RULE: the tutorial never grants bites ───────────────────────────
 
-test("reward map has small positive amounts and Spanish labels", () => {
-  for (const [key, reward] of Object.entries(TOUR_STEP_REWARDS)) {
-    assert.ok(reward.bites > 0 && reward.bites <= 10, `${key} reward out of range`);
-    assert.ok(reward.label.length > 5, `${key} missing label`);
-  }
-});
-
-test("every frontend rewardStep exists in the backend whitelist", () => {
-  const rewardSteps = TOUR_STEPS.filter((s) => s.rewardStep).map((s) => s.rewardStep);
-  assert.ok(rewardSteps.length > 0, "tour must reward some actions");
-  for (const stepId of rewardSteps) {
-    assert.ok(TOUR_STEP_REWARDS[stepId], `frontend rewardStep "${stepId}" missing in backend TOUR_STEP_REWARDS`);
-  }
-});
-
-test("rewards are only attached to ACTION steps (completionEvent required)", () => {
+test("no tutorial step carries any reward", () => {
   for (const s of TOUR_STEPS) {
-    if (s.rewardStep) {
-      assert.ok(
-        stepCompletionEvents(s).length > 0,
-        `step ${s.id} grants "${s.rewardStep}" without requiring a real action`
-      );
-    }
+    assert.equal(s.rewardStep, undefined, `step ${s.id} must not reward`);
+    assert.equal(s.rewardBites, undefined, `step ${s.id} must not reward`);
   }
 });
 
-test("informational steps (no completionEvent) never carry rewards", () => {
-  for (const s of TOUR_STEPS) {
-    if (stepCompletionEvents(s).length === 0) {
-      assert.equal(s.rewardStep, undefined, `info step ${s.id} must not reward`);
-    }
-  }
+test("backend no longer exports a tutorial reward whitelist", async () => {
+  const mod = await import("./guidedTourService.js");
+  assert.equal(mod.TOUR_STEP_REWARDS, undefined, "tutorial reward map must be gone");
 });
 
-test("finish bonus is granted by complete(), not by a visible step", () => {
-  assert.ok(TOUR_STEP_REWARDS.finish, "finish reward must exist");
-  const finishStep = TOUR_STEPS.find((s) => s.kind === "finish");
-  assert.ok(finishStep, "steps must end with a finish screen");
-  assert.equal(finishStep.rewardStep, undefined, "finish screen must not double-reward via progress");
+test("finish step hands off to the challenge onboarding, not to a reward", () => {
+  const finish = TOUR_STEPS[TOUR_STEPS.length - 1];
+  assert.equal(finish.kind, "finish");
+  assert.match(finish.command, /onboarding/i);
+  assert.match(finish.command, /retos/i);
 });
 
-// ─── Step structure ──────────────────────────────────────────────────────────
+// ─── Deterministic flow ──────────────────────────────────────────────────────
 
-test("tour structure: welcome first, finish last, unique ids, known routes", () => {
-  assert.equal(TOUR_STEPS[0].kind, "welcome");
-  assert.equal(TOUR_STEPS[TOUR_STEPS.length - 1].kind, "finish");
-
+test("flow order: welcome → planning → pollo → randomize → lista → item → cocina → creation → recipe thread → catalog → menu → settings → finish", () => {
   const ids = TOUR_STEPS.map((s) => s.id);
-  assert.equal(new Set(ids).size, ids.length, "step ids must be unique");
-
-  const validRoutes = new Set([
-    null,
-    undefined,
-    "/kitchen/semana",
-    "/kitchen/compra",
-    "/kitchen/platos",
-    "/kitchen/catalogo",
-    "/kitchen/configuracion"
-  ]);
-  for (const s of TOUR_STEPS) {
-    assert.ok(validRoutes.has(s.route ?? null), `unknown route in step ${s.id}: ${s.route}`);
-  }
+  const expectedOrder = [
+    "welcome", "nav-planning", "plan-pollo", "plan-random", "nav-shopping",
+    "shopping-check", "nav-kitchen", "create-open", "create-name",
+    "create-ingredient", "create-save", "recipe-open", "recipe-servings",
+    "recipe-execute", "recipe-step", "recipe-timer", "recipe-minimize",
+    "nav-catalog", "catalog-explore", "menu-open", "settings-link", "finish"
+  ];
+  assert.deepEqual(ids, expectedOrder);
 });
 
-test("action steps carry an action hint and fallback copy", () => {
-  for (const s of TOUR_STEPS) {
-    if (stepCompletionEvents(s).length > 0) {
-      assert.ok(s.hint, `action step ${s.id} needs a "Ahora pulsa…" hint`);
-      assert.ok(s.fallbackBody, `action step ${s.id} needs fallbackBody for missing targets`);
-    }
-  }
-});
-
-test("navigation-as-action steps do not auto-navigate", () => {
-  for (const id of ["catalog", "settings"]) {
+test("navigation steps are user-driven: no auto-route, completion via page arrival", () => {
+  for (const id of ["nav-planning", "nav-shopping", "nav-kitchen", "nav-catalog"]) {
     const s = TOUR_STEPS.find((x) => x.id === id);
-    assert.ok(s, `step ${id} exists`);
-    assert.equal(s.route ?? null, null, `step ${id} must let the USER navigate`);
-    assert.ok(stepCompletionEvents(s).length > 0, `step ${id} completes via navigation event`);
+    assert.equal(s.route ?? null, null, `${id} must not auto-navigate`);
+    assert.ok(stepCompletionEvents(s).length > 0, `${id} completes via navigation event`);
+    assert.ok(s.target.startsWith("nav-"), `${id} highlights the nav item`);
+  }
+});
+
+test("dish creation is gated: open → name → ingredient → save, each action-based", () => {
+  const substeps = ["create-open", "create-name", "create-ingredient", "create-save"];
+  const ids = TOUR_STEPS.map((s) => s.id);
+  const indices = substeps.map((id) => ids.indexOf(id));
+  assert.deepEqual([...indices].sort((a, b) => a - b), indices, "creation substeps in order");
+  for (const id of substeps) {
+    const s = TOUR_STEPS.find((x) => x.id === id);
+    assert.ok(stepCompletionEvents(s).length > 0, `${id} must require a real action`);
+  }
+  // The recipe thread comes strictly AFTER the dish is saved.
+  assert.ok(ids.indexOf("recipe-open") > ids.indexOf("create-save"));
+});
+
+test("plan-pollo requires the onboarding dish when available, any dish otherwise", () => {
+  const s = TOUR_STEPS.find((x) => x.id === "plan-pollo");
+  const ctx = { demoRecipe: { _id: "abc", name: "Pollo al horno" } };
+  assert.equal(s.matchesDetail(ctx, { dishId: "abc" }), true);
+  assert.equal(s.matchesDetail(ctx, { dishId: "zzz", dishName: "Lentejas" }), false);
+  assert.equal(s.matchesDetail(ctx, { dishId: "zzz", dishName: "Pollo al Hornó con patatas" }), true, "name match");
+  assert.equal(s.matchesDetail({ demoRecipe: null }, { dishId: "any" }), true, "degrades to any dish");
+});
+
+test("recipe-open only completes for the onboarding recipe (wrong dish never advances)", () => {
+  const step = TOUR_STEPS.find((s) => s.id === "recipe-open");
+  const ctx = { demoRecipe: { _id: "abc", name: "Pollo al horno" } };
+  assert.equal(step.matchesDetail(ctx, { dishId: "abc" }), true);
+  assert.equal(step.matchesDetail(ctx, { dishId: "other" }), false);
+});
+
+test("recipe-open targets the Cocinar ahora action with the card as fallback", () => {
+  const step = TOUR_STEPS.find((s) => s.id === "recipe-open");
+  const targets = resolveStepTargets(step, { demoRecipe: { _id: "abc" } });
+  assert.equal(targets.length, 2);
+  assert.match(targets[0], /data-dish-id="abc".*data-tour-id="dish-cook"/);
+  assert.deepEqual(resolveStepTargets(step, { demoRecipe: null }), []);
+});
+
+test("planning steps ask the page to expose the target (mobile carousel)", () => {
+  for (const id of ["plan-pollo", "plan-random"]) {
+    const s = TOUR_STEPS.find((x) => x.id === id);
+    assert.ok(s.prepare, `${id} must trigger a prepare action`);
+  }
+});
+
+test("outside clicks blocked on single-tap steps; multi-stage steps stay open", () => {
+  for (const id of ["plan-random", "shopping-check", "recipe-open", "recipe-timer", "nav-catalog", "menu-open"]) {
+    assert.equal(stepBlocksOutside(TOUR_STEPS.find((s) => s.id === id)), true, `${id} should block`);
+  }
+  // Pickers, typing and the user-menu dropdown need the app free.
+  for (const id of ["plan-pollo", "create-name", "create-ingredient", "create-save", "settings-link"]) {
+    assert.equal(stepBlocksOutside(TOUR_STEPS.find((s) => s.id === id)), false, `${id} must stay open`);
   }
 });
 
 test("recipe block is skipped entirely when no demo recipe exists", () => {
   const withRecipe = getActiveSteps({ demoRecipe: { _id: "x", name: "Demo" }, demoRecipeHasTimer: true });
   const withoutRecipe = getActiveSteps({ demoRecipe: null, demoRecipeHasTimer: false });
-  assert.ok(withRecipe.length > withoutRecipe.length, "recipe steps must be conditional");
-  // recipe-open stays as the graceful explanation; interactive recipe steps drop.
-  assert.ok(withoutRecipe.some((s) => s.id === "recipe-open"));
+  assert.ok(withRecipe.length > withoutRecipe.length);
+  assert.ok(withoutRecipe.some((s) => s.id === "recipe-open"), "recipe-open stays as short fallback");
   for (const id of ["recipe-servings", "recipe-execute", "recipe-step", "recipe-timer", "recipe-minimize"]) {
     assert.ok(!withoutRecipe.some((s) => s.id === id), `${id} must skip without a demo recipe`);
   }
@@ -138,58 +164,129 @@ test("recipe block is skipped entirely when no demo recipe exists", () => {
 test("timer step also skips when the demo recipe has no timer", () => {
   const steps = getActiveSteps({ demoRecipe: { _id: "x", name: "Demo" }, demoRecipeHasTimer: false });
   assert.ok(!steps.some((s) => s.id === "recipe-timer"));
-  assert.ok(steps.some((s) => s.id === "recipe-execute"));
+});
+
+// ─── Coach copy discipline: commands, not essays ─────────────────────────────
+
+test("every step has ONE short command — no paragraphs, no bites mentions in actions", () => {
+  for (const s of TOUR_STEPS) {
+    assert.ok(s.command, `step ${s.id} needs a command`);
+    assert.ok(s.command.length <= 80, `step ${s.id} command too long (${s.command.length})`);
+    assert.equal(s.body, undefined, `step ${s.id} must not carry a body paragraph`);
+    assert.equal(s.why, undefined, `step ${s.id} must not carry extra explanations`);
+    if (!s.kind && stepCompletionEvents(s).length > 0) {
+      assert.ok(!/bites/i.test(s.command), `action step ${s.id} must not mention bites`);
+      assert.ok(s.fallbackBody && s.fallbackBody.length <= 90, `${s.id} needs a one-line fallback`);
+    }
+  }
 });
 
 test("progress labels exclude welcome/finish and follow N/M format", () => {
   const steps = getActiveSteps({ demoRecipe: null, demoRecipeHasTimer: false });
-  assert.equal(progressLabelFor(steps, 0), null, "welcome shows no progress");
-  assert.equal(progressLabelFor(steps, steps.length - 1), null, "finish shows no progress");
-  const label = progressLabelFor(steps, 1);
-  assert.match(label, /^1\/\d+$/);
+  assert.equal(progressLabelFor(steps, 0), null);
+  assert.equal(progressLabelFor(steps, steps.length - 1), null);
+  assert.match(progressLabelFor(steps, 1), /^1\/\d+$/);
 });
 
-// ─── Coach bubble placement: never off-screen ───────────────────────────────
+// ─── Onboarding recipe lookup (Pollo al horno) ──────────────────────────────
+
+const recipeOf = (hasTimer) => ({
+  ingredients: [{ name: "Pollo", quantity: { amount: 1, unit: "unidad", scalable: true } }],
+  steps: [
+    { order: 1, title: "Prepara", text: "…", hasTimer: false },
+    { order: 2, title: "Hornea", text: "…", hasTimer, durationSeconds: hasTimer ? 2700 : null }
+  ]
+});
+
+test("lookup prefers Pollo al horno by normalized accent-insensitive contains-match", () => {
+  const dishes = [
+    { _id: "a", name: "Lentejas", ingredients: [{ displayName: "x", canonicalName: "x" }], recipe: recipeOf(true) },
+    { _id: "b", name: "POLLO AL HORNO con pimientos", ingredients: [{ displayName: "x", canonicalName: "x" }], recipe: recipeOf(true) }
+  ];
+  const pick = pickOnboardingRecipe(dishes);
+  assert.equal(pick.dish._id, "b");
+  assert.equal(pick.matchedPreferred, true);
+});
+
+test("lookup falls back to a timer recipe when Pollo al horno is missing", () => {
+  const dishes = [
+    { _id: "a", name: "Ensalada", ingredients: [{ displayName: "x", canonicalName: "x" }], recipe: recipeOf(false) },
+    { _id: "b", name: "Guiso", ingredients: [{ displayName: "x", canonicalName: "x" }], recipe: recipeOf(true) }
+  ];
+  const pick = pickOnboardingRecipe(dishes);
+  assert.equal(pick.dish._id, "b");
+  assert.equal(pick.matchedPreferred, false);
+});
+
+test("lookup returns null when no dish has a complete recipe", () => {
+  assert.equal(pickOnboardingRecipe([{ _id: "a", name: "Pollo al horno", recipe: { steps: null } }]), null);
+  assert.equal(pickOnboardingRecipe([]), null);
+});
+
+test("frontend and backend dish-name normalization agree", () => {
+  for (const name of ["Pollo al Horno", "  POLLO   AL  HORNÓ ", "pollo àl horno"]) {
+    assert.equal(normalizeDishName(name), normalizeDishNameBackend(name));
+  }
+  assert.equal(normalizeDishName("Pollo al Hornó"), "pollo al horno");
+});
+
+// ─── Coach bubble placement: never off-screen, never covering the target ────
 
 const viewport = { width: 1280, height: 800 };
-const bubble = { width: 300, height: 180 };
+const bubble = { width: 264, height: 150 };
 
 test("bubble prefers the configured side when it fits", () => {
   const spot = { top: 100, left: 500, width: 200, height: 60 };
   const pos = computeBubblePosition({ spot, bubble, viewport, preferred: "bottom" });
   assert.equal(pos.placement, "bottom");
-  assert.ok(pos.top >= spot.top + spot.height, "sits below the target");
+  assert.ok(pos.top >= spot.top + spot.height);
 });
 
 test("bubble flips above when the target is near the bottom (no cut-off)", () => {
   const spot = { top: 700, left: 500, width: 200, height: 60 };
   const pos = computeBubblePosition({ spot, bubble, viewport, preferred: "bottom" });
   assert.equal(pos.placement, "top");
-  assert.ok(pos.top + bubble.height <= spot.top, "sits fully above the target");
-  assert.ok(pos.top >= 0, "not off the top edge");
+  assert.ok(pos.top + bubble.height <= spot.top);
+  assert.ok(pos.top >= 0);
 });
 
-test("bubble is always fully inside the viewport, even in degenerate cases", () => {
-  const extremes = [
-    { top: -50, left: -50, width: 100, height: 100 },
-    { top: 780, left: 1250, width: 60, height: 60 },
-    { top: 0, left: 0, width: 1280, height: 800 }, // target covers everything
-    { top: 400, left: 640, width: 4, height: 4 }
+test("bubble never covers the target when any placement can avoid it", () => {
+  const spots = [
+    { top: 100, left: 500, width: 200, height: 60 },
+    { top: 700, left: 100, width: 120, height: 60 },
+    { top: 300, left: 1150, width: 100, height: 60 },
+    { top: 90, left: 20, width: 90, height: 50 }
   ];
-  for (const spot of extremes) {
+  const noOverlap = (pos, spot) => (
+    pos.left + bubble.width <= spot.left || pos.left >= spot.left + spot.width ||
+    pos.top + bubble.height <= spot.top || pos.top >= spot.top + spot.height
+  );
+  for (const spot of spots) {
     for (const preferred of ["top", "bottom", "left", "right"]) {
       const pos = computeBubblePosition({ spot, bubble, viewport, preferred });
-      assert.ok(pos.top >= 0, `top cut off (spot ${JSON.stringify(spot)}, ${preferred})`);
-      assert.ok(pos.left >= 0, `left cut off (spot ${JSON.stringify(spot)}, ${preferred})`);
-      assert.ok(pos.top + bubble.height <= viewport.height, `bottom cut off (${preferred})`);
-      assert.ok(pos.left + bubble.width <= viewport.width, `right cut off (${preferred})`);
+      assert.equal(pos.covered, false);
+      assert.ok(noOverlap(pos, spot), `bubble covers target (${JSON.stringify(spot)}, ${preferred})`);
     }
   }
 });
 
+test("covered flag reports unavoidable overlap (mobile switches to coach bar)", () => {
+  const spot = { top: 0, left: 0, width: 1280, height: 800 };
+  const pos = computeBubblePosition({ spot, bubble, viewport, preferred: "bottom" });
+  assert.equal(pos.covered, true);
+});
+
+test("insets keep the bubble clear of sticky header and bottom nav", () => {
+  const insets = { top: 74, bottom: 84, left: 10, right: 10 };
+  const spot = { top: 60, left: 400, width: 200, height: 50 };
+  const pos = computeBubblePosition({ spot, bubble, viewport, preferred: "top", insets });
+  assert.ok(pos.top >= insets.top);
+  assert.ok(pos.top + bubble.height <= viewport.height - insets.bottom);
+});
+
 test("narrow screens only use top/bottom placements and never overflow", () => {
   const mobile = { width: 375, height: 700 };
-  const mobileBubble = { width: 350, height: 200 };
+  const mobileBubble = { width: 264, height: 160 };
   const spots = [
     { top: 60, left: 10, width: 80, height: 40 },
     { top: 620, left: 300, width: 60, height: 60 }
@@ -199,13 +296,13 @@ test("narrow screens only use top/bottom placements and never overflow", () => {
       spot, bubble: mobileBubble, viewport: mobile, preferred: "right", allowSides: false
     });
     assert.ok(["top", "bottom"].includes(pos.placement));
-    assert.ok(pos.left >= 0 && pos.left + mobileBubble.width <= mobile.width, "no horizontal overflow");
-    assert.ok(pos.top >= 0 && pos.top + mobileBubble.height <= mobile.height, "no vertical overflow");
+    assert.ok(pos.left >= 0 && pos.left + mobileBubble.width <= mobile.width);
+    assert.ok(pos.top >= 0 && pos.top + mobileBubble.height <= mobile.height);
   }
 });
 
 test("arrow stays within the bubble edge and points toward the target", () => {
-  const spot = { top: 300, left: 30, width: 60, height: 40 }; // near left edge → clamped bubble
+  const spot = { top: 300, left: 30, width: 60, height: 40 };
   const pos = computeBubblePosition({ spot, bubble, viewport, preferred: "bottom" });
   assert.ok(["top", "bottom"].includes(pos.arrow.side));
   assert.ok(pos.arrow.offset >= 18 && pos.arrow.offset <= bubble.width - 18);

@@ -1,119 +1,110 @@
-# Guided Onboarding (tour interactivo)
+# Guided Tutorial (tutorial guiado)
 
-Interactive coach that teaches the core loop (planificar → lista → cocinar →
-bites/catálogo) by making the user PERFORM the real actions — not a modal
-slideshow. Spotlight + compact anchored speech bubble ("coach bubble") that
-points at the exact UI element.
+Coach-mark tutorial that teaches the core loop (planificar → lista → cocinar →
+catálogo → configuración) by making the user perform every real action.
+
+**PRODUCT RULE: the tutorial NEVER grants bites.** It only teaches where
+things are. The challenge onboarding ("retos", onboardingEngine) is the single
+reward system; the tutorial's finish screen hands the user off to it
+("Abrir onboarding" → expands the challenge banner + opens its panel via
+`requestOpenOnboardingPanel()`).
 
 ## How it triggers
 
 - `initOnboarding()` (backend/src/kitchen/onboardingEngine.js) runs when a new
-  household is created (routes/auth.js). If the global switch is ON it stores
+  household is created. If the global switch is ON it stores
   `guidedTour: { status: "pending" }` on the `HouseholdOnboarding` record.
-- Tour state travels inside `GET /api/kitchen/onboarding/state` as
-  `guidedTour` + `guidedTourEnabled`.
-- `GuidedTourProvider` (frontend/src/kitchen/components/tour/) auto-launches
-  when: user authenticated + on a `/kitchen/*` route + `guidedTourEnabled` +
-  status `pending`. Status `active` resumes at the persisted
-  `currentStepIndex` (refresh mid-tour is safe).
-- Households that predate the feature have no `guidedTour` subdoc → normalized
-  to status `none` → never auto-launch.
+- Tutorial state travels inside `GET /api/kitchen/onboarding/state` as
+  `guidedTour` + `guidedTourEnabled`. `GuidedTourProvider`
+  (frontend/src/kitchen/components/tour/) auto-launches on `pending`; `active`
+  resumes at the persisted step index (refresh-safe).
+- Households that predate the feature normalize to status `none` → never
+  auto-launch. Global disable ⇒ no auto-launch for anyone.
 
-## Interactive step model
+## The flow (deterministic, Pollo al horno thread)
 
-Steps live in `frontend/src/kitchen/components/tour/guidedTourSteps.js`:
-`{ id, route, target, title, body, hint, why, completionEvent, rewardStep,
-fallbackBody, skipIf, placement }`.
+welcome → **nav-planning** (user taps Planificación; silently satisfied if
+already there) → **plan-pollo** (user programs «Pollo al horno» via the dish
+picker) → **plan-random** (user taps the dice) → **nav-shopping** (user taps
+Lista) → **shopping-check** (user marks an item) → **nav-kitchen** (user taps
+Mi Cocina) → **create-open / create-name / create-ingredient / create-save**
+(user actually creates and SAVES a test dish — the flow cannot jump past
+creation) → **recipe-open** (app scrolls to the Pollo al horno card and
+highlights «Cocinar ahora»; user opens it) → **recipe-servings** →
+**recipe-execute** → **recipe-step** → **recipe-timer** → **recipe-minimize**
+→ **nav-catalog** → **catalog-explore** (info) → **menu-open** →
+**settings-link** (highlights Configuración INSIDE the opened dropdown) →
+finish.
 
-- **Action steps** declare `completionEvent` (one or more). They have NO
-  "Siguiente" button — the only way forward is performing the action in the
-  real UI ("Omitir paso" is the unrewarded escape hatch). The provider listens
-  to the event bus and advances (with a ✓ success flash) when the event fires.
-- **Info steps** (welcome, finish, recipe explanation fallback) have
-  "Siguiente" and never carry rewards (pinned by tests).
-- **Navigation-as-action** steps (catalog, settings) have `route: null` and
-  highlight the nav item / user menu — the user must tap it; arrival on the
-  page emits the completion event.
-- `skipIf(ctx)` drops steps at runtime: the whole recipe block skips when no
-  suitable recipe exists (`recipe-open` stays as a short explanation); the
-  timer step also skips when the chosen recipe has no timers.
-- Demo recipe: auto-picked from `/api/kitchen/dishes` — prefers steps + timer
-  + ingredients, falls back to steps + ingredients (guidedTourService.js
-  `findDemoRecipeApi`). Its dish card is targeted via `[data-dish-id="…"]`.
+Config: `frontend/src/kitchen/components/tour/guidedTourSteps.js`. Step model:
+`{ id, kind, route, completeIfRoute, prepare, target, title, command,
+completionEvent, matchesDetail, fallbackBody, skipIf, placement,
+blockOutside }`.
 
-## Event bus
+- Copy discipline (pinned by tests): every step = 1 short title + ONE command
+  ("Pulsa Lista."). No body paragraphs, no `why`, no bites mentions.
+- Navigation steps have `route: null` — the USER taps the nav item; arrival on
+  the page emits the completion event (`planning:opened`, `shopping:opened`,
+  `kitchen:opened`, `catalog:opened`, `settings:opened`).
+- `prepare` asks the current screen to expose the target: planning steps emit
+  `TOUR_PREPARE.REVEAL_EMPTY_PLANNING_DAY` and WeekPage moves the mobile
+  carousel to the first empty day.
+- `matchesDetail` scopes entity steps: `plan-pollo` accepts the onboarding
+  dish by id OR normalized name (degrades to any dish when unavailable);
+  `recipe-open` only completes for the onboarding dish id.
+- Creation gating: `kitchen:create_dish_opened` → `kitchen:dish_name_entered`
+  → `kitchen:dish_ingredient_added` → `kitchen:dish_created` (emitted from
+  DishModal on real input/save; create mode only).
 
-`guidedOnboardingEvents.js` — window CustomEvent channel
-(`lunchfy:onboarding-action`). App code emits at REAL success points:
+## Onboarding recipe: "Pollo al horno"
 
-| Event | Emitted from |
-|---|---|
-| planning:dish_selected / planning:day_randomized | WeekPage `updateDay` success (`options.source === "random"` distinguishes) + week randomize |
-| shopping:item_marked_bought | ShoppingPage `setItemStatus` purchased success |
-| kitchen:create_dish_opened | DishesPage `startCreate` / `startIngredientCreate` |
-| recipe:opened / servings_changed / executor_started | RecipeModal |
-| recipe:step_next / executor_minimized | CookingSessionStepper |
-| recipe:timer_started | RecipeTimer `handleStart` |
-| catalog:opened / settings:opened | page mount effects |
+- Backend `seedOnboardingRecipe()` (guidedTourService.js, runs at startup)
+  upserts a MASTER-scope KitchenDish "Pollo al horno" (structured ingredients,
+  4 steps, two timers) — visible in every household's Mi Cocina.
+- Frontend lookup (`onboardingRecipe.js`, pure + unit-tested): normalized
+  accent/case-insensitive contains-match, preferring timer variants; falls
+  back to any timer recipe, then any complete recipe; missing preferred
+  recipe is reported via telemetry (`lastMissingTarget`) as a data issue.
 
-Emissions are unconditional (cheap no-op when no tour runs); the provider is
-the only listener.
+## Coach bubble & overlay
 
-## Coach bubble placement
+- `bubblePosition.js` (pure, unit-tested): picks top/bottom/left/right,
+  REJECTS placements that overlap the target, honors keep-out insets (header
+  74px, mobile bottom nav 84px), clamps inside the viewport, reports
+  `covered` when overlap is unavoidable.
+- Mobile: sides disabled (<640px); when `covered`, the overlay switches to a
+  slim bottom **coach bar** above the bottom nav — the target stays fully
+  visible and tappable. Recomputed on scroll/resize/orientation/route/modal.
+- `blockOutside` (default true on single-tap action steps): four transparent
+  strips around the spotlight swallow background clicks while the target and
+  scrolling keep working. False on multi-stage steps (dish picker, typing,
+  the user-menu dropdown — fixes the "can't click Configuración" bug).
+- Missing target → small fallback panel (top third) with a one-line
+  `fallbackBody` + "Omitir paso". Never crashes, always reports telemetry.
 
-`bubblePosition.js` (pure, unit-tested): picks top/bottom/left/right from the
-step's preferred side, flips when there is no room, clamps fully inside the
-viewport (never cut off on desktop, never bottom-pinned, no horizontal
-overflow on mobile — sides disabled under 640px), and returns the arrow
-position so it keeps pointing at the target after clamping. Targets are
-scrolled to center before showing. No valid target → small floating mini-panel
-(top third) with `fallbackBody` + "Omitir paso".
+## Telemetry
 
-## Bites rewards (actions only, anti-farming)
-
-- Whitelist in `backend/src/kitchen/guidedTourService.js`
-  (`TOUR_STEP_REWARDS`): `plan_dish`, `randomize_day`, `mark_bought`,
-  `create_dish_opened`, `recipe_servings`, `recipe_execution`, `recipe_timer`
-  (+5 each) and `finish` (+10). Opening modals, reading explanations and
-  pressing "Siguiente" grant NOTHING — the client only sends a `stepId` when
-  the completion event fired, and tests pin that rewards exist only on steps
-  with `completionEvent`.
-- The `finish` bonus pays only when ≥3 real actions were rewarded
-  (`FINISH_REWARD_MIN_ACTIONS`) — skipping every step earns nothing.
-- Grants go through the same path as challenge rewards
-  (`grantOnboardingBites` → `BitesTransaction`, source `guided_tour`).
-- `rewardedSteps` persists forever, **including across admin resends** — each
-  key pays once per household. "Reenviar (test)" sets `testMode`: no grants.
-- Floating bites pill stays visible during the whole tour: wallet total +
-  "+X en el tour" + count-up/burst only on real awards.
-
-## Merge with challenge onboarding
-
-One coherent flow, two layers: the tour is the interactive delivery, the
-existing challenge system stays the server-verified reward ledger. Guided
-actions fire the SAME app handlers, so `plan_meal`, `mark_purchased`,
-`visit_*` etc. progress challenges simultaneously (separate reward sources,
-each with its own dedupe — nothing double-grants). The "Guía de inicio"
-banner hides while the tour is active and takes over afterwards as the
-follow-up task list. Weekly challenges untouched.
+`guidedTour` persists `currentStepId` + `stepStartedAt`, `completedStepIds`,
+`skippedStepIds` (per-step "Omitir"), `stalledStepId` (set when the user
+skips the whole tutorial) and `lastMissingTarget`. All visible in the DIOD
+household control center.
 
 ## DIOD admin
 
-- **Global switch**: Admin → Onboarding section → "Tour guiado" card
-  (`GET/PUT /api/kitchen/onboarding/admin/guided-tour/config`, model
-  `GuidedTourConfig`). Disabled ⇒ no auto-launch for anyone; new households
-  are created without a pending tour.
-- **Per household**: control center → Onboarding card (status, sent/completed
-  dates, "Reenviar tour" / "Reenviar (test)") or the Onboarding section table
-  (Tour column + actions). Resend sets `pending` + `lastSentAt`; the user sees
-  it on next app load. Default replay = no duplicate rewards (rewardedSteps
-  persists); test mode = no rewards at all.
+- **Global switch**: Admin → Onboarding → "Tour guiado" card
+  (`GET/PUT /api/kitchen/onboarding/admin/guided-tour/config`).
+- **Per household**: control center → Onboarding card (status, current step,
+  steps done/skipped, stall step, missing-target report, dates, "Reenviar
+  tutorial") or the Onboarding section table. Resend sets `pending` + resets
+  telemetry; it never touches bites, challenge state or rewards (the tutorial
+  has none).
 
 ## Tests
 
-`cd backend && node --test src/kitchen/guidedTourService.test.js` — 18 tests:
-normalization, action-only reward contract (frontend steps ↔ backend
-whitelist), step structure (user-navigated steps, skipIf behavior, hints +
-fallbacks), and bubble placement (flip near bottom, full viewport clamping,
-mobile no-overflow, arrow bounds). Frontend quality gate:
+`cd backend && node --test src/kitchen/guidedTourService.test.js` — 28 tests:
+the no-bites rule (no step rewards, no reward whitelist), deterministic flow
+order, user-driven navigation, creation gating, Pollo al horno matching +
+lookup + FE/BE normalization parity, copy discipline (command length, no
+essays), and bubble placement (never covers target, covered→coach-bar flag,
+insets, clamping, mobile no-overflow). Frontend gate:
 `cd frontend && npm run build`.

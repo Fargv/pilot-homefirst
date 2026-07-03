@@ -589,7 +589,7 @@ const modals = [
   ["BasicsPopup", "Household basics for shopping", "Shopping and Settings", "Creates/applies HouseholdBasic items"],
   ["Catalog pack detail / Bites store / insufficient Bites", "Catalog actions", "CatalogPage", "Ownership, unlock and payment paths"],
   ["OnboardingBanner / WeeklyChallengeCard / MilestoneToast", "Gamification surfaces", "KitchenLayout", "Challenge state and rewards"],
-  ["GuidedTourOverlay", "Interactive guided onboarding: spotlight + anchored coach bubble; action steps advance only via real app events (guidedOnboardingEvents), rewards only for completed actions", "App-level portal (GuidedTourProvider)", "guidedTour status on HouseholdOnboarding; auto-launch for pending users"],
+  ["GuidedTourOverlay", "Guided TUTORIAL (no bites): spotlight + tiny coach bubble / mobile coach bar; steps advance only via real app events (guidedOnboardingEvents); finish hands off to challenge onboarding", "App-level portal (GuidedTourProvider)", "guidedTour status + telemetry on HouseholdOnboarding; auto-launch for pending users"],
   ["Admin panels", "Reset, grant, edit and normalize data", "AdminPanelPage", "DIOD-only backend mutations"],
   ["ConsentGate", "Legal consent acceptance", "AppRoutes wrapper", "Blocks app until accepted"],
 ];

@@ -120,7 +120,10 @@ export default function DishesPage() {
   const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { notifyOnboarding("visit_dishes"); }, []);
+  useEffect(() => {
+    notifyOnboarding("visit_dishes");
+    emitOnboardingEvent(ONBOARDING_EVENTS.KITCHEN_OPENED);
+  }, []);
 
   const [ingredientSuggestions, setIngredientSuggestions] = useState([]);
   const [dishSuggestions, setDishSuggestions] = useState([]);
@@ -1392,6 +1395,7 @@ export default function DishesPage() {
                     <button
                       type="button"
                       className="dfc-btn dfc-btn--cook"
+                      data-tour-id="dish-cook"
                       onClick={() => setRecipeModalDish(dish)}
                       aria-label={`Cocinar ${dish.name} ahora`}
                     >

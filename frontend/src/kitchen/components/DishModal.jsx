@@ -7,6 +7,7 @@ import SearchableSelect from "./ui/SearchableSelect.jsx";
 import { ProBadge } from "./ui/ProBadge.jsx";
 import { normalizeIngredientName } from "../utils/normalize.js";
 import { useAuth } from "../auth.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "./tour/guidedOnboardingEvents.js";
 import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscription.js";
 
 const EMPTY_FORM = {
@@ -268,6 +269,7 @@ export default function DishModal({
   const saveDishOnly = async () => {
     const payload = buildDishPayload();
     let dish = null;
+    const isCreate = !editingId;
     if (editingId) {
       const data = await apiRequest(`/api/kitchen/dishes/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
       dish = data.dish;
@@ -277,6 +279,12 @@ export default function DishModal({
     }
     if (dish?._id) {
       setEditingId(String(dish._id));
+      if (isCreate) {
+        emitOnboardingEvent(ONBOARDING_EVENTS.DISH_CREATED, {
+          dishId: String(dish._id),
+          dishName: dish.name || ""
+        });
+      }
       await onSaved?.(dish);
     }
     return dish;
@@ -538,10 +546,18 @@ export default function DishModal({
             <span className="kitchen-label">Nombre del plato</span>
             <input
               className="kitchen-input"
+              data-tour-id="dish-name-input"
               value={form.name}
-              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              onChange={(event) => {
+                const value = event.target.value;
+                setForm((prev) => ({ ...prev, name: value }));
+                // Tutorial gate: a meaningful name (create mode only).
+                if (!editingId && value.trim().length >= 3) {
+                  emitOnboardingEvent(ONBOARDING_EVENTS.DISH_NAME_ENTERED);
+                }
+              }}
               required
-              placeholder="Ej. Pollo al horno"
+              placeholder="Ej. Plato de prueba"
             />
           </label>
 
@@ -558,11 +574,17 @@ export default function DishModal({
           </div>
 
           {/* 3. Ingredients */}
-          <div className="kitchen-field kitchen-dish-ingredients">
+          <div className="kitchen-field kitchen-dish-ingredients" data-tour-id="dish-add-ingredient">
             <span className="kitchen-label">Ingredientes</span>
             <IngredientPicker
               value={form.ingredients}
-              onChange={(ingredients) => setForm((prev) => ({ ...prev, ingredients }))}
+              onChange={(ingredients) => {
+                // Tutorial gate: an ingredient was actually added (create mode).
+                if (!editingId && (ingredients?.length || 0) > (form.ingredients?.length || 0)) {
+                  emitOnboardingEvent(ONBOARDING_EVENTS.DISH_INGREDIENT_ADDED);
+                }
+                setForm((prev) => ({ ...prev, ingredients }));
+              }}
               categories={categories}
               onCategoryCreated={onCategoryCreated}
               onIngredientCreated={onIngredientCreated}
@@ -653,7 +675,7 @@ export default function DishModal({
             {isCreatingIngredient ? (
               <div className="kitchen-inline-warning">Termina de crear el ingrediente para guardar el plato.</div>
             ) : (
-              <button className="kitchen-button" type="submit" disabled={saving}>
+              <button className="kitchen-button" type="submit" data-tour-id="dish-save" disabled={saving}>
                 {saving ? "Guardando..." : "Guardar"}
               </button>
             )}
