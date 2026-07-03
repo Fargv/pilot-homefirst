@@ -27156,6 +27156,142 @@ body,
   color: #b45309;
 }
 
+/* ── Robot pack chips (pack detail modal) ───────────────────────────────────── */
+.pk2-modal-robots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+
+.pk2-robot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--hf-brand-soft, #eef2ff);
+  color: var(--hf-brand, #4f46e5);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pk2-modal-robot-note {
+  font-size: 11px;
+  color: var(--text-muted, #667085);
+  margin: 4px 0 0;
+}
+
+/* ── Robot selector modal ──────────────────────────────────────────────────── */
+.robot-selector-modal {
+  max-width: 380px;
+  width: 92vw;
+  padding: 24px 20px 20px;
+}
+
+.robot-selector-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  margin: 0 0 6px;
+  padding-right: 24px;
+}
+
+.robot-selector-subtitle {
+  font-size: 13px;
+  color: var(--text-muted, #667085);
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.robot-selector-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.robot-selector-option {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 10px;
+  padding: 12px 14px;
+  background: var(--card-bg, #f8fafc);
+  border: 2px solid var(--hf-border, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.robot-selector-option.is-selected {
+  border-color: var(--hf-brand, #4f46e5);
+  background: var(--hf-brand-soft, #eef2ff);
+}
+
+.robot-selector-option:focus-visible {
+  outline: 2px solid var(--hf-brand, #4f46e5);
+  outline-offset: 2px;
+}
+
+.robot-selector-emoji {
+  grid-row: 1 / 3;
+  font-size: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.robot-selector-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  grid-column: 2;
+  grid-row: 1;
+  line-height: 1.2;
+}
+
+.robot-selector-sub {
+  font-size: 11px;
+  color: var(--text-muted, #667085);
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.robot-selector-check {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  color: var(--hf-brand, #4f46e5);
+  display: flex;
+  align-items: center;
+}
+
+.robot-selector-error {
+  font-size: 13px;
+  color: var(--danger-text, #dc2626);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.robot-selector-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.robot-selector-actions .kitchen-btn {
+  width: 100%;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .pk2-modal-cta {
   width: 100%;
   height: 48px;

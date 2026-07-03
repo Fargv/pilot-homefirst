@@ -1,0 +1,180 @@
+{
+  "global": "LunchfyKitchen",
+  "pkg": "lunchfy-kitchen",
+  "pkgDir": "C:\\APPS\\pilot-homefirst\\frontend",
+  "extraEntries": [],
+  "exported": [],
+  "storybookStatic": null,
+  "keyRecipe": 7,
+  "cfgSliceGlobal": "a8107b59a3b06e0548137728811871dddff16c6f6b3c6b10282134514cc3feb1",
+  "components": [
+    {
+      "name": "AvatarStack",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "32262fceb0f712cf",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Badge",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "cbbe277cb6497ef4",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "BottomNav",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "912ab6f791631cc8",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Button",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "23a8ec97cd5785a7",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Card",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "0f74bb486edd4292",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "CategoryChip",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "8382e90e1e7881f8",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "DatePickerField",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "109ceb785db89dfb",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "DinnerUpgradeBanner",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "512573de97d0322e",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Fab",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "2d9108f645902c07",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Header",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "e7a444bcdb5fc916",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Input",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "259773f726667c71",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "KitchenProvider",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "604b16359c696cc3",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "MilestoneToast",
+      "group": "rewards",
+      "srcSha": null,
+      "sourceKey": "9bd9de770f42fc82",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "ModalSheet",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "01fe56e73ac6b75c",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "PageHeader",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "2478db7bf295de4f",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "ProBadge",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "ba7679025e7de6d5",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "SearchableSelect",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "8178c4a7c52fe7aa",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "Skeleton",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "f707557d066d1de3",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "WeekDatePicker",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "1f26e3fd16d5acee",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "WeekDayTabs",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "1403e7b6e8aa32fe",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    },
+    {
+      "name": "WeekNavigator",
+      "group": "general",
+      "srcSha": null,
+      "sourceKey": "157c08727dc01a38",
+      "cfgSlice": "5ff899b099eb6923833804cda955efdd69101524bec86f67dac5537cd81802e8",
+      "stories": []
+    }
+  ]
+}

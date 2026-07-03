@@ -31,6 +31,8 @@ const DishTemplateSchema = new mongoose.Schema(
     recipe: {
       ingredients: { type: [RecipeIngredientTemplateSchema], default: [] },
       steps: { type: mongoose.Schema.Types.Mixed, default: null },
+      // Robot-specific step variants, keyed by robot ID (thermomix, monsieur, mambo, moulinex, taurus)
+      robotSteps: { type: mongoose.Schema.Types.Mixed, default: null },
       servings: { type: Number, default: null },
       baseServings: { type: Number, default: null },
       prepMinutes: { type: Number, default: null },
@@ -96,7 +98,11 @@ const CatalogPackSchema = new mongoose.Schema(
     stripePriceId: { type: String, default: null, trim: true },
     paymentMode: { type: String, enum: ["none", "stripe"], default: "none" },
     purchasedCount: { type: Number, default: 0 },
-    lastPurchasedAt: { type: Date, default: null }
+    lastPurchasedAt: { type: Date, default: null },
+
+    // ── Robot cooking packs ──────────────────────────────────────────────────
+    isRobotPack: { type: Boolean, default: false },
+    supportedRobots: { type: [String], default: [] }
   },
   { timestamps: true }
 );

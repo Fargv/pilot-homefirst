@@ -567,6 +567,10 @@ export default function SettingsPage() {
   }, [convertModal]);
 
   const loadData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -591,7 +595,25 @@ export default function SettingsPage() {
         requests.push(Promise.resolve({ inviteCode: "" }));
       }
 
-      const [categoryData, dishCategoryData, householdData, memberData, invitationData, codeData] = await Promise.all(requests);
+      const results = await Promise.allSettled(requests);
+      const loadWarnings = [];
+      const readResult = (index, fallback, label) => {
+        const result = results[index];
+        if (result?.status === "fulfilled") return result.value || fallback;
+        loadWarnings.push(result?.reason?.message || label);
+        return fallback;
+      };
+      const categoryData = readResult(0, { categories: [] }, "No se pudieron cargar las categorias.");
+      const dishCategoryData = readResult(1, { categories: [] }, "No se pudieron cargar las categorias de platos.");
+      const householdData = readResult(2, { household: null }, "No se pudo cargar el resumen del hogar.");
+      const memberData = readResult(3, { users: [] }, "No se pudieron cargar los miembros.");
+      const invitationData = readResult(4, { invitations: [] }, "No se pudieron cargar las invitaciones.");
+      const codeData = readResult(5, { inviteCode: "" }, "No se pudo cargar el codigo de invitacion.");
+      if (loadWarnings.length > 0 && import.meta.env.DEV) {
+        console.warn("[settings][dev] Settings loaded with partial API data", {
+          warnings: loadWarnings
+        });
+      }
       setCategories(categoryData.categories || []);
       setDishCategories(dishCategoryData.categories || []);
       setHouseholdName(householdData?.household?.name || "");
@@ -630,6 +652,9 @@ export default function SettingsPage() {
         dinnerActive: user?.dinnerActive !== false,
         dinnerCanCook: user?.dinnerCanCook !== false
       });
+      if (loadWarnings.length > 0) {
+        setError("Algunos datos de configuracion no se pudieron cargar. Puedes seguir usando perfil y cerrar sesion.");
+      }
     } catch (err) {
       setError(err.message || "No se pudo cargar configuracion.");
     } finally {
@@ -639,7 +664,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     void loadData();
-  }, [isDiod, canManageHousehold, user?.activeHouseholdId]);
+  }, [isDiod, canManageHousehold, user?.activeHouseholdId, user?.id]);
 
   useEffect(() => {
     if (!canManageHousehold) return;

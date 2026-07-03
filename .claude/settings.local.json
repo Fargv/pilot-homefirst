@@ -13,7 +13,8 @@
       "Bash(rm -f \".git/COMMIT_EDITMSG_TEMP.txt\")",
       "Bash(git add *)",
       "Bash(git checkout *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(git stash *)"
     ],
     "deny": [
       "Read(./.env)",

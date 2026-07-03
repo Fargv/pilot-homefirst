@@ -1,0 +1,1 @@
+DatePickerField from lunchfy-kitchen. Use via `window.LunchfyKitchen.DatePickerField` (bundle loaded from the root `_ds_bundle.js`). Wrap the tree in `<KitchenProvider>` (full provider chain in README.md — components read theme/i18n from that context).

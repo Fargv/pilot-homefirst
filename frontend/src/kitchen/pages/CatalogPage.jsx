@@ -28,6 +28,86 @@ import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guide
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { CatalogPageSkeleton } from "../components/ScreenSkeletons.jsx";
 
+// ─── Robot definitions ────────────────────────────────────────────────────────
+
+const ROBOT_OPTIONS = [
+  { id: "thermomix", label: "Thermomix", subtitle: "TM6 / TM5", emoji: "🌡️" },
+  { id: "monsieur", label: "Monsieur Cuisine", subtitle: "Smart / Connect", emoji: "👨‍🍳" },
+  { id: "mambo", label: "Mambo Cecotec", subtitle: "Robot de cocina", emoji: "🤖" },
+  { id: "moulinex", label: "Moulinex", subtitle: "ClickChef / Companion", emoji: "🍲" },
+  { id: "taurus", label: "Taurus Mycook", subtitle: "Touch / Pro", emoji: "⚙️" }
+];
+
+const ROBOT_LABEL = Object.fromEntries(ROBOT_OPTIONS.map((r) => [r.id, r.label]));
+
+function getRobotLabel(robotId) {
+  return ROBOT_LABEL[robotId] || robotId;
+}
+
+function getLastRobot() {
+  try { return localStorage.getItem("catalog_last_robot") || null; } catch { return null; }
+}
+
+function saveLastRobot(robotId) {
+  try { localStorage.setItem("catalog_last_robot", robotId); } catch {}
+}
+
+// ─── Robot selector modal ─────────────────────────────────────────────────────
+
+function RobotSelectorModal({ pack, onConfirm, onClose }) {
+  const [selected, setSelected] = useState(getLastRobot);
+  const [error, setError] = useState("");
+  const supported = pack.supportedRobots?.length ? pack.supportedRobots : ROBOT_OPTIONS.map((r) => r.id);
+  const availableRobots = ROBOT_OPTIONS.filter((r) => supported.includes(r.id));
+
+  const handleConfirm = () => {
+    if (!selected) { setError("Elige tu robot de cocina para continuar."); return; }
+    saveLastRobot(selected);
+    onConfirm(selected);
+  };
+
+  return (
+    <div className="kitchen-modal-overlay" onClick={onClose}>
+      <div className="kitchen-modal robot-selector-modal" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="kitchen-modal-close" onClick={onClose} aria-label="Cerrar"><CloseIcon /></button>
+        <h2 className="robot-selector-title">¿Cuál es tu robot de cocina?</h2>
+        <p className="robot-selector-subtitle">
+          Las instrucciones se adaptarán a tu robot. Podrás cambiar el pack después desinstalándolo.
+        </p>
+
+        <div className="robot-selector-options">
+          {availableRobots.map((robot) => (
+            <button
+              key={robot.id}
+              type="button"
+              className={`robot-selector-option${selected === robot.id ? " is-selected" : ""}`}
+              onClick={() => { setSelected(robot.id); setError(""); }}
+            >
+              <span className="robot-selector-emoji">{robot.emoji}</span>
+              <span className="robot-selector-name">{robot.label}</span>
+              <span className="robot-selector-sub">{robot.subtitle}</span>
+              {selected === robot.id && (
+                <span className="robot-selector-check" aria-hidden="true">
+                  <CheckIcon />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="robot-selector-error" role="alert">{error}</p>}
+
+        <div className="robot-selector-actions">
+          <button type="button" className="kitchen-btn primary" onClick={handleConfirm}>
+            Instalar para {selected ? getRobotLabel(selected) : "mi robot"}
+          </button>
+          <button type="button" className="kitchen-btn" onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { id: "all", label: "Todos" },
   { id: "included", label: "En mi plan" },
@@ -610,6 +690,22 @@ function PackDetailModal({ pack, closing, onClose, onAction, onBuyBites, onUnins
             </div>
           ) : null}
 
+          {pack.isRobotPack && Array.isArray(pack.supportedRobots) && pack.supportedRobots.length > 0 ? (
+            <div className="pk2-modal-section">
+              <span className="pk2-modal-label">Robots compatibles</span>
+              <div className="pk2-modal-robots">
+                {ROBOT_OPTIONS.filter((r) => pack.supportedRobots.includes(r.id)).map((r) => (
+                  <span key={r.id} className="pk2-robot-chip">
+                    {r.emoji} {r.label}
+                  </span>
+                ))}
+              </div>
+              <p className="pk2-modal-robot-note">
+                Los pasos se adaptan automáticamente a tu robot al instalar.
+              </p>
+            </div>
+          ) : null}
+
           {freeDaysLeft !== null ? (
             <p className="pk2-modal-free-countdown">
               ⏳ Gratis todavía {freeDaysLeft} {freeDaysLeft === 1 ? "día" : "días"} más
@@ -786,6 +882,8 @@ export default function CatalogPage() {
   const [dietInstallModal, setDietInstallModal] = useState(null);
   // Pack detail modal: presentation state only ({ packId, closing })
   const [packDetail, setPackDetail] = useState(null);
+  // Robot selector: { pack, pendingPaymentMethod }
+  const [robotSelector, setRobotSelector] = useState(null);
 
   const openPackDetail = useCallback((pack) => {
     setPackDetail({ packId: String(pack.id), closing: false });
@@ -840,7 +938,7 @@ export default function CatalogPage() {
 
   const hasActiveFilters = activeTab !== "all" || hideInstalled || priceFilter !== "all";
 
-  const anyModalOpen = bitesStoreOpen || Boolean(insufficientBitesPack) || Boolean(dietInstallModal);
+  const anyModalOpen = bitesStoreOpen || Boolean(insufficientBitesPack) || Boolean(dietInstallModal) || Boolean(robotSelector);
 
   useEffect(() => {
     if (!anyModalOpen) return undefined;
@@ -848,7 +946,8 @@ export default function CatalogPage() {
     document.body.style.overflow = "hidden";
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
-      if (bitesStoreOpen) setBitesStoreOpen(false);
+      if (robotSelector) setRobotSelector(null);
+      else if (bitesStoreOpen) setBitesStoreOpen(false);
       else if (insufficientBitesPack) setInsufficientBitesPack(null);
       else if (dietInstallModal) setDietInstallModal(null);
     };
@@ -859,13 +958,20 @@ export default function CatalogPage() {
     };
   }, [anyModalOpen, bitesStoreOpen, insufficientBitesPack, dietInstallModal]);
 
-  const handlePackAction = useCallback(async (pack, paymentMethod) => {
+  const handlePackAction = useCallback(async (pack, paymentMethod, robotType = null) => {
     const { entitlement } = pack;
 
     if (entitlement.installed) return;
 
     if (paymentMethod === "buy-bites") {
       setBitesStoreOpen(true);
+      return;
+    }
+
+    // Robot packs: show selector before any install action (skip if robot already provided)
+    const isInstallAction = paymentMethod === "install" || paymentMethod === "bites" || (!paymentMethod && !entitlement.requiresPurchase);
+    if (pack.isRobotPack && isInstallAction && !robotType) {
+      setRobotSelector({ pack, pendingPaymentMethod: paymentMethod });
       return;
     }
 
@@ -947,13 +1053,19 @@ export default function CatalogPage() {
     }
 
     try {
-      const result = await apiSync(`/api/kitchen/catalog/packs/${pack.id}/install`, { method: "POST" });
+      const installBody = robotType ? JSON.stringify({ robotType }) : undefined;
+      const result = await apiSync(`/api/kitchen/catalog/packs/${pack.id}/install`, {
+        method: "POST",
+        body: installBody
+      });
 
       if (result.alreadyInstalled) {
         showToast("Este pack ya estaba instalado.", "info");
       } else {
         if (pack.slug === "ayuno-permanente-vol1") {
           showToast("🎉 Tu lista de la compra acaba de simplificarse muchísimo.", "success");
+        } else if (result.isRobotPack && result.robotType) {
+          showToast(`¡Pack instalado para ${getRobotLabel(result.robotType)}! ${result.dishesCreated} platos añadidos.`, "success");
         } else {
           showToast(`¡Pack instalado! ${result.dishesCreated} platos añadidos a tu biblioteca.`, "success");
         }
@@ -1188,6 +1300,18 @@ export default function CatalogPage() {
           />
         );
       })() : null}
+
+      {robotSelector && (
+        <RobotSelectorModal
+          pack={robotSelector.pack}
+          onClose={() => setRobotSelector(null)}
+          onConfirm={(robotType) => {
+            const { pack, pendingPaymentMethod } = robotSelector;
+            setRobotSelector(null);
+            handlePackAction(pack, pendingPaymentMethod, robotType);
+          }}
+        />
+      )}
 
       {bitesStoreOpen && (
         <CatalogBitesStore

@@ -1,6 +1,9 @@
 const API = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
 
 let clerkTokenGetter = null;
+let clerkAuthState = { isLoaded: false, isSignedIn: false };
+const authStateListeners = new Set();
+const CLERK_AUTH_WAIT_MS = 2500;
 
 export class ApiRequestError extends Error {
   constructor(message, details = {}) {
@@ -37,11 +40,69 @@ export function setToken(token) {
   sessionStorage.removeItem("kitchen_token");
 }
 
-export function registerClerkTokenGetter(getter) {
+export function registerClerkTokenGetter(getter, state = {}) {
   clerkTokenGetter = typeof getter === "function" ? getter : null;
+  clerkAuthState = {
+    isLoaded: Boolean(state.isLoaded),
+    isSignedIn: Boolean(state.isSignedIn)
+  };
+  authStateListeners.forEach((listener) => listener());
 }
 
-async function getAuthorizationHeader(authMode = "auto") {
+function waitForAuthStateChange(timeoutMs = CLERK_AUTH_WAIT_MS) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, timeoutMs);
+    function done() {
+      clearTimeout(timer);
+      authStateListeners.delete(done);
+      resolve();
+    }
+    authStateListeners.add(done);
+  });
+}
+
+function normalizeApiPath(path = "") {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return normalizedPath.split("?")[0];
+}
+
+function isPublicKitchenPath(path = "") {
+  const normalizedPath = normalizeApiPath(path);
+  return (
+    normalizedPath === "/api/kitchen/auth/login"
+    || normalizedPath === "/api/kitchen/auth/register"
+    || normalizedPath.startsWith("/api/kitchen/auth/invite/")
+    || normalizedPath.startsWith("/api/kitchen/auth/resolve-household/")
+    || normalizedPath.startsWith("/api/kitchen/beta/validate")
+  );
+}
+
+function requiresAuthorization(path = "", authMode = "auto") {
+  if (authMode === "none") return false;
+  if (authMode === "clerk") return true;
+  const normalizedPath = normalizeApiPath(path);
+  if (isPublicKitchenPath(normalizedPath)) return false;
+  return normalizedPath.startsWith("/api/kitchen/")
+    || normalizedPath.startsWith("/api/payments/")
+    || normalizedPath.startsWith("/api/subscription/");
+}
+
+async function readClerkTokenWithRetry() {
+  if (!clerkTokenGetter) return null;
+  const token = await clerkTokenGetter();
+  if (token) return token;
+  if (!clerkAuthState.isLoaded) {
+    await waitForAuthStateChange();
+    return clerkTokenGetter ? clerkTokenGetter() : null;
+  }
+  if (clerkAuthState.isSignedIn) {
+    await waitForAuthStateChange(250);
+    return clerkTokenGetter ? clerkTokenGetter() : null;
+  }
+  return null;
+}
+
+async function getAuthorizationHeader(authMode = "auto", path = "") {
   if (authMode === "clerk") {
     if (!clerkTokenGetter) {
       if (import.meta.env.DEV) {
@@ -51,9 +112,9 @@ async function getAuthorizationHeader(authMode = "auto") {
     }
 
     try {
-      const clerkToken = await clerkTokenGetter();
+      const clerkToken = await readClerkTokenWithRetry();
       if (!clerkToken && import.meta.env.DEV) {
-        console.warn("[clerk][dev] Clerk authMode requested but getToken returned no token");
+        console.warn("[clerk][dev] Clerk authMode requested but getToken returned no token", { path });
       }
       return clerkToken ? `Bearer ${clerkToken}` : null;
     } catch (error) {
@@ -72,7 +133,7 @@ async function getAuthorizationHeader(authMode = "auto") {
   if (!clerkTokenGetter) return null;
 
   try {
-    const clerkToken = await clerkTokenGetter();
+    const clerkToken = await readClerkTokenWithRetry();
     return clerkToken ? `Bearer ${clerkToken}` : null;
   } catch (error) {
     if (import.meta.env.DEV) {
@@ -86,14 +147,32 @@ async function getAuthorizationHeader(authMode = "auto") {
 
 export async function apiRequest(path, options = {}) {
   const { authMode = "auto", ...fetchOptions } = options;
+  const isFormDataBody = typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormDataBody ? {} : { "Content-Type": "application/json" }),
     ...(fetchOptions.headers || {})
   };
 
-  const authorizationHeader = await getAuthorizationHeader(authMode);
+  const authorizationRequired = requiresAuthorization(path, authMode);
+  const authorizationHeader = await getAuthorizationHeader(authMode, path);
   if (authorizationHeader && !headers.Authorization) {
     headers.Authorization = authorizationHeader;
+  }
+  if (authorizationRequired && !headers.Authorization) {
+    if (import.meta.env.DEV) {
+      console.warn("[auth][dev] Blocked protected API request without bearer token", {
+        path,
+        clerkLoaded: clerkAuthState.isLoaded,
+        clerkSignedIn: clerkAuthState.isSignedIn,
+        hasLegacyToken: hasLegacyToken()
+      });
+    }
+    throw new ApiRequestError("Sesion no disponible. Espera un momento y vuelve a intentarlo.", {
+      path,
+      url: buildApiUrl(path),
+      status: 0,
+      body: { code: "AUTH_TOKEN_UNAVAILABLE" }
+    });
   }
 
   const url = buildApiUrl(path);

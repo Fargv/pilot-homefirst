@@ -23,7 +23,9 @@ const HouseholdCatalogPackSchema = new mongoose.Schema(
       enum: ["not_required", "pending", "paid", "manual"],
       default: "not_required"
     },
-    pricePaid: { type: Number, default: null }
+    pricePaid: { type: Number, default: null },
+    // Selected kitchen robot at install time (for robot packs)
+    robotType: { type: String, default: null }
   },
   { timestamps: true }
 );

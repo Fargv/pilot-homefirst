@@ -1,0 +1,33 @@
+[
+  {
+    "sheet": 1,
+    "components": [
+      "AvatarStack",
+      "Badge",
+      "BottomNav",
+      "Button",
+      "Card",
+      "CategoryChip",
+      "DatePickerField",
+      "DinnerUpgradeBanner",
+      "Fab",
+      "Header",
+      "Input",
+      "KitchenProvider",
+      "MilestoneToast",
+      "ModalSheet",
+      "PageHeader",
+      "ProBadge"
+    ]
+  },
+  {
+    "sheet": 2,
+    "components": [
+      "SearchableSelect",
+      "Skeleton",
+      "WeekDatePicker",
+      "WeekDayTabs",
+      "WeekNavigator"
+    ]
+  }
+]

@@ -134,7 +134,12 @@ function catalogContentHash(template) {
     .digest("hex");
 }
 
-function dishFieldsFromTemplate(template) {
+function dishFieldsFromTemplate(template, robotType = null) {
+  // For robot packs: use robot-specific steps if available, fall back to generic
+  let steps = template.recipe?.steps ?? null;
+  if (robotType && template.recipe?.robotSteps?.[robotType]) {
+    steps = template.recipe.robotSteps[robotType];
+  }
   return {
     name: template.name,
     isDinner: Boolean(template.isDinner),
@@ -148,8 +153,9 @@ function dishFieldsFromTemplate(template) {
     })),
     recipe: {
       ingredients: Array.isArray(template.recipe?.ingredients) ? template.recipe.ingredients : [],
-      steps: template.recipe?.steps ?? null,
-      servings: template.recipe?.servings || null
+      steps,
+      servings: template.recipe?.servings || null,
+      baseServings: template.recipe?.baseServings || null
     }
   };
 }
@@ -290,7 +296,9 @@ function serializeAdminPack(p, ownedByCount = 0, installedCount = 0, lastAcquire
     stripePriceId: p.stripePriceId || null,
     paymentMode: p.paymentMode || "none",
     purchasedCount: p.purchasedCount || 0,
-    lastPurchasedAt: p.lastPurchasedAt || null
+    lastPurchasedAt: p.lastPurchasedAt || null,
+    isRobotPack: Boolean(p.isRobotPack),
+    supportedRobots: p.supportedRobots || []
   };
 }
 
@@ -496,6 +504,8 @@ router.get("/packs", requireAuth, async (req, res) => {
         freeUntil: pack.freeUntil,
         isDietPack: Boolean(pack.isDietPack),
         dietLabel: pack.dietLabel || "",
+        isRobotPack: Boolean(pack.isRobotPack),
+        supportedRobots: pack.supportedRobots || [],
         entitlement: {
           owned,
           installed,
@@ -583,7 +593,9 @@ router.get("/packs/:packId", requireAuth, async (req, res) => {
         color: pack.color,
         freeUntil: pack.freeUntil,
         isDietPack: Boolean(pack.isDietPack),
-        dietLabel: pack.dietLabel || ""
+        dietLabel: pack.dietLabel || "",
+        isRobotPack: Boolean(pack.isRobotPack),
+        supportedRobots: pack.supportedRobots || []
       },
       entitlement
     });
@@ -716,10 +728,13 @@ router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
   }
 });
 
+const VALID_ROBOT_TYPES = ["thermomix", "monsieur", "mambo", "moulinex", "taurus"];
+
 router.post("/packs/:packId/install", requireAuth, async (req, res) => {
   try {
     const householdId = getEffectiveHouseholdId(req.user);
     const userId = req.user.id;
+    const robotType = req.body?.robotType ? String(req.body.robotType).toLowerCase().trim() : null;
     const household = await Household.findById(householdId).select("subscriptionPlan").lean();
     const subscriptionPlan = normalizeSubscriptionPlan(household?.subscriptionPlan);
 
@@ -740,6 +755,25 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
         alreadyInstalled: true,
         message: "Este pack ya está instalado en tu hogar."
       });
+    }
+
+    // Robot pack validation: must provide a valid robot type before installing
+    if (pack.isRobotPack) {
+      if (!robotType) {
+        return res.status(400).json({
+          ok: false,
+          code: "ROBOT_TYPE_REQUIRED",
+          error: "Selecciona tu robot de cocina antes de instalar este pack.",
+          supportedRobots: pack.supportedRobots || VALID_ROBOT_TYPES
+        });
+      }
+      if (!VALID_ROBOT_TYPES.includes(robotType)) {
+        return res.status(400).json({
+          ok: false,
+          code: "INVALID_ROBOT_TYPE",
+          error: `Robot no reconocido: ${robotType}. Opciones válidas: ${VALID_ROBOT_TYPES.join(", ")}.`
+        });
+      }
     }
 
     const isFree = isPackCurrentlyFree(pack);
@@ -814,7 +848,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       const dishDoc = {
         scope: "household",
         householdId,
-        ...dishFieldsFromTemplate(templateWithResolvedIngredients),
+        ...dishFieldsFromTemplate(templateWithResolvedIngredients, robotType),
         active: true,
         createdBy: userId,
         source: "catalog",
@@ -838,6 +872,7 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
     ownership.status = "installed";
     ownership.installedAt = now;
     ownership.installedBy = userId;
+    if (robotType) ownership.robotType = robotType;
     await ownership.save();
 
     return res.json({
@@ -846,7 +881,9 @@ router.post("/packs/:packId/install", requireAuth, async (req, res) => {
       dishesCreated: createdDishes.length,
       dishes: createdDishes,
       isDietPack: Boolean(pack.isDietPack),
-      dietLabel: pack.dietLabel || ""
+      dietLabel: pack.dietLabel || "",
+      isRobotPack: Boolean(pack.isRobotPack),
+      robotType: robotType || null
     });
   } catch (error) {
     if (handleHouseholdError(res, error)) return;
@@ -1114,7 +1151,7 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
       "active", "featured", "priceBasic", "includedPlans", "monthlyCreditCost",
       "dishes", "releaseDate", "freeUntil", "activeFrom", "activeUntil",
       "color", "defaultSpecial", "defaultAllowRandom", "sortOrder",
-      "isDietPack", "dietLabel"
+      "isDietPack", "dietLabel", "isRobotPack", "supportedRobots"
     ];
 
     const packDoc = await CatalogPack.findById(req.params.packId);

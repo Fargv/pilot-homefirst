@@ -144,17 +144,20 @@ export function AuthProvider({ children, clerk = null }) {
 
   useEffect(() => {
     if (!clerk) {
-      registerClerkTokenGetter(null);
+      registerClerkTokenGetter(null, { isLoaded: false, isSignedIn: false });
       return undefined;
     }
 
     registerClerkTokenGetter(async () => {
       if (!clerk.isLoaded || !clerk.isSignedIn) return null;
       return clerk.getToken();
+    }, {
+      isLoaded: clerk.isLoaded,
+      isSignedIn: clerk.isSignedIn
     });
 
     return () => {
-      registerClerkTokenGetter(null);
+      registerClerkTokenGetter(null, { isLoaded: false, isSignedIn: false });
     };
   }, [clerk]);
 

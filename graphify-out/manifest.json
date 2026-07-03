@@ -5,8 +5,8 @@
     "semantic_hash": "af5683cedca023035194f9ad92eb0eef"
   },
   ".claude/settings.local.json": {
-    "mtime": 1780867449.4651053,
-    "ast_hash": "3ab26a0b0fb0d49d7d09683c12004810",
+    "mtime": 1781562265.96339,
+    "ast_hash": "1b340163af6af7a42bf058d01435edc1",
     "semantic_hash": ""
   },
   ".claude/skills/impeccable/scripts/cleanup-deprecated.mjs": {
@@ -475,9 +475,9 @@
     "semantic_hash": ""
   },
   "backend/src/index.js": {
-    "mtime": 1780850791.5278485,
-    "ast_hash": "12168064f1215aadfa6a4753962ef012",
-    "semantic_hash": "12168064f1215aadfa6a4753962ef012"
+    "mtime": 1783032272.370615,
+    "ast_hash": "5e6cfe02c27e3c4ccbd791229cbada4c",
+    "semantic_hash": ""
   },
   "backend/src/kitchen/assignmentPushService.js": {
     "mtime": 1775688143.834169,
@@ -575,8 +575,8 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/CatalogPack.js": {
-    "mtime": 1780850791.5388465,
-    "ast_hash": "536a94886bbb7609170dbfa9c9ae4375",
+    "mtime": 1783094794.190837,
+    "ast_hash": "9c7ed4149c5d8a92d6205fab64dfa4ae",
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/Category.js": {
@@ -600,13 +600,13 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/HouseholdCatalogPack.js": {
-    "mtime": 1780850791.5418477,
-    "ast_hash": "e0a88bf6a1cd32f9c45fbc82a7834a21",
+    "mtime": 1783094800.7270288,
+    "ast_hash": "8fc09f19e2cd3323c759685f7a196918",
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/HouseholdOnboarding.js": {
-    "mtime": 1780850791.5418477,
-    "ast_hash": "fd5500ab970a083980386c6a4e987df9",
+    "mtime": 1783094106.8963406,
+    "ast_hash": "deda7cff4fa5670d557cfef0d1810afd",
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/HouseholdWeeklyProgress.js": {
@@ -650,8 +650,8 @@
     "semantic_hash": "817b9c15df55fafdcbdd8593261fdc04"
   },
   "backend/src/kitchen/models/KitchenUser.js": {
-    "mtime": 1781294920.712201,
-    "ast_hash": "b10120066207fb23d96e058b3822414d",
+    "mtime": 1781562029.425651,
+    "ast_hash": "f258bcbb833fad75fd5a5a45abfb900f",
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/KitchenWeekPlan.js": {
@@ -685,9 +685,9 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/models/PurchaseSession.js": {
-    "mtime": 1775688143.8417063,
-    "ast_hash": "e28f529ed89dddaad304ce2669d24697",
-    "semantic_hash": "e28f529ed89dddaad304ce2669d24697"
+    "mtime": 1781562029.4266498,
+    "ast_hash": "d2ab394244242044e0190305555bf5b7",
+    "semantic_hash": ""
   },
   "backend/src/kitchen/models/PushReminderDelivery.js": {
     "mtime": 1775688143.8417063,
@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/onboardingEngine.js": {
-    "mtime": 1780850791.5528474,
-    "ast_hash": "27a3dc4dbf4f30b1fbbbf6160570f466",
+    "mtime": 1783012650.6176858,
+    "ast_hash": "e1446addca27916b562b77ab2377ee16",
     "semantic_hash": ""
   },
   "backend/src/kitchen/paymentEntitlementService.js": {
@@ -735,18 +735,18 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/purchaseSessionService.js": {
-    "mtime": 1775688143.8428278,
-    "ast_hash": "5a0a3ba694d0f1cb193aaef026e551e8",
-    "semantic_hash": "5a0a3ba694d0f1cb193aaef026e551e8"
+    "mtime": 1781562029.4276485,
+    "ast_hash": "9fa9f9e2bfce627547d97d42ebaee2d7",
+    "semantic_hash": ""
   },
   "backend/src/kitchen/routes/admin.js": {
-    "mtime": 1780850791.554848,
-    "ast_hash": "875dee71d0294aa5e4c4dc7b40300a3f",
+    "mtime": 1783013396.3943176,
+    "ast_hash": "44c4307e5a44212f08033262ce11df9c",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/auth.js": {
-    "mtime": 1780850791.5568488,
-    "ast_hash": "a338ea6ea65f3dc0c5336d083942472a",
+    "mtime": 1781562029.4296484,
+    "ast_hash": "822e3ee5b1d0bcec5b2252a0296c4857",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/basics.js": {
@@ -765,8 +765,8 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/catalog.js": {
-    "mtime": 1780850791.5598474,
-    "ast_hash": "d127141eb405dfe4548086cf58589e21",
+    "mtime": 1783094883.5893934,
+    "ast_hash": "14f6291b44b43dc78840e558d1f55c44",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/categories.js": {
@@ -795,8 +795,8 @@
     "semantic_hash": "ee667acfa6e525190bbbc26a5d3590df"
   },
   "backend/src/kitchen/routes/onboarding.js": {
-    "mtime": 1780850791.5648465,
-    "ast_hash": "dda6476c10d41bf409c9466eaa5ace43",
+    "mtime": 1783094139.0529158,
+    "ast_hash": "ee7a2d8d98643f0bd7fea75b9ddbe603",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/plans.js": {
@@ -810,9 +810,9 @@
     "semantic_hash": "7050d3371cf06551f1fd04e7ec3e873a"
   },
   "backend/src/kitchen/routes/shopping.js": {
-    "mtime": 1780850791.56785,
-    "ast_hash": "ce923aa6ec4ebd89e848a57d43b05938",
-    "semantic_hash": "ce923aa6ec4ebd89e848a57d43b05938"
+    "mtime": 1781562029.4306498,
+    "ast_hash": "0c85292751b7218cf4c483d7b92dae80",
+    "semantic_hash": ""
   },
   "backend/src/kitchen/routes/swaps.js": {
     "mtime": 1775688143.8488152,
@@ -820,8 +820,8 @@
     "semantic_hash": "d15376c6d0c96f38b824def425996216"
   },
   "backend/src/kitchen/routes/users.js": {
-    "mtime": 1781295358.3256013,
-    "ast_hash": "428da3327b8df8076279597cf34be96c",
+    "mtime": 1781562029.4316492,
+    "ast_hash": "842c1dd1ceaee9c19287cdaec5e56e12",
     "semantic_hash": ""
   },
   "backend/src/kitchen/routes/weekly.js": {
@@ -895,8 +895,8 @@
     "semantic_hash": ""
   },
   "backend/src/kitchen/weeklyEngine.js": {
-    "mtime": 1780850791.5769508,
-    "ast_hash": "4fc68844dcf3dc1cce2720048ee67ed1",
+    "mtime": 1782565788.6040983,
+    "ast_hash": "e317ee8c00ed0bc17386d878ea1829c2",
     "semantic_hash": ""
   },
   "backend/src/mailer.js": {
@@ -950,8 +950,8 @@
     "semantic_hash": "519565ff4000dc843fa12a07d2f3d90d"
   },
   "frontend/package.json": {
-    "mtime": 1781216985.1205862,
-    "ast_hash": "056c93154069a27927810d881d982992",
+    "mtime": 1782163989.9385965,
+    "ast_hash": "c67431a6ecc43a2621a5c1974d60332e",
     "semantic_hash": ""
   },
   "frontend/public/sw.js": {
@@ -960,8 +960,8 @@
     "semantic_hash": "d8b5a529c8360b94369f1dcfeb0e306b"
   },
   "frontend/src/App.jsx": {
-    "mtime": 1781217513.8352978,
-    "ast_hash": "77c7baccad96112de51c12f2943f0872",
+    "mtime": 1783013226.8806171,
+    "ast_hash": "2070742e538465eb20a0073a53317993",
     "semantic_hash": ""
   },
   "frontend/src/components/AppErrorBoundary.jsx": {
@@ -975,28 +975,28 @@
     "semantic_hash": "38e13e3c6485c01ce630ce317153e5f7"
   },
   "frontend/src/context/ThemeContext.jsx": {
-    "mtime": 1781337240.1654112,
-    "ast_hash": "9e881ac5c62565ad201d7a632f0088fc",
+    "mtime": 1782487014.6843204,
+    "ast_hash": "2a400f1947232f167d5350d98144be47",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/Layout.jsx": {
-    "mtime": 1781337304.6345637,
-    "ast_hash": "62ea9c2dc683e8e5f60134041550dc90",
+    "mtime": 1783093878.8612533,
+    "ast_hash": "824b17a0cfdc6c55cc997357d0cce8d2",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/RequireAuth.jsx": {
-    "mtime": 1780850791.5991862,
-    "ast_hash": "7f04cdb2e4a84b62baefa9b11fe1014a",
+    "mtime": 1782149960.1000223,
+    "ast_hash": "19f3140d766e3ed6ddf49c53f70f1277",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/api.js": {
-    "mtime": 1780850791.6001854,
-    "ast_hash": "8cbf185ad6280bb6ffd1a40addd190ca",
+    "mtime": 1783097263.8561728,
+    "ast_hash": "539bb60bca6de987b082039c18f739b7",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/auth.jsx": {
-    "mtime": 1780868063.8415327,
-    "ast_hash": "601b5d82480cfaef33e4f2cc0f2360cb",
+    "mtime": 1783097196.239282,
+    "ast_hash": "b8a0a59b227ef0db31391c5628b6dc2c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/authRedirect.js": {
@@ -1030,19 +1030,19 @@
     "semantic_hash": "9ef290ee22164c4c9697e8e1b7267542"
   },
   "frontend/src/kitchen/components/DishModal.jsx": {
-    "mtime": 1780850791.6061835,
-    "ast_hash": "8489babfdb1b35d88575b5ee662e69a7",
+    "mtime": 1783093963.3368735,
+    "ast_hash": "caf8a3d3e1c3cd701c081a69feca1589",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/IngredientModal.jsx": {
-    "mtime": 1780850791.6071837,
-    "ast_hash": "3b41a84f39972b8409d32059ca9c12d7",
+    "mtime": 1782568158.091663,
+    "ast_hash": "4307e7a15a0469eb25b026734d96e6e6",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/IngredientPicker.jsx": {
-    "mtime": 1780850791.608183,
-    "ast_hash": "9707025d2bbedcddf877b77b1d49a3ba",
-    "semantic_hash": "9707025d2bbedcddf877b77b1d49a3ba"
+    "mtime": 1782568682.2354827,
+    "ast_hash": "8aa5715ab81dba1ef31f6c3a3430a054",
+    "semantic_hash": ""
   },
   "frontend/src/kitchen/components/PushNotificationsPanel.jsx": {
     "mtime": 1775688143.8629892,
@@ -1060,18 +1060,18 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/RecipeModal.jsx": {
-    "mtime": 1780850791.6121826,
-    "ast_hash": "6200a40863b5725756871628e738945f",
+    "mtime": 1783027608.0819173,
+    "ast_hash": "42729a1fab8113d5762eca9a5601b3a3",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/RecipeServingsControl.jsx": {
-    "mtime": 1780850791.613182,
-    "ast_hash": "d156ff2fa5ee8333baf79677908ae9fe",
+    "mtime": 1783027618.0178642,
+    "ast_hash": "5097f2cb0497a8cbd88a1257f9688ad0",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/SettingsSharePanel.jsx": {
-    "mtime": 1780850791.6141827,
-    "ast_hash": "ecc6abca811e7307593cbab900149478",
+    "mtime": 1782250583.0369985,
+    "ast_hash": "53dd3462a72fbac16dc95ec20ee753f6",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/ShareWhatsAppButton.jsx": {
@@ -1110,33 +1110,33 @@
     "semantic_hash": "c5c638f36c68205dded54ffcfd0dd843"
   },
   "frontend/src/kitchen/components/cooking/CookingSessionBanner.jsx": {
-    "mtime": 1780850791.618182,
-    "ast_hash": "a6744304a38c14d9e2273bfa6afd43fc",
+    "mtime": 1782569810.185545,
+    "ast_hash": "f43ab41a434afd1cf04a7286dd25d67e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/cooking/CookingSessionStepper.jsx": {
-    "mtime": 1780850791.6191835,
-    "ast_hash": "4fcba5e57e08e76b8d87fea0c71d3532",
+    "mtime": 1783027810.5752108,
+    "ast_hash": "dd8795250e392a29fd295e3ad190c200",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/cooking/RecipeStepCard.jsx": {
-    "mtime": 1780850791.6201837,
-    "ast_hash": "7035da0cfada392c85b15d504e259d8b",
+    "mtime": 1782569682.2312715,
+    "ast_hash": "4c4a73cf44b597113d92abf01a47453e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/cooking/RecipeTimer.jsx": {
-    "mtime": 1780850791.621183,
-    "ast_hash": "4cceb01fb96c7be33add472b10bb0909",
+    "mtime": 1783027657.2027366,
+    "ast_hash": "f937cdc5ffae5a38dedcbcb96dcf78fd",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/onboarding/OnboardingBanner.jsx": {
-    "mtime": 1780850791.6221833,
-    "ast_hash": "5481fe606c3cd50257098485bb4b3f56",
+    "mtime": 1783093995.793954,
+    "ast_hash": "08dd5ac7b0186a42722bdacc12fec10f",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/onboarding/OnboardingPanel.jsx": {
-    "mtime": 1780850791.623184,
-    "ast_hash": "b5ec3236d26ddf5be91cc7b41a663510",
+    "mtime": 1782565732.3857994,
+    "ast_hash": "8482fd33e02192ba3f2601a374a96e27",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/rewards/MilestoneToast.jsx": {
@@ -1160,12 +1160,12 @@
     "semantic_hash": "9cf8d29302672930ea633c83566f7f4e"
   },
   "frontend/src/kitchen/components/ui/BottomNav.jsx": {
-    "mtime": 1781217413.6206174,
-    "ast_hash": "8b7d69e4dac254c58625a3dedf079c1f",
+    "mtime": 1783013273.5540211,
+    "ast_hash": "02bfa4a79017bc4a3d96413671c454c4",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/ui/Button.jsx": {
-    "mtime": 1781214369.2889845,
+    "mtime": 1781562029.4502552,
     "ast_hash": "e07910cce95ea4786060bcf6e1f30705",
     "semantic_hash": ""
   },
@@ -1200,9 +1200,9 @@
     "semantic_hash": "9e14de444470f48004691b77568aeb3a"
   },
   "frontend/src/kitchen/components/ui/ModalSheet.jsx": {
-    "mtime": 1773141082.3873825,
-    "ast_hash": "6e2b432ec04ee02e7e974ba134233d4e",
-    "semantic_hash": "6e2b432ec04ee02e7e974ba134233d4e"
+    "mtime": 1782249902.9679348,
+    "ast_hash": "1e79c1bc3d960b3abd4efa9ab822f5bd",
+    "semantic_hash": ""
   },
   "frontend/src/kitchen/components/ui/ProBadge.jsx": {
     "mtime": 1780850791.6281824,
@@ -1225,13 +1225,13 @@
     "semantic_hash": "d2e8f8dba4ab95fc0de5de0f25a1b1f2"
   },
   "frontend/src/kitchen/components/weekly/WeeklyChallengeCard.jsx": {
-    "mtime": 1780850791.6311817,
-    "ast_hash": "bca0355ed5b1a022a528bc6e5679b3ca",
+    "mtime": 1781562029.4502552,
+    "ast_hash": "bda19846a651f2d07a315b964303a715",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/contexts/CookingSessionContext.jsx": {
-    "mtime": 1780850791.632183,
-    "ast_hash": "e498af50df3e14990b68195653b2e7ad",
+    "mtime": 1782569650.260789,
+    "ast_hash": "d8eeb7182187a93a56bc3051d2394bc4",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/contexts/OnboardingContext.jsx": {
@@ -1255,7 +1255,7 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/hooks/usePwaInstallPrompt.js": {
-    "mtime": 1781341844.6087615,
+    "mtime": 1781562029.4502552,
     "ast_hash": "453c6aff8ac1bc7cd514b0963ba7b69b",
     "semantic_hash": ""
   },
@@ -1275,8 +1275,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/AdminPanelPage.jsx": {
-    "mtime": 1780850791.647989,
-    "ast_hash": "e2c66ca2842fae63e3b7336c8ac91e47",
+    "mtime": 1783097313.8102314,
+    "ast_hash": "eb7c1026491dd02ac20f41081a630f0c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/AdminResetPasswordPage.jsx": {
@@ -1295,23 +1295,23 @@
     "semantic_hash": "848b545b3ceb9545b7d0390b7877faa5"
   },
   "frontend/src/kitchen/pages/CatalogPage.jsx": {
-    "mtime": 1781278756.0006404,
-    "ast_hash": "72d70fad425c60d620d6a7c3601c4e00",
+    "mtime": 1783094974.9882321,
+    "ast_hash": "8e2f18da163e5f6fd165ccb5fc14349c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ClerkAuthPage.jsx": {
-    "mtime": 1780850791.6509888,
-    "ast_hash": "00dc859ac6d4810201dc7d725d2c98d9",
+    "mtime": 1782150512.5690107,
+    "ast_hash": "1ebc5b920dd5df45003301ca0363b398",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ClerkOnboardingPage.jsx": {
-    "mtime": 1780850791.652989,
-    "ast_hash": "c1ffd1d50d55aefa0cd0ec65a1656059",
+    "mtime": 1782150461.577676,
+    "ast_hash": "f42e74d0a4e763f3df8ac9734308c67f",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/DishesPage.jsx": {
-    "mtime": 1781279389.4257717,
-    "ast_hash": "587eae23dc3190d107cfe90340fbe60b",
+    "mtime": 1783093872.0367603,
+    "ast_hash": "57a9995fdec3b60670752cbba5b57663",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/InviteLandingPage.jsx": {
@@ -1330,8 +1330,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SettingsPage.jsx": {
-    "mtime": 1781337313.2512324,
-    "ast_hash": "4f94cdb33e45213f231c54a8c3a8de0e",
+    "mtime": 1783097232.6117964,
+    "ast_hash": "af6e71b372e1db5084d37c575434b0b6",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/ShoppingBudgetPage.jsx": {
@@ -1340,8 +1340,8 @@
     "semantic_hash": "91aac52ba3f80133175ae9e6af2e6c69"
   },
   "frontend/src/kitchen/pages/ShoppingPage.jsx": {
-    "mtime": 1781338573.0132234,
-    "ast_hash": "b6869965462fdb7027ce4bfe4a2f9e39",
+    "mtime": 1783093908.4702103,
+    "ast_hash": "930145ace6908d17599a88c16faef40e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/SwapsPage.jsx": {
@@ -1355,8 +1355,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/pages/WeekPage.jsx": {
-    "mtime": 1781338565.576845,
-    "ast_hash": "15e32e5987c073869b6db10a49ccb2aa",
+    "mtime": 1783093859.644873,
+    "ast_hash": "9e8047d8138e94721205a819d2106419",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/push.js": {
@@ -1400,8 +1400,8 @@
     "semantic_hash": ""
   },
   "frontend/src/kitchen/utils/timerService.js": {
-    "mtime": 1780850791.6739876,
-    "ast_hash": "b08a824e20f3433169ba7a732422b5db",
+    "mtime": 1782570027.5147738,
+    "ast_hash": "53b93933a6901d7be53a7c2dd41959da",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/utils/userColors.js": {
@@ -1420,7 +1420,7 @@
     "semantic_hash": "4722a28a52ccd0994c517cfdd70cdc90"
   },
   "frontend/src/main.jsx": {
-    "mtime": 1781341834.0207708,
+    "mtime": 1781562029.4605732,
     "ast_hash": "95cdb513f734d3375ecf596fbf28eec2",
     "semantic_hash": ""
   },
@@ -1430,8 +1430,8 @@
     "semantic_hash": "cc6117e65b25c0bcbb1254216c792ef1"
   },
   "frontend/vite.config.js": {
-    "mtime": 1781244026.4739535,
-    "ast_hash": "14a1eae3cb3557460015885b1e31abb6",
+    "mtime": 1781562029.4605732,
+    "ast_hash": "47f284e350fd2b1e747195c9e212838a",
     "semantic_hash": ""
   },
   "package.json": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": "b400a170ce672c993086601437f21aa6"
   },
   "DESIGN.md": {
-    "mtime": 1780850791.4645357,
-    "ast_hash": "d04cf65c68ca4d08ce166bd546cfa4cf",
+    "mtime": 1782339683.468323,
+    "ast_hash": "ff3668b7cef915b02575b84955784cbb",
     "semantic_hash": ""
   },
   "PRODUCT.md": {
@@ -1705,7 +1705,7 @@
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1781341826.507531,
+    "mtime": 1781562029.4336488,
     "ast_hash": "fa738791c27c3757aeafc95c5901d6e8",
     "semantic_hash": ""
   },
@@ -1860,13 +1860,13 @@
     "semantic_hash": ""
   },
   "backend/scripts/db-migration/04_audit_and_fix_categories.js": {
-    "mtime": 1780870960.447845,
-    "ast_hash": "92fd69e9e88d8939d04492545a464079",
+    "mtime": 1781562029.4225588,
+    "ast_hash": "86bfa4fec9d9b0f40af5ff196b240c3c",
     "semantic_hash": ""
   },
   "backend/scripts/db-migration/05_add_herb_bbq_categories.js": {
-    "mtime": 1780870949.6099374,
-    "ast_hash": "2b5fa25078f2480b0baa3ec26266268b",
+    "mtime": 1781562029.4225588,
+    "ast_hash": "1418d2602a03386f10905b57a8038e07",
     "semantic_hash": ""
   },
   "backend/scripts/db-migration/run_migration.sh": {
@@ -1875,13 +1875,13 @@
     "semantic_hash": ""
   },
   "backend/scripts/seedIngredientsFromJson.js": {
-    "mtime": 1780870026.722551,
-    "ast_hash": "52e25b0c44c5fe3a9841202bb77451ef",
+    "mtime": 1781562029.4236493,
+    "ast_hash": "8dbb3c5f045021fd08adc5132a268f2e",
     "semantic_hash": ""
   },
   "backend/scripts/syncMasterCatalogDevToProd.js": {
-    "mtime": 1780868983.0427601,
-    "ast_hash": "47959e64eef765806d75c8a790e08613",
+    "mtime": 1781562029.4236493,
+    "ast_hash": "e77e7d3aa891d5a5d31f43af2010ad6f",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/PageHeader.jsx": {
@@ -1910,38 +1910,1478 @@
     "semantic_hash": ""
   },
   "REDESIGN_PLAN.md": {
-    "mtime": 1781213902.732521,
+    "mtime": 1781562029.420558,
     "ast_hash": "782f9b174e00b21b30a6c6417f67e6d2",
     "semantic_hash": ""
   },
   "backend/REDESIGN_PLAN.md": {
-    "mtime": 1781213865.8384054,
+    "mtime": 1781562029.421561,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/motion.js": {
-    "mtime": 1781214511.9653137,
-    "ast_hash": "93c4be50ecc3c47509e7015da4028834",
+    "mtime": 1781562029.4605732,
+    "ast_hash": "2bc3be81b139c7f03688fdad65b7d1cc",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/components/PageSkeleton.jsx": {
-    "mtime": 1781217457.868172,
-    "ast_hash": "0d50dd84131f53244f0e96555a89795e",
+    "mtime": 1781562029.4481878,
+    "ast_hash": "15b99c5273db0954693f2c53e444e82c",
     "semantic_hash": ""
   },
   "frontend/src/kitchen/queryClient.js": {
-    "mtime": 1781217124.8278806,
-    "ast_hash": "f5035addc96cc26ad4ec050a5d992d64",
+    "mtime": 1781562029.4605732,
+    "ast_hash": "65df568819d52a4a15c181111eced84b",
     "semantic_hash": ""
   },
   "backend/src/kitchen/themeService.js": {
-    "mtime": 1781337473.5198474,
-    "ast_hash": "c6b72ba2174f14a658c4060022c5509c",
+    "mtime": 1782340051.7875192,
+    "ast_hash": "170d1f0d0f6a27538d9e535cdef728e0",
     "semantic_hash": ""
   },
   "frontend/src/context/appThemes.js": {
-    "mtime": 1781337207.5725636,
-    "ast_hash": "a67dccd2c16afca6bdee57e19e379bbf",
+    "mtime": 1782339523.04088,
+    "ast_hash": "b5e268ac5bd07d0b8477fb399345df65",
+    "semantic_hash": ""
+  },
+  ".design-sync/config.json": {
+    "mtime": 1782164575.099398,
+    "ast_hash": "4215ca492e9021c163b75fd47653d5dd",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/AvatarStack.tsx": {
+    "mtime": 1782164878.8891156,
+    "ast_hash": "39cd601bef3665df55935644d79d184d",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Badge.tsx": {
+    "mtime": 1782164864.601651,
+    "ast_hash": "b697139bae5efefd965e5efa9b6f1030",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/BottomNav.tsx": {
+    "mtime": 1782164915.9421458,
+    "ast_hash": "88007b3207ce5e6a48311301d39929c4",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Button.tsx": {
+    "mtime": 1782164847.8712204,
+    "ast_hash": "a9e7c17059f901a6bf3c892a028e354d",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Card.tsx": {
+    "mtime": 1782164857.3121254,
+    "ast_hash": "07e5a26d8b53d5737108d7b7816c7f40",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/CategoryChip.tsx": {
+    "mtime": 1782164952.738317,
+    "ast_hash": "26509fc955bcfe9e859018b8e3ca5275",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/DatePickerField.tsx": {
+    "mtime": 1782164936.1969492,
+    "ast_hash": "2abfc50f37d6381b6e09760f0d75d9a6",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/DinnerUpgradeBanner.tsx": {
+    "mtime": 1782164967.9708982,
+    "ast_hash": "c3f098db2f0080f5fac0acfb60b19258",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Fab.tsx": {
+    "mtime": 1782164904.6210232,
+    "ast_hash": "364b6ecfb4fbdbd482f99e534324971f",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Header.tsx": {
+    "mtime": 1782164888.2426379,
+    "ast_hash": "9fcc57fcb808cae831d6ebf3a02279be",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Input.tsx": {
+    "mtime": 1782164871.5215855,
+    "ast_hash": "0d79f141351f1915609ca9935cf0dbf3",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/KitchenProvider.tsx": {
+    "mtime": 1782165010.595396,
+    "ast_hash": "e79beb7b4b4f2b4593f7ddbd1702458d",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/MilestoneToast.tsx": {
+    "mtime": 1782164999.7593877,
+    "ast_hash": "4417fb7f73f58136b6e746568bbaf45d",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/ModalSheet.tsx": {
+    "mtime": 1782164923.7978323,
+    "ast_hash": "7d9db7d22807e24bcd0821b8f514a3e4",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/PageHeader.tsx": {
+    "mtime": 1782164962.0155792,
+    "ast_hash": "5f0ee5cfac1df791fed9c5de21be6660",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/ProBadge.tsx": {
+    "mtime": 1782164975.0769618,
+    "ast_hash": "0b8d8d55af9f9f46095d8c83cf0b8e96",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/SearchableSelect.tsx": {
+    "mtime": 1782164982.703362,
+    "ast_hash": "452566274c80ba5991d852ead2ccd1d0",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/Skeleton.tsx": {
+    "mtime": 1782164897.0097263,
+    "ast_hash": "13bb2d9a2681936d171a5148acad034e",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/WeekDatePicker.tsx": {
+    "mtime": 1782164942.6136596,
+    "ast_hash": "aded5a6ddae58c78414ed29b0616dc03",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/WeekDayTabs.tsx": {
+    "mtime": 1782164990.031853,
+    "ast_hash": "a485dbb7622a0af55cef2615471bb4d2",
+    "semantic_hash": ""
+  },
+  ".design-sync/previews/WeekNavigator.tsx": {
+    "mtime": 1782164929.9169066,
+    "ast_hash": "f9e8cad7509024e25baa862a5455eba1",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/bundle.mjs": {
+    "mtime": 1782163788.383159,
+    "ast_hash": "366697d28fcd497ef38066cabd725bd6",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/common.mjs": {
+    "mtime": 1782163788.3811607,
+    "ast_hash": "6cc37891bf990dcc2863360148bc6ad4",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/css-fallback.mjs": {
+    "mtime": 1782163788.3884473,
+    "ast_hash": "c25157901864805c2875e4b20ba06f55",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/css.mjs": {
+    "mtime": 1782163788.384162,
+    "ast_hash": "81cdae53fe508a6027d0c4de3acb9a88",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/detect.mjs": {
+    "mtime": 1782163788.38216,
+    "ast_hash": "82a83890443a9ffcbf43c273f5cd227c",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/docs.mjs": {
+    "mtime": 1782163788.3924465,
+    "ast_hash": "1ebc0fdd6a5766c961209ff9ff9b17bb",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/dts.mjs": {
+    "mtime": 1782163788.38216,
+    "ast_hash": "e87373130d859a3cefa8efd881e849f9",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/emit.mjs": {
+    "mtime": 1782163788.389446,
+    "ast_hash": "b81e581f005b8ddc27580a7f79bee7d9",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/preview-gen-storybook.mjs": {
+    "mtime": 1782163788.391447,
+    "ast_hash": "673bd13d1fd7af6e3a8fb62ff8c3015e",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/preview-rebuild.mjs": {
+    "mtime": 1782163788.393447,
+    "ast_hash": "2e4ec784433ecd739c8ad9565a5706aa",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/previews.mjs": {
+    "mtime": 1782163788.3904471,
+    "ast_hash": "afc9cd8c362f326e936561799eb2368b",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/remote-diff.mjs": {
+    "mtime": 1782163788.401719,
+    "ast_hash": "bd8d07982a1c15c6d0c241436edca25b",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/source-kit.mjs": {
+    "mtime": 1782163788.3864484,
+    "ast_hash": "324a44bf6a94e5f7d72452cc9792e5d5",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/source-storybook.mjs": {
+    "mtime": 1782163788.3854482,
+    "ast_hash": "5be643ee379466930bef84f151f6660c",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/story-imports.mjs": {
+    "mtime": 1782163788.3874457,
+    "ast_hash": "47f64378d79726d19116c7bfae250334",
+    "semantic_hash": ""
+  },
+  ".ds-sync/lib/sync-hashes.mjs": {
+    "mtime": 1782163788.3967214,
+    "ast_hash": "21c1e20c95c473d558af9a481cb7ff1d",
+    "semantic_hash": ""
+  },
+  ".ds-sync/package-build.mjs": {
+    "mtime": 1782163788.303733,
+    "ast_hash": "1ce5fb3a1f5e5a95730461725620881d",
+    "semantic_hash": ""
+  },
+  ".ds-sync/package-capture.mjs": {
+    "mtime": 1782163788.3398604,
+    "ast_hash": "1f8074cb11766c5bfc4af2748d13172e",
+    "semantic_hash": ""
+  },
+  ".ds-sync/package-validate.mjs": {
+    "mtime": 1782163788.3218026,
+    "ast_hash": "a227a39b7b5d6034e32e2185ccb08d57",
+    "semantic_hash": ""
+  },
+  ".ds-sync/package.json": {
+    "mtime": 1782164416.718328,
+    "ast_hash": "ee1295875d74382604a548c0c3958012",
+    "semantic_hash": ""
+  },
+  ".ds-sync/resync.mjs": {
+    "mtime": 1782163788.3540905,
+    "ast_hash": "d7c1c8414140e59c1715f450fa0a4b89",
+    "semantic_hash": ""
+  },
+  ".ds-sync/storybook/compare.mjs": {
+    "mtime": 1782163788.4078307,
+    "ast_hash": "c795386ad700525b7d411e0ca07df46f",
+    "semantic_hash": ""
+  },
+  ".ds-sync/storybook/http-serve.mjs": {
+    "mtime": 1782163788.4048293,
+    "ast_hash": "0e1558928e860e51e2e91caf783e782e",
+    "semantic_hash": ""
+  },
+  ".ds-sync/storybook/probe.mjs": {
+    "mtime": 1782163788.4068298,
+    "ast_hash": "8e154f3cb58961baa09c8c2c824b64de",
+    "semantic_hash": ""
+  },
+  "backend/src/kitchen/guidedTourService.js": {
+    "mtime": 1783094119.172324,
+    "ast_hash": "7e3b467933be5341102d2ab72dfac031",
+    "semantic_hash": ""
+  },
+  "backend/src/kitchen/guidedTourService.test.js": {
+    "mtime": 1783094496.3625658,
+    "ast_hash": "ca92e180f94569db38b7af473b9964f5",
+    "semantic_hash": ""
+  },
+  "backend/src/kitchen/models/ConsentRecord.js": {
+    "mtime": 1781562029.4246502,
+    "ast_hash": "521d1029f1656ebc1ec84f2ea3f704b5",
+    "semantic_hash": ""
+  },
+  "backend/src/kitchen/models/GuidedTourConfig.js": {
+    "mtime": 1783012550.2426908,
+    "ast_hash": "67925b7c4d4b6682bb6815c74cebe023",
+    "semantic_hash": ""
+  },
+  "ds-bundle/.ds-build-meta.json": {
+    "mtime": 1782165018.5953283,
+    "ast_hash": "b3586f09aee7670f1f748831553095fc",
+    "semantic_hash": ""
+  },
+  "ds-bundle/.render-check.json": {
+    "mtime": 1782165037.7643957,
+    "ast_hash": "7ce904c0456105d0879437ef877702c9",
+    "semantic_hash": ""
+  },
+  "ds-bundle/.stories-map.json": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "47871b879761469f9a71ea5cd77474b0",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_ds_bundle.js": {
+    "mtime": 1782165018.5932715,
+    "ast_hash": "7444d4bfc8907bba0c39f01f69855ed7",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_ds_sync.json": {
+    "mtime": 1782165018.6117904,
+    "ast_hash": "29e25c517f509e2356ef9dd5e772d40c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/AvatarStack.js": {
+    "mtime": 1782165018.4300427,
+    "ast_hash": "a71702d86dde8d639ee6566b1a4ab271",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Badge.js": {
+    "mtime": 1782165018.4336622,
+    "ast_hash": "6c334c549f344f6f43a43e75f6c30b90",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/BottomNav.js": {
+    "mtime": 1782165018.4378226,
+    "ast_hash": "d2b550819ff7fc4d537cd7b99cc0ae80",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Button.js": {
+    "mtime": 1782165018.442386,
+    "ast_hash": "c4f3b126ed11252dec686eafc0ced7a2",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Card.js": {
+    "mtime": 1782165018.4465642,
+    "ast_hash": "ae52ac90e212bcccc6f304cab3832a21",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/CategoryChip.js": {
+    "mtime": 1782165018.450716,
+    "ast_hash": "361fc2a09c71dd357ffa2a347c032f29",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/DatePickerField.js": {
+    "mtime": 1782165018.454347,
+    "ast_hash": "2535852ba06457831484ed8e51eabc9a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/DinnerUpgradeBanner.js": {
+    "mtime": 1782165018.4577267,
+    "ast_hash": "b293af569825d19d9dd8b5b724ae6a9e",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Fab.js": {
+    "mtime": 1782165018.4621072,
+    "ast_hash": "2d6359711c5e14c435f86ebbfac061b1",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Header.js": {
+    "mtime": 1782165018.46562,
+    "ast_hash": "4f3e645a9dbd5e593c452ebf6311b1c2",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Input.js": {
+    "mtime": 1782165018.46562,
+    "ast_hash": "89fa9238313c92e8ac1e8bab7629731b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/KitchenProvider.js": {
+    "mtime": 1782165018.4744043,
+    "ast_hash": "dfa5b22a6286e3392dc727db162f94f1",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/MilestoneToast.js": {
+    "mtime": 1782165018.4799569,
+    "ast_hash": "3fcd12078e2220770c3959dc916692bd",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/ModalSheet.js": {
+    "mtime": 1782165018.489604,
+    "ast_hash": "30d5d5dee35e4ed7e05206e93f2a3af3",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/PageHeader.js": {
+    "mtime": 1782165018.4939234,
+    "ast_hash": "5365c14ca196b6606a1206403c078a13",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/ProBadge.js": {
+    "mtime": 1782165018.4980474,
+    "ast_hash": "a711b80e6c6e06ee02c892f64dde784d",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/SearchableSelect.js": {
+    "mtime": 1782165018.5016675,
+    "ast_hash": "2210ece0c495c02d6142ca32b3e80099",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/Skeleton.js": {
+    "mtime": 1782165018.5053988,
+    "ast_hash": "030ebe20b0f6b29208598be9ff672ffe",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/WeekDatePicker.js": {
+    "mtime": 1782165018.5097284,
+    "ast_hash": "93016f3feb8d47c00ee16ebfe0be392a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/WeekDayTabs.js": {
+    "mtime": 1782165018.5138943,
+    "ast_hash": "193709cd1462cf14c099dc081fdb2796",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_preview/WeekNavigator.js": {
+    "mtime": 1782165018.5180285,
+    "ast_hash": "1d0b3a424cae59758932908a848d2192",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/contact-sheets.json": {
+    "mtime": 1782165038.957076,
+    "ast_hash": "805ff9a0c4cf0bddc19a7bfb141819d6",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_vendor/react-dom.js": {
+    "mtime": 1782165017.9957802,
+    "ast_hash": "c1b9b966eaf9ca3cf4ce5b8b4b270c3c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_vendor/react.js": {
+    "mtime": 1782165017.9957802,
+    "ast_hash": "48a0a0ecf3e98c61806d87ab1e4bbc83",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/AvatarStack/AvatarStack.d.ts": {
+    "mtime": 1782165018.5221727,
+    "ast_hash": "f31a5fcea3ac3dafbf39985d4d8bf326",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/AvatarStack/AvatarStack.jsx": {
+    "mtime": 1782165018.5195994,
+    "ast_hash": "d4f370ade3a11e766e43941efb5d0c3e",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Badge/Badge.d.ts": {
+    "mtime": 1782165018.5259507,
+    "ast_hash": "5aba9a498316abf05a8581cc0ba40eda",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Badge/Badge.jsx": {
+    "mtime": 1782165018.5247202,
+    "ast_hash": "e1afea4a19e68baa290efe690f8f5495",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/BottomNav/BottomNav.d.ts": {
+    "mtime": 1782165018.5280404,
+    "ast_hash": "74fce3ac7d267efff28a5ef88221bb7c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/BottomNav/BottomNav.jsx": {
+    "mtime": 1782165018.5280404,
+    "ast_hash": "d939772e587305ac55437d877d514998",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Button/Button.d.ts": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "72312cb7943b598a6584d682bc161cfc",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Button/Button.jsx": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "46c469055b532572ad50db65f0eaac8c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Card/Card.d.ts": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "56fbe9e0f9ffd9d57471b394d4f09581",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Card/Card.jsx": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "8ef8e0f296efb135178334e05d110319",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/CategoryChip/CategoryChip.d.ts": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "274d88abf367a1e7ad2aa890812855af",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/CategoryChip/CategoryChip.jsx": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "21ed52e769c10b76353fed967c83ed07",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DatePickerField/DatePickerField.d.ts": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "5c497e43537d8d28577fcbcf14c7d2c1",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DatePickerField/DatePickerField.jsx": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "1cdd7f1acb28fc5b063763e9d6c1bcd3",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DinnerUpgradeBanner/DinnerUpgradeBanner.d.ts": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "67579473838034e1f4a04b2b51bca26b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DinnerUpgradeBanner/DinnerUpgradeBanner.jsx": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "da8de16e0454f0e6f7deb6b0778de384",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Fab/Fab.d.ts": {
+    "mtime": 1782165018.5410922,
+    "ast_hash": "0c2f0fc6bb7171d74dc16c412d467543",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Fab/Fab.jsx": {
+    "mtime": 1782165018.5399823,
+    "ast_hash": "8f6a1e84dbd99ba6694e5542216fb53b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Header/Header.d.ts": {
+    "mtime": 1782165018.544098,
+    "ast_hash": "d92f2fdd0b30f68d9ac27a86198b3e47",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Header/Header.jsx": {
+    "mtime": 1782165018.5431013,
+    "ast_hash": "9742d2a9269fa778cb09274e2c0ac250",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Input/Input.d.ts": {
+    "mtime": 1782165018.5460978,
+    "ast_hash": "753daab09a02604a77f2d2a2a78a5ce5",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Input/Input.jsx": {
+    "mtime": 1782165018.5460978,
+    "ast_hash": "95110b84d103986fefc9776eeccbd178",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/KitchenProvider/KitchenProvider.d.ts": {
+    "mtime": 1782165018.5480976,
+    "ast_hash": "c4256ad7dc19309c965c08f1f375fbf0",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/KitchenProvider/KitchenProvider.jsx": {
+    "mtime": 1782165018.5480976,
+    "ast_hash": "dc6999470893ece9584137be74461bae",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ModalSheet/ModalSheet.d.ts": {
+    "mtime": 1782165018.5520976,
+    "ast_hash": "f2c56075374d0d4d20e3c4c2bc5ad74a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ModalSheet/ModalSheet.jsx": {
+    "mtime": 1782165018.5510988,
+    "ast_hash": "238e0fc8a5eaee6dc06a88ce5bb05c12",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/PageHeader/PageHeader.d.ts": {
+    "mtime": 1782165018.5540967,
+    "ast_hash": "c84f98904943905b8c2ce9c262190e29",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/PageHeader/PageHeader.jsx": {
+    "mtime": 1782165018.5530965,
+    "ast_hash": "740e5f06593b9932ca845ced146bd53f",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ProBadge/ProBadge.d.ts": {
+    "mtime": 1782165018.5560973,
+    "ast_hash": "68e25e2adcbdde9f2e5679fcff3c7f6f",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ProBadge/ProBadge.jsx": {
+    "mtime": 1782165018.5550966,
+    "ast_hash": "700b5ae2f7957bbd80519622ef943764",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/SearchableSelect/SearchableSelect.d.ts": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "c42100eea2781799983baf895351a6eb",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/SearchableSelect/SearchableSelect.jsx": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "39637d731d1dc91668247324f311a982",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Skeleton/Skeleton.d.ts": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "023070ce37bf8833db8b423f57b2ec00",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Skeleton/Skeleton.jsx": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "ce8716afd7b292ae9934e306a07dc7f1",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDatePicker/WeekDatePicker.d.ts": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "c52a86d2cd7bd68bcba42688d5058650",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDatePicker/WeekDatePicker.jsx": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "250949c8e143cb8a12724d0319ea6fab",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDayTabs/WeekDayTabs.d.ts": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "90d13a8f8406fa4fad39fbbf20b116ca",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDayTabs/WeekDayTabs.jsx": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "76cf471a72336707344659d3876bbfc8",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekNavigator/WeekNavigator.d.ts": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "5d5b82b60fffdca5bf3c49e38908afba",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekNavigator/WeekNavigator.jsx": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "012504931aad8ba49e98ffeadac85f38",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/rewards/MilestoneToast/MilestoneToast.d.ts": {
+    "mtime": 1782165018.5500965,
+    "ast_hash": "01198dcf4e3ddb1c5b98220021e722ca",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/rewards/MilestoneToast/MilestoneToast.jsx": {
+    "mtime": 1782165018.5500965,
+    "ast_hash": "aadf68bf9ad7aed078f2efe5295e1f6f",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/LunchfyScenes.jsx": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "0577250e281d829f077d3d6f72099bbf",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/js/tutorial.js": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "310c88fe30e7a0e63d9847f2b290dc1c",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/original/LunchfyScenes.jsx": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "0577250e281d829f077d3d6f72099bbf",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/original/support.js": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "79c526abd40548c72528e7c487ea4939",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/package.json": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "f75749143251a651fca2c2274a9918e7",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/support.js": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "79c526abd40548c72528e7c487ea4939",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/lunchfy-kitchen.js": {
+    "mtime": 1782163975.8639145,
+    "ast_hash": "dc810b46d10af8e65ea18a17bc80f263",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/sw.js": {
+    "mtime": 1775688143.8576777,
+    "ast_hash": "d8b5a529c8360b94369f1dcfeb0e306b",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/LunchfyScenes.jsx": {
+    "mtime": 1782167224.0,
+    "ast_hash": "0577250e281d829f077d3d6f72099bbf",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/js/tutorial.js": {
+    "mtime": 1782167410.3473575,
+    "ast_hash": "a80f8d024682db4f2d054e3509b475a8",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/original/LunchfyScenes.jsx": {
+    "mtime": 1782167224.0,
+    "ast_hash": "0577250e281d829f077d3d6f72099bbf",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/original/support.js": {
+    "mtime": 1782167224.0,
+    "ast_hash": "79c526abd40548c72528e7c487ea4939",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/package.json": {
+    "mtime": 1782167224.0,
+    "ast_hash": "f75749143251a651fca2c2274a9918e7",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/support.js": {
+    "mtime": 1782167224.0,
+    "ast_hash": "79c526abd40548c72528e7c487ea4939",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/ConsentGate.jsx": {
+    "mtime": 1781562029.4471395,
+    "ast_hash": "49ae82b684f8b2979e3050b4f669e060",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/GuidedTourOverlay.jsx": {
+    "mtime": 1783094365.1370063,
+    "ast_hash": "440949db6a6356ad472bd5bb687dbeca",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/GuidedTourProvider.jsx": {
+    "mtime": 1783094309.611384,
+    "ast_hash": "03086edbd23e4eda9f608de888b97013",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/guidedTourService.js": {
+    "mtime": 1783094535.2958183,
+    "ast_hash": "776056765b4c05c92d02e29e1c15b5dc",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/guidedTourSteps.js": {
+    "mtime": 1783094241.5100796,
+    "ast_hash": "b42cbd66f97ff71b45f99889603c6fc8",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/ui/KitchenProvider.jsx": {
+    "mtime": 1782163686.3497212,
+    "ast_hash": "15cf0b66791d6cce77f1521e1eabe05f",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/ds-entry.jsx": {
+    "mtime": 1782163968.6511793,
+    "ast_hash": "3fe2fc23c6b2ad8389a9345ec3e73d9a",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/pages/InterfaceMapPage.jsx": {
+    "mtime": 1783094592.966526,
+    "ast_hash": "372ad1998224148269d920dafc9f6c53",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/pages/LandingPage.jsx": {
+    "mtime": 1782517784.3486848,
+    "ast_hash": "d87dd5253b6519f5e542f769df181234",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/pages/LegalPage.jsx": {
+    "mtime": 1781562029.4605732,
+    "ast_hash": "b2ab927e7dbb406ca36c2bb177ae1ddd",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/publicRoutes.js": {
+    "mtime": 1782149929.98811,
+    "ast_hash": "25c7238a40e7b5d0c22cd132bdd3835e",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/shoppingOptimisticState.js": {
+    "mtime": 1782568903.7602987,
+    "ast_hash": "2efd5660a5a4b3677abf6f23a67c99ee",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/shoppingOptimisticState.test.js": {
+    "mtime": 1782568923.2382405,
+    "ast_hash": "66620f3143d3a1f02bc21de01c5274c7",
+    "semantic_hash": ""
+  },
+  "frontend/vite.lib.config.js": {
+    "mtime": 1782163872.920298,
+    "ast_hash": "c74537062e0a2f6cc1b131dea2923319",
+    "semantic_hash": ""
+  },
+  "video_work/make_guided_tutorial_video.py": {
+    "mtime": 1782562442.5961874,
+    "ast_hash": "9944768e77b1341be024b834ac496c38",
+    "semantic_hash": ""
+  },
+  "video_work/make_polished_tutorial_video.py": {
+    "mtime": 1782566516.6669304,
+    "ast_hash": "a99caa3ccf6df3321f77a02855f2670c",
+    "semantic_hash": ""
+  },
+  "video_work/make_promo_video.py": {
+    "mtime": 1782560887.5406246,
+    "ast_hash": "c24ceef60dba5f3f1ca0fdd84492b64e",
+    "semantic_hash": ""
+  },
+  ".ds-sync/storybook/SKILL.md": {
+    "mtime": 1782163788.40372,
+    "ast_hash": "486caef8023bc908e2d739fb3e79cf57",
+    "semantic_hash": ""
+  },
+  "docs/guided-tour.md": {
+    "mtime": 1783094580.497796,
+    "ast_hash": "c632fb8a7b06261272d13a7073512c71",
+    "semantic_hash": ""
+  },
+  "ds-bundle/.review.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "3d849ff7bab69846899c3cd8746807f1",
+    "semantic_hash": ""
+  },
+  "ds-bundle/README.md": {
+    "mtime": 1782165018.5953283,
+    "ast_hash": "14f487526c8b898028bad8134293e8bd",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/.contact-sheet-1.html": {
+    "mtime": 1782165037.7736819,
+    "ast_hash": "4106e43345e2e6df959072f3ec147389",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/.contact-sheet-2.html": {
+    "mtime": 1782165038.391463,
+    "ast_hash": "bde76127394b5b5cc11c640ee1fd0f34",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/AvatarStack/AvatarStack.html": {
+    "mtime": 1782165018.5243206,
+    "ast_hash": "2b950847bd9f3ac73d440cbdaae12336",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/AvatarStack/AvatarStack.prompt.md": {
+    "mtime": 1782165018.5232124,
+    "ast_hash": "63b567d3be04a0c35f1ac3b3e80e0ca6",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Badge/Badge.html": {
+    "mtime": 1782165018.526993,
+    "ast_hash": "1b8295684c1c3177bc2da7610793def2",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Badge/Badge.prompt.md": {
+    "mtime": 1782165018.526473,
+    "ast_hash": "b13733f8ad2ba6de9269cabc49d1ae67",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/BottomNav/BottomNav.html": {
+    "mtime": 1782165018.5280404,
+    "ast_hash": "84539ef1742a49cec71fc3d6e6156fd2",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/BottomNav/BottomNav.prompt.md": {
+    "mtime": 1782165018.5280404,
+    "ast_hash": "1bbac3c251aca6728b8887a3ce07d868",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Button/Button.html": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "998eb44b257b6d9bf9e8c2a902def16c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Button/Button.prompt.md": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "b64bd85831024104346d5afc09251f54",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Card/Card.html": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "1ea46159df80576341f15a2e0d72c3e7",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Card/Card.prompt.md": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "70d4288237fb042e8a995173dc7b4b05",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/CategoryChip/CategoryChip.html": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "ac595be204ba1f016d82f3171b14c23a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/CategoryChip/CategoryChip.prompt.md": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "94150c3ab3d7120a0c3b0f38e65c9c97",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DatePickerField/DatePickerField.html": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "31465c1d395cc0e69b3943d83f2f21c7",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DatePickerField/DatePickerField.prompt.md": {
+    "mtime": 1782165018.5300457,
+    "ast_hash": "8babe8b30a5104e8dee674875964d629",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DinnerUpgradeBanner/DinnerUpgradeBanner.html": {
+    "mtime": 1782165018.5399823,
+    "ast_hash": "428caea63d6c5e034d6ff52616bc6bf9",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/DinnerUpgradeBanner/DinnerUpgradeBanner.prompt.md": {
+    "mtime": 1782165018.5399823,
+    "ast_hash": "8cae02bba5bbfa22a3c02e7cd38a6869",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Fab/Fab.html": {
+    "mtime": 1782165018.5420988,
+    "ast_hash": "5af1d732b72efa61bcb6356c27d45eea",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Fab/Fab.prompt.md": {
+    "mtime": 1782165018.5420988,
+    "ast_hash": "34312b66a4dc18fca4bfb3c40bb1a3da",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Header/Header.html": {
+    "mtime": 1782165018.5450993,
+    "ast_hash": "ae9b142d47fb534c21e2c52c006d81b5",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Header/Header.prompt.md": {
+    "mtime": 1782165018.544098,
+    "ast_hash": "75759d5d84e48bfbab5e467b1e8fb3b4",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Input/Input.html": {
+    "mtime": 1782165018.5470972,
+    "ast_hash": "dd79089f58d20cfb5c353573b926182e",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Input/Input.prompt.md": {
+    "mtime": 1782165018.5460978,
+    "ast_hash": "66d40fea58539c56cda42379bdd4808a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/KitchenProvider/KitchenProvider.html": {
+    "mtime": 1782165018.5490973,
+    "ast_hash": "0c84a90f75f315dc76764b155ac5442f",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/KitchenProvider/KitchenProvider.prompt.md": {
+    "mtime": 1782165018.5490973,
+    "ast_hash": "6065a3a8a2517dbd4346b2d89cfed055",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ModalSheet/ModalSheet.html": {
+    "mtime": 1782165018.5530965,
+    "ast_hash": "2f844cf1db4984dd92392a3159c435d2",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ModalSheet/ModalSheet.prompt.md": {
+    "mtime": 1782165018.5530965,
+    "ast_hash": "e454da60b44755732fa4354b568e32fd",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/PageHeader/PageHeader.html": {
+    "mtime": 1782165018.5550966,
+    "ast_hash": "9f254b360feb9dd419c84cb0f3e30a64",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/PageHeader/PageHeader.prompt.md": {
+    "mtime": 1782165018.5550966,
+    "ast_hash": "f10dbb943c48807e03782bd69ddb62a8",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ProBadge/ProBadge.html": {
+    "mtime": 1782165018.557098,
+    "ast_hash": "6f6e23d0706c60bbc82b147ed7bd9a1f",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/ProBadge/ProBadge.prompt.md": {
+    "mtime": 1782165018.5560973,
+    "ast_hash": "73d808ec49ec6c6056ba9ccca672553f",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/SearchableSelect/SearchableSelect.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "4345493abbf8bc50ef20740930892009",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/SearchableSelect/SearchableSelect.prompt.md": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "29810345e58be4d532c805f8226fabf3",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Skeleton/Skeleton.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "804e5865fe7334ed55831c163be99fe0",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/Skeleton/Skeleton.prompt.md": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "410b9be648d9f261ce0d04acf86ff0c4",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDatePicker/WeekDatePicker.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "6785e929c811c44910070e3b3dfc372d",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDatePicker/WeekDatePicker.prompt.md": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "84826cf01fcdd47ba2f4aa1a914de3d9",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDayTabs/WeekDayTabs.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "214da6dddc6028f78f21bd3fdb52322b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekDayTabs/WeekDayTabs.prompt.md": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "344611f7b1e27350eb9d1a1c7228a15b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekNavigator/WeekNavigator.html": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "7cf313c57497d3d3a0035ff3c3591992",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/general/WeekNavigator/WeekNavigator.prompt.md": {
+    "mtime": 1782165018.557868,
+    "ast_hash": "afbddbcdb4a10db838407734503ba666",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/rewards/MilestoneToast/MilestoneToast.html": {
+    "mtime": 1782165018.5510988,
+    "ast_hash": "4455459dde7c7788bea8e9ed69d10eae",
+    "semantic_hash": ""
+  },
+  "ds-bundle/components/rewards/MilestoneToast/MilestoneToast.prompt.md": {
+    "mtime": 1782165018.5510988,
+    "ast_hash": "157302ed791ee49382cf02d303ead71a",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/MANIFEST.md": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "f9d5d263fb392333a40c6b73dab2f9e8",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/README.md": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "2306f8985cd4fd705b799e2d3f51b293",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/index.html": {
+    "mtime": 1782167224.4800162,
+    "ast_hash": "1428ce72eb7d224a0adb87903c50730a",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/original/Lunchfy Tutorial 9x16.dc.html": {
+    "mtime": 1782165136.0452147,
+    "ast_hash": "84744eb68c88f94fc80e046170085391",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/architecture-map.html": {
+    "mtime": 1780850791.5859492,
+    "ast_hash": "8a32b13285e71158c2f746fdd48dc601",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/MANIFEST.md": {
+    "mtime": 1782167224.0,
+    "ast_hash": "f9d5d263fb392333a40c6b73dab2f9e8",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/README.md": {
+    "mtime": 1782167224.0,
+    "ast_hash": "2306f8985cd4fd705b799e2d3f51b293",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/index.html": {
+    "mtime": 1782167224.0,
+    "ast_hash": "1428ce72eb7d224a0adb87903c50730a",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/original/Lunchfy Tutorial 9x16.dc.html": {
+    "mtime": 1782165136.0,
+    "ast_hash": "84744eb68c88f94fc80e046170085391",
+    "semantic_hash": ""
+  },
+  "frontend/src/legal/politica-de-privacidad.md": {
+    "mtime": 1781562029.4605732,
+    "ast_hash": "3dc23ce2ad52836815fd146fe7de26b0",
+    "semantic_hash": ""
+  },
+  "frontend/src/legal/terminos-y-condiciones.md": {
+    "mtime": 1781562029.4605732,
+    "ast_hash": "fb85b4043a858dbf4d861c2e75ee5fc7",
+    "semantic_hash": ""
+  },
+  "legal/politica-de-privacidad.md": {
+    "mtime": 1781562268.144767,
+    "ast_hash": "3dc23ce2ad52836815fd146fe7de26b0",
+    "semantic_hash": ""
+  },
+  "legal/terminos-y-condiciones.md": {
+    "mtime": 1781562268.144767,
+    "ast_hash": "fb85b4043a858dbf4d861c2e75ee5fc7",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/contact-sheet-1.png": {
+    "mtime": 1782165038.3894582,
+    "ast_hash": "6a12b2d35d1701d5c589aebc089ae511",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/contact-sheet-2.png": {
+    "mtime": 1782165038.9560761,
+    "ast_hash": "cb1775d1f7816d0b5d5c29a0d8c288a9",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__AvatarStack.png": {
+    "mtime": 1782165026.3137348,
+    "ast_hash": "cf010beb9406b78224f166fb17227266",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Badge.png": {
+    "mtime": 1782165026.880346,
+    "ast_hash": "702e5e3ac8815d17715d572637af9dae",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__BottomNav.png": {
+    "mtime": 1782165027.4468656,
+    "ast_hash": "f186309e241f21869f370edb10963c06",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Button.png": {
+    "mtime": 1782165028.0348327,
+    "ast_hash": "cfb2d3b19be5b948a2088943adc3d39c",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Card.png": {
+    "mtime": 1782165028.5984907,
+    "ast_hash": "eb34019008ddb95bc4405482846ba7be",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__CategoryChip.png": {
+    "mtime": 1782165029.1840138,
+    "ast_hash": "ccfc28818d7a32707abd820a5f1d9062",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__DatePickerField.png": {
+    "mtime": 1782165029.764652,
+    "ast_hash": "c6083aa73aaedef5f842fcd84010a6c8",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__DinnerUpgradeBanner.png": {
+    "mtime": 1782165030.340165,
+    "ast_hash": "286969505d714c97df74558777e0c2bc",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Fab.png": {
+    "mtime": 1782165030.8968012,
+    "ast_hash": "acdc11f81c90718438c6332e313a1f34",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Header.png": {
+    "mtime": 1782165031.4841537,
+    "ast_hash": "8a5fbc4424e2fa5615e92ac94d4df449",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Input.png": {
+    "mtime": 1782165032.0458972,
+    "ast_hash": "51758ca9a6b7873dc6022205c868e8df",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__KitchenProvider.png": {
+    "mtime": 1782165032.631508,
+    "ast_hash": "f64781c760d2d602cb62d30e1c5e5b5b",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__ModalSheet.png": {
+    "mtime": 1782165033.1981301,
+    "ast_hash": "344a59ecb4aa7ab38e821dbfe7df0c9a",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__PageHeader.png": {
+    "mtime": 1782165033.7855768,
+    "ast_hash": "1ea3336bbfe98f92b6609446136b1e25",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__ProBadge.png": {
+    "mtime": 1782165034.3655849,
+    "ast_hash": "89748a1ec3cd6964ed5b0f0d79e6e6ac",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__SearchableSelect.png": {
+    "mtime": 1782165034.9315095,
+    "ast_hash": "450f7d64778a972749d0d0c8439c2704",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__Skeleton.png": {
+    "mtime": 1782165035.5084229,
+    "ast_hash": "ea4f4015826523f0cefad6b4a8fc1cd8",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__WeekDatePicker.png": {
+    "mtime": 1782165036.0796957,
+    "ast_hash": "483bad6808b8f65dd64258ac2b2d0674",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__WeekDayTabs.png": {
+    "mtime": 1782165036.6296852,
+    "ast_hash": "429bbcb0eb662490f7d7b46fa10ae381",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/general__WeekNavigator.png": {
+    "mtime": 1782165037.1985736,
+    "ast_hash": "ec8e188af75e60bd2d372f05a4c64eaa",
+    "semantic_hash": ""
+  },
+  "ds-bundle/_screenshots/rewards__MilestoneToast.png": {
+    "mtime": 1782165037.7633946,
+    "ast_hash": "efcbbeb2e82fe58daec0b5ec51b72781",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/brand/Lunchfy_icon.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "86b79998b7f1c18be023fb6b02f84379",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/brand/Lunchfy_logo1.png": {
+    "mtime": 1780850791.5950727,
+    "ast_hash": "0dd19f34969f4c8daa3d3a8ad13f5828",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/Chicken_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "e10ad2d753de6727fc4923890bdc49f5",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/Fish_tp.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "96edba485c2a7995b1de5d46e9507aec",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/Pasta_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "141ccb710fc2cb0961fa83e5e47688a4",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/Rice_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "a7da3f6d1fa75f0295dc81b61a900c3f",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/Vegetables_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "b1d114c510a2dfb7cf517e3a9619c1fb",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/category-icons/eggs_tp.png": {
+    "mtime": 1773141082.3716705,
+    "ast_hash": "992d6abefb0a91f55db2a9c17d5f2a21",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/brand/Lunchfy_icon.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "86b79998b7f1c18be023fb6b02f84379",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/icons/icon-192.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "ce1228f2d093704b51f6f9465413c36e",
+    "semantic_hash": ""
+  },
+  "frontend/dist-lib/icons/icon-512.png": {
+    "mtime": 1773141082.3555968,
+    "ast_hash": "122bb5ec5db67af4e690c953e7da8ddf",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/brand/Lunchfy_icon.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "86b79998b7f1c18be023fb6b02f84379",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/brand/Lunchfy_logo1.png": {
+    "mtime": 1780850790.0,
+    "ast_hash": "0dd19f34969f4c8daa3d3a8ad13f5828",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/Chicken_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "e10ad2d753de6727fc4923890bdc49f5",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/Fish_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "96edba485c2a7995b1de5d46e9507aec",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/Pasta_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "141ccb710fc2cb0961fa83e5e47688a4",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/Rice_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "a7da3f6d1fa75f0295dc81b61a900c3f",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/Vegetables_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "b1d114c510a2dfb7cf517e3a9619c1fb",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/category-icons/eggs_tp.png": {
+    "mtime": 1773141082.0,
+    "ast_hash": "992d6abefb0a91f55db2a9c17d5f2a21",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia1_contact.jpg": {
+    "mtime": 1782560545.6116512,
+    "ast_hash": "95d3e9ca986a0d17e63518fc556d1149",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia1_thumb_1.jpg": {
+    "mtime": 1782560518.639974,
+    "ast_hash": "0bf0acc0e718bf2a748dd3f6a5e79452",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia1_thumb_2.jpg": {
+    "mtime": 1782560518.7186348,
+    "ast_hash": "0983e8a784b897cd4cf2fb63eb2e9bd2",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia1_thumb_3.jpg": {
+    "mtime": 1782560518.7747376,
+    "ast_hash": "57308bcbeda4aa7ea4d5418d53f0ac67",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia1_thumb_4.jpg": {
+    "mtime": 1782560518.8379264,
+    "ast_hash": "beeb3d9d2f5ffb6a4975eb48e5e5fde3",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia2_contact.jpg": {
+    "mtime": 1782560545.911773,
+    "ast_hash": "142da2cfc2d177bfed9f7907e6db2d12",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia2_thumb_1.jpg": {
+    "mtime": 1782560518.9316576,
+    "ast_hash": "4bc4decb87320ab45d0eed84ffd0debe",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia2_thumb_2.jpg": {
+    "mtime": 1782560518.998336,
+    "ast_hash": "4d49be295d1655641e980d21790c1244",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia2_thumb_3.jpg": {
+    "mtime": 1782560519.0568924,
+    "ast_hash": "f7b7cb48ec1142dc332f4943e3838d0c",
+    "semantic_hash": ""
+  },
+  "video_work/Multimedia2_thumb_4.jpg": {
+    "mtime": 1782560519.1077194,
+    "ast_hash": "5aa6cab78bfc59e6fd94c9bb82c49ef3",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_promo_final_contact.jpg": {
+    "mtime": 1782561409.7421808,
+    "ast_hash": "90629ae20826d6e1983cb6163c48a661",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_promo_preview.jpg": {
+    "mtime": 1782560847.894464,
+    "ast_hash": "e9f6a5ccb46d19491f7961b6640c0bd7",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_tutorial_guiado_contact.jpg": {
+    "mtime": 1782564888.6440945,
+    "ast_hash": "e33c2f76190114ff8f0e3e61543914d3",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_tutorial_pulido_contact.jpg": {
+    "mtime": 1782567468.6352348,
+    "ast_hash": "a149619bd3ad32ee11ae9faf2715d994",
+    "semantic_hash": ""
+  },
+  "exports/lunchfy-tutorial-9x16-package/assets/music/lunchfy-loop.wav": {
+    "mtime": 1782167248.2636826,
+    "ast_hash": "d082849d667d4f3240e3132cce739856",
+    "semantic_hash": ""
+  },
+  "frontend/public/media/lunchfy-tutorial-9x16/assets/music/lunchfy-loop.wav": {
+    "mtime": 1782167248.0,
+    "ast_hash": "d082849d667d4f3240e3132cce739856",
+    "semantic_hash": ""
+  },
+  "homefirst_promo_verticalTEMP_MPY_wvf_snd.mp4": {
+    "mtime": 1782560653.5664594,
+    "ast_hash": "d28a171ac9de9e04f21b2365ef46bc9f",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_music_loop.wav": {
+    "mtime": 1782560898.6106963,
+    "ast_hash": "226fd41805256e4f8f7178c601aa4d56",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_polished_music.wav": {
+    "mtime": 1782566533.1897025,
+    "ast_hash": "e3b7de7c11456eaed391643ad48e39bd",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_promo_vertical.mp4": {
+    "mtime": 1782561394.812468,
+    "ast_hash": "55bd6680208da83864f6d9b067529663",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_tutorial_guiado_vertical.mp4": {
+    "mtime": 1782564869.0759115,
+    "ast_hash": "9a78c792d814e6e761ac09f95471710d",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_tutorial_music.wav": {
+    "mtime": 1782565231.934695,
+    "ast_hash": "a97466eb6334a01a80e5f918f5342e91",
+    "semantic_hash": ""
+  },
+  "video_work/homefirst_tutorial_pulido_vertical.mp4": {
+    "mtime": 1782567449.8069782,
+    "ast_hash": "8b0f53fb11d15be1df709d33dab6ef43",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_01.wav": {
+    "mtime": 1782562454.3963919,
+    "ast_hash": "44255e7d01317458441bcbe2a360a532",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_02.wav": {
+    "mtime": 1782562454.872583,
+    "ast_hash": "3602b8362a7f11773d051d487a1f9f84",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_03.wav": {
+    "mtime": 1782562455.3056386,
+    "ast_hash": "6afb3b4e9c642a078dcf584a0598b7c9",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_04.wav": {
+    "mtime": 1782562455.6970484,
+    "ast_hash": "eaf96bb119fab48c2cc83c1d612264f8",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_05.wav": {
+    "mtime": 1782562456.1569848,
+    "ast_hash": "7f873a900a42b2887f9e340b76f97f27",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_06.wav": {
+    "mtime": 1782562456.557044,
+    "ast_hash": "7593ad9780cb8c64e79a032c97c971d3",
+    "semantic_hash": ""
+  },
+  "video_work/voiceover/scene_07.wav": {
+    "mtime": 1782562456.9741988,
+    "ast_hash": "17417737f019a379a221567af7376f81",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/bubblePosition.js": {
+    "mtime": 1783032452.0648327,
+    "ast_hash": "e5e20f17950bfc861d9848d3546e26c3",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/guidedOnboardingEvents.js": {
+    "mtime": 1783093982.743603,
+    "ast_hash": "c052d2b25eeb9a2d3339ee97625c23ad",
+    "semantic_hash": ""
+  },
+  "frontend/src/kitchen/components/tour/onboardingRecipe.js": {
+    "mtime": 1783032761.3760142,
+    "ast_hash": "c290d2328816aae382e3b65a28d450f1",
     "semantic_hash": ""
   }
 }

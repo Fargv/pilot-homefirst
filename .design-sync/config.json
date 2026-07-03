@@ -1,0 +1,36 @@
+{
+  "projectId": "1d235704-ce17-4178-a088-a39b47f5388d",
+  "shape": "package",
+  "pkg": "lunchfy-kitchen",
+  "globalName": "LunchfyKitchen",
+  "srcDir": "src/kitchen",
+  "cssEntry": "dist-lib/style.css",
+  "provider": {
+    "component": "KitchenProvider"
+  },
+  "componentSrcMap": {
+    "Button": "src/kitchen/components/ui/Button.jsx",
+    "Card": "src/kitchen/components/ui/Card.jsx",
+    "Badge": "src/kitchen/components/ui/Badge.jsx",
+    "Input": "src/kitchen/components/ui/Input.jsx",
+    "DatePickerField": "src/kitchen/components/ui/DatePickerField.jsx",
+    "WeekDatePicker": "src/kitchen/components/ui/WeekDatePicker.jsx",
+    "Skeleton": "src/kitchen/components/ui/Skeleton.jsx",
+    "Fab": "src/kitchen/components/ui/Fab.jsx",
+    "AvatarStack": "src/kitchen/components/ui/AvatarStack.jsx",
+    "Header": "src/kitchen/components/ui/Header.jsx",
+    "ModalSheet": "src/kitchen/components/ui/ModalSheet.jsx",
+    "WeekNavigator": "src/kitchen/components/ui/WeekNavigator.jsx",
+    "BottomNav": "src/kitchen/components/ui/BottomNav.jsx",
+    "DinnerUpgradeBanner": "src/kitchen/components/ui/DinnerUpgradeBanner.jsx",
+    "ProBadge": "src/kitchen/components/ui/ProBadge.jsx",
+    "SearchableSelect": "src/kitchen/components/ui/SearchableSelect.jsx",
+    "KitchenProvider": "src/kitchen/components/ui/KitchenProvider.jsx",
+    "CategoryChip": "src/kitchen/components/CategoryChip.jsx",
+    "PageHeader": "src/kitchen/components/PageHeader.jsx",
+    "WeekDayTabs": "src/kitchen/components/WeekDayTabs.jsx",
+    "MilestoneToast": "src/kitchen/components/rewards/MilestoneToast.jsx"
+  },
+  "buildCmd": "cd frontend && npx vite build --config vite.lib.config.js",
+  "runtimeFontPrefixes": ["Montserrat"]
+}

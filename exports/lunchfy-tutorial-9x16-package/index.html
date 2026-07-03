@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lunchfy Tutorial 9x16</title>
+  <link rel="stylesheet" href="./css/tutorial.css">
+  <script src="./support.js" defer></script>
+  <script src="./js/tutorial.js" defer></script>
+</head>
+<body>
+  <main class="stage" data-duration-full="54" data-duration-teaser="15">
+    <audio
+      id="soundtrack"
+      src="./assets/music/lunchfy-loop.wav"
+      preload="auto"
+      autoplay
+      loop
+    ></audio>
+
+    <section class="scene scene-hero" data-scene="hero">
+      <div class="ambient ambient-a"></div>
+      <div class="ambient ambient-b"></div>
+      <img class="brand-icon" src="./assets/brand/Lunchfy_icon.png" alt="">
+      <img class="brand-logo" src="./assets/brand/Lunchfy_logo1.png" alt="Lunchfy">
+      <h1>Planifica tu semana sin caos</h1>
+      <p>Comidas, cenas, recetas y compra en un solo lugar.</p>
+    </section>
+
+    <section class="scene scene-problem" data-scene="problem">
+      <div class="phone">
+        <div class="phone-top"></div>
+        <div class="messy-list">
+          <span>Que comemos hoy?</span>
+          <span>Falta pasta</span>
+          <span>Otra vez pollo?</span>
+          <span>Lista perdida</span>
+        </div>
+      </div>
+      <div class="copy">
+        <span class="eyebrow">Antes</span>
+        <h2>La semana se decide a ultima hora.</h2>
+        <p>Lunchfy convierte ese ruido diario en un plan claro.</p>
+      </div>
+    </section>
+
+    <section class="scene scene-plan" data-scene="plan">
+      <div class="copy centered">
+        <span class="eyebrow">Plan semanal</span>
+        <h2>Arrastra platos, rellena huecos y deja la semana lista.</h2>
+      </div>
+      <div class="planner">
+        <div class="day active"><strong>Lun</strong><span>Pollo al limon</span></div>
+        <div class="day"><strong>Mar</strong><span>Pasta verde</span></div>
+        <div class="day"><strong>Mie</strong><span>Arroz salteado</span></div>
+        <div class="day"><strong>Jue</strong><span>Pescado</span></div>
+        <div class="day"><strong>Vie</strong><span>Tortilla</span></div>
+      </div>
+    </section>
+
+    <section class="scene scene-recipes" data-scene="recipes">
+      <div class="recipe-orbit">
+        <img src="./assets/category-icons/Chicken_tp.png" alt="">
+        <img src="./assets/category-icons/Fish_tp.png" alt="">
+        <img src="./assets/category-icons/Vegetables_tp.png" alt="">
+        <img src="./assets/category-icons/Pasta_tp.png" alt="">
+        <img src="./assets/category-icons/Rice_tp.png" alt="">
+        <img src="./assets/category-icons/eggs_tp.png" alt="">
+      </div>
+      <div class="copy card-copy">
+        <span class="eyebrow">Recetas</span>
+        <h2>Guarda tus platos favoritos.</h2>
+        <p>Ingredientes, pasos y modos de coccion guiados.</p>
+      </div>
+    </section>
+
+    <section class="scene scene-shopping" data-scene="shopping">
+      <div class="shopping-card">
+        <h3>Lista de la compra</h3>
+        <label><input type="checkbox" checked> Tomates</label>
+        <label><input type="checkbox" checked> Arroz</label>
+        <label><input type="checkbox"> Huevos</label>
+        <label><input type="checkbox"> Verduras</label>
+        <label><input type="checkbox"> Pescado</label>
+      </div>
+      <div class="copy">
+        <span class="eyebrow">Compra</span>
+        <h2>La lista se genera sola.</h2>
+        <p>Sin duplicados, sin olvidos, lista para compartir.</p>
+      </div>
+    </section>
+
+    <section class="scene scene-family" data-scene="family">
+      <div class="household">
+        <div class="avatar">M</div>
+        <div class="avatar">A</div>
+        <div class="avatar">L</div>
+      </div>
+      <div class="copy centered">
+        <span class="eyebrow">Hogar</span>
+        <h2>Todos ven el mismo menu actualizado.</h2>
+        <p>Comparte la semana con tu pareja o familia.</p>
+      </div>
+    </section>
+
+    <section class="scene scene-final" data-scene="final">
+      <img class="brand-icon final-icon" src="./assets/brand/Lunchfy_icon.png" alt="">
+      <h2>Lunchfy</h2>
+      <p>Planifica mejor. Compra justo. Cocina tranquilo.</p>
+      <div class="cta">Empieza gratis</div>
+    </section>
+
+    <div class="progress" aria-hidden="true"><span></span></div>
+  </main>
+</body>
+</html>

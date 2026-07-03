@@ -1,0 +1,11 @@
+{
+  "namespace": "LunchfyKitchen",
+  "source": "lunchfy-kitchen@1.0.0",
+  "shape": "package",
+  "provider": "KitchenProvider",
+  "componentCount": 21,
+  "skippedStoryIds": [],
+  "runtimeFontPrefixes": [
+    "Montserrat"
+  ]
+}

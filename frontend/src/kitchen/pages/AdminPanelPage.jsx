@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { apiRequest, buildApiUrl, getToken, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
+import { apiRequest, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -2348,14 +2348,10 @@ function PackForm({ item, onSave, onCancel, onPaymentSaved, onSaved, baseBitePri
     try {
       const fd = new FormData();
       fd.append("cover", file);
-      const token = getToken();
-      const resp = await fetch(buildApiUrl(`/api/kitchen/catalog/packs/${packId}/cover`), {
+      const data = await apiRequest(`/api/kitchen/catalog/packs/${packId}/cover`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd
       });
-      const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) throw new Error(data?.error || "Error al subir imagen.");
       setForm((p) => ({ ...p, coverImage: data.coverImage }));
     } catch (err) {
       setCoverUploadError(err.message || "Error al subir imagen.");
@@ -7103,16 +7099,11 @@ function AdminAccountSecurityPanel() {
     setRecMsg(null);
     setRecSaving(true);
     try {
-      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/recovery-email"), {
+      const data = await apiRequest("/api/kitchen/admin/account/recovery-email", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
         body: JSON.stringify({ currentPassword: recCurrentPw, recoveryEmail: recEmail.trim() })
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
+      if (!data.ok) {
         setRecMsg({ ok: false, text: data.error || "Error al actualizar el email de recuperación." });
         return;
       }
@@ -7140,16 +7131,11 @@ function AdminAccountSecurityPanel() {
     }
     setPwSaving(true);
     try {
-      const res = await fetch(buildApiUrl("/api/kitchen/admin/account/password"), {
+      const data = await apiRequest("/api/kitchen/admin/account/password", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`
-        },
         body: JSON.stringify({ currentPassword: pwCurrent, newPassword: pwNew })
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
+      if (!data.ok) {
         setPwMsg({ ok: false, text: data.error || "Error al cambiar la contraseña." });
         return;
       }
