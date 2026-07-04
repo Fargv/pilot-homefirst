@@ -19,6 +19,7 @@ import CookingSessionStepper from "./components/cooking/CookingSessionStepper.js
 import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
 import { isProLikeHousehold } from "./subscription.js";
 import { useActiveWeek } from "./weekContext.jsx";
+import { emitOnboardingEvent, ONBOARDING_EVENTS } from "./components/tour/guidedOnboardingEvents.js";
 import {
   queryClient,
   planningQuery,
