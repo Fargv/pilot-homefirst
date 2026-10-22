@@ -4,8 +4,12 @@ import { KitchenDish } from "./models/KitchenDish.js";
 import { KitchenIngredient } from "./models/KitchenIngredient.js";
 import { Category } from "./models/Category.js";
 import { buildScopedFilter } from "./householdScope.js";
-import { combineDayIngredients } from "./utils/ingredients.js";
 import { normalizeIngredientName } from "./utils/normalize.js";
+import {
+  consolidateDayIngredients,
+  getQuantityConsolidationKey,
+  mergeCompatibleQuantities
+} from "./utils/ingredientQuantities.js";
 import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
 import { ensureDefaultCategory } from "./utils/categoryMatching.js";
 import { resolveDishCatalogForHousehold } from "./utils/dishCatalog.js";
@@ -213,9 +217,10 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
     }
     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
-    const ingredients = combineDayIngredients({
+    const ingredients = consolidateDayIngredients({
       mainDish: main,
       sideDish: side,
+      day,
       overrides: day.ingredientOverrides,
       baseExclusions: day.baseIngredientExclusions,
       includeMain: shouldIncludeMainInShopping(day),
@@ -246,7 +251,7 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
 
     for (const ingredient of ingredients) {
       const normalizedCanonical = normalizeIngredientName(ingredient.canonicalName || ingredient.displayName);
-      const key = ingredient.ingredientId ? String(ingredient.ingredientId) : normalizedCanonical;
+      const key = getQuantityConsolidationKey(ingredient);
       if (!key) continue;
       const current = merged.get(key) || {
         ingredientId: ingredient.ingredientId || null,
@@ -259,7 +264,14 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
         fromDishes: []
       };
 
-      current.occurrences += 1;
+      current.occurrences += Number(ingredient.occurrences) || 1;
+      if (ingredient.quantity && ingredient.unit) {
+        const nextQuantity = { amount: ingredient.quantity.amount, unit: ingredient.unit };
+        current.quantity = current.quantity
+          ? mergeCompatibleQuantities(current.quantity, nextQuantity)
+          : nextQuantity;
+        current.unit = current.quantity?.unit || ingredient.unit;
+      }
       const dayDishIds = [day.mainDishId, day.sideDishId].filter(Boolean).map(String);
       current.fromDishes = Array.from(new Set([...current.fromDishes.map(String), ...dayDishIds]));
       merged.set(key, current);
@@ -278,10 +290,20 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
     fallbackCategoryId: fallbackCategory?._id || null
   });
 
-  const previousMap = new Map(list.items.map((item) => [item.ingredientId ? String(item.ingredientId) : item.canonicalName, item]));
+  const previousMap = new Map(list.items.flatMap((item) => {
+    const key = getQuantityConsolidationKey(item);
+    const legacyKey = item.ingredientId ? String(item.ingredientId) : item.canonicalName;
+    return [[key, item], [legacyKey, item]];
+  }));
   const rebuiltItems = resolvedBuiltItems.resolvedItems.map((item, index) => {
-    const normalizedItem = ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null);
-    const previous = previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
+    const shoppingItem = {
+      ...item,
+      quantity: item.quantity?.amount ?? item.quantity ?? null,
+      unit: item.quantity?.unit || item.unit || null
+    };
+    const normalizedItem = ensureValidShoppingItemShape(shoppingItem, index, fallbackCategory?._id || null);
+    const previous = previousMap.get(getQuantityConsolidationKey(normalizedItem))
+      || previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
     const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
     return {
       ...normalizedItem,
