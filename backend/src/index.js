@@ -5,22 +5,21 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { config } from "./config.js";
 import { connectDb } from "./db.js";
-import { sendTestEmail } from "./mailer.js";
 import kitchenRouter from "./kitchen/index.js";
 import weekRoutes from "./kitchen/routes/weeks.js";
 import categoriesRouter from "./kitchen/routes/categories.js";
 import kitchenIngredientsRouter from "./kitchen/routes/kitchenIngredients.js";
 import usersRouter from "./users/index.js";
 import adminRouter from "./kitchen/routes/admin.js";
-import testEmailRouter from "./routes/testEmail.js";
 import authRoutes from "./kitchen/routes/auth.js";
 import internalPushRouter from "./routes/internalPush.js";
 import subscriptionRouter from "./routes/subscription.js";
 import paymentsRouter, { stripeWebhookHandler } from "./routes/payments.js";
 import { deactivateExpiredSubscriptions } from "./kitchen/subscriptionCron.js";
-import { seedOnboardingChallenges, seedOnboardingSuggestions, cleanupOldChallenges } from "./kitchen/onboardingEngine.js";
+import { seedOnboardingChallenges, seedOnboardingSuggestions } from "./kitchen/onboardingEngine.js";
 import { seedWeeklyChallengeDefs } from "./kitchen/weeklyEngine.js";
 import { seedOnboardingRecipe } from "./kitchen/guidedTourService.js";
+import { startStartupTasks } from "./startupTasks.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -62,18 +61,6 @@ app.get("/invite/:token", (req, res) => {
   return res.redirect(302, `${frontendBaseUrl}/invite/${req.params.token}`);
 });
 
-app.post("/api/email/test", async (req, res) => {
-  try {
-    const { to } = req.body;
-    if (!to) return res.status(400).json({ ok: false, error: "Falta 'to' en body" });
-
-    const messageId = await sendTestEmail({ to });
-    res.json({ ok: true, messageId });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
 app.use("/api/kitchen", kitchenRouter);
 app.use("/api/weeks", weekRoutes);
 app.use("/weeks", weekRoutes);
@@ -84,28 +71,29 @@ app.use("/api/users", usersRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/subscription", subscriptionRouter);
 app.use("/api/payments", paymentsRouter);
-app.use("/api", testEmailRouter);
 app.use("/api/internal/push", internalPushRouter);
 
-connectDb()
-  .then(() => {
-    const PORT = process.env.PORT || config.port || 3000;
+export { app };
 
-app.listen(PORT, () => {
-  console.log(`🚀 API escuchando en :${PORT}`);
-});
+if (config.nodeEnv !== "test") {
+  connectDb()
+    .then(() => {
+      const PORT = process.env.PORT || config.port || 3000;
 
-    seedOnboardingChallenges().catch((e) => console.error("[onboarding] Seed failed:", e.message));
-    seedOnboardingSuggestions().catch((e) => console.error("[onboarding] Suggestions seed failed:", e.message));
-    cleanupOldChallenges().catch((e) => console.error("[onboarding] Cleanup failed:", e.message));
-    seedWeeklyChallengeDefs().catch((e) => console.error("[weekly] Seed failed:", e.message));
-    seedOnboardingRecipe().catch((e) => console.error("[guided-tour] Recipe seed failed:", e.message));
+      app.listen(PORT, () => {
+        console.log(`🚀 API escuchando en :${PORT}`);
+      });
 
-    // O-6: Deactivate expired subscriptions hourly
-    deactivateExpiredSubscriptions();
-    setInterval(deactivateExpiredSubscriptions, 60 * 60 * 1000);
-  })
-  .catch((e) => {
-    console.error("❌ Error conectando DB", e);
-    process.exit(1);
-  });
+      startStartupTasks({
+        seedOnboardingChallenges,
+        seedOnboardingSuggestions,
+        seedWeeklyChallengeDefs,
+        seedOnboardingRecipe,
+        deactivateExpiredSubscriptions
+      });
+    })
+    .catch((e) => {
+      console.error("❌ Error conectando DB", e);
+      process.exit(1);
+    });
+}
