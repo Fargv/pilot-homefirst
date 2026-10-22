@@ -6587,6 +6587,40 @@ body {
   min-width: 0;
 }
 
+.shopping-source-toggle {
+  display: block;
+  margin: 3px 0 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.76rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.shopping-source-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.shopping-source-details {
+  display: grid;
+  gap: 3px;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.shopping-source-details[hidden] {
+  display: none;
+}
+
 /* ── Added-item toast stack ── */
 /* ── Global toast stack — always bottom-center ── */
 .hf-toast-stack {

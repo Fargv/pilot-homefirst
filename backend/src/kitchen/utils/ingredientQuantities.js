@@ -124,7 +124,7 @@ function contributionKey(identityKey, quantity) {
   return `${identityKey}|${quantity ? quantityBucket(quantity.unit) : "none"}`;
 }
 
-function addContribution(groups, ingredient, quantity) {
+function addContribution(groups, ingredient, quantity, source = null) {
   const identity = identityParts(ingredient);
   if (!identity.canonicalName && !identity.ingredientId) return;
 
@@ -137,12 +137,14 @@ function addContribution(groups, ingredient, quantity) {
       canonicalName: identity.canonicalName,
       quantity: quantity ? { ...quantity } : null,
       unit: quantity?.unit || null,
-      occurrences: 1
+      occurrences: 1,
+      sources: source ? [{ ...source, quantity: quantity ? { ...quantity } : null }] : []
     });
     return;
   }
 
   existing.occurrences += 1;
+  if (source) existing.sources.push({ ...source, quantity: quantity ? { ...quantity } : null });
   if (quantity) {
     existing.quantity = mergeCompatibleQuantities(existing.quantity, quantity);
     existing.unit = existing.quantity?.unit || quantity.unit;
@@ -186,7 +188,8 @@ export function consolidateDayIngredients({
   includeMain = true,
   includeSide = true,
   overrides = [],
-  baseExclusions = []
+  baseExclusions = [],
+  sourceContext = null
 } = {}) {
   const exclusions = new Set(
     (Array.isArray(baseExclusions) ? baseExclusions : [])
@@ -196,27 +199,28 @@ export function consolidateDayIngredients({
   const groups = new Map();
   const baseIdentityKeys = new Set();
 
-  for (const { dish, include } of [
-    { dish: mainDish, include: includeMain },
-    { dish: sideDish, include: includeSide }
+  for (const { dish, include, role, dishId } of [
+    { dish: mainDish, include: includeMain, role: "principal", dishId: sourceContext?.mainDishId },
+    { dish: sideDish, include: includeSide, role: "acompanamiento", dishId: sourceContext?.sideDishId }
   ]) {
     for (const { ingredient, recipe } of sourceIngredients(dish, day, include)) {
       if (shouldExclude(ingredient, exclusions)) continue;
       baseIdentityKeys.add(identityParts(ingredient).key);
       const matches = recipe.filter((item) => recipeMatchesIngredient(item, ingredient));
       if (!matches.length) {
-        addContribution(groups, ingredient, null);
+        addContribution(groups, ingredient, null, { ...sourceContext, role, dishId: dishId ? String(dishId) : null, dishName: dish?.name || "Plato" });
         continue;
       }
       for (const recipeIngredient of matches) {
-        addContribution(groups, ingredient, readScaledIngredientQuantity(recipeIngredient, dish, day));
+        const quantity = readScaledIngredientQuantity(recipeIngredient, dish, day);
+        addContribution(groups, ingredient, quantity, { ...sourceContext, role, dishId: dishId ? String(dishId) : null, dishName: dish?.name || "Plato" });
       }
     }
   }
 
   for (const override of Array.isArray(overrides) ? overrides : []) {
     if (baseIdentityKeys.has(identityParts(override).key)) continue;
-    addContribution(groups, override, null);
+    addContribution(groups, override, null, { ...sourceContext, role: "extra", dishId: null, dishName: "Ingredientes añadidos" });
   }
 
   return Array.from(groups.values());

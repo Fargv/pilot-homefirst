@@ -274,6 +274,7 @@ export default function ShoppingPage() {
   const [pendingPurchaseSessions, setPendingPurchaseSessions] = useState([]);
   const [currentPurchaseSession, setCurrentPurchaseSession] = useState(null);
   const [transitioningItemKey, setTransitioningItemKey] = useState(null);
+  const [ingredientDetailOpenId, setIngredientDetailOpenId] = useState(null);
   const [recentlyMovedItemKey, setRecentlyMovedItemKey] = useState(null);
   const [leavePromptOpen, setLeavePromptOpen] = useState(false);
   const [purchaseConfirmOpen, setPurchaseConfirmOpen] = useState(false);
@@ -1464,6 +1465,28 @@ export default function ShoppingPage() {
                                   </button>
                                   <div className="shopping-item-name-col">
                                     <span className="shopping-item-text">{item.displayName}</span>
+                                    <button
+                                      type="button"
+                                      className="shopping-source-toggle"
+                                      aria-expanded={ingredientDetailOpenId === key}
+                                      aria-controls={`shopping-source-${key}`}
+                                      onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
+                                    >¿Para qué?</button>
+                                    <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
+                                        {item.source === "manual" || (!item.source && !(item.fromDishes || []).length) ? (
+                                          <span>Añadido manualmente</span>
+                                        ) : (item.sources || []).length ? item.sources.map((source, index) => {
+                                          const sourceDate = source.date ? new Date(source.date) : null;
+                                          const dayLabel = sourceDate && !Number.isNaN(sourceDate.getTime())
+                                            ? sourceDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" })
+                                            : "Día sin fecha";
+                                          const amount = source.quantity?.amount;
+                                          const amountLabel = amount != null && Number.isFinite(Number(amount)) && source.quantity?.unit
+                                            ? ` · ${amount} ${source.quantity.unit}` : "";
+                                          const roleLabel = source.role === "acompanamiento" ? "Acompañamiento" : source.role === "principal" ? "Principal" : "Extra";
+                                          return <span key={`${source.dishId || source.dishName}-${index}`}>{dayLabel} · {source.mealType || "comida"} · {roleLabel}: {source.dishName || "Plato"}{amountLabel}</span>;
+                                        }) : <span>Plato asociado (detalle no disponible)</span>}
+                                    </div>
                                   </div>
                                   <div className="shopping-item-controls">
                                     <button
