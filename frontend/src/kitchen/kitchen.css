@@ -6588,9 +6588,12 @@ body {
 }
 
 .shopping-source-toggle {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
   margin: 3px 0 0;
-  padding: 2px 0;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   color: #64748b;
@@ -6599,6 +6602,7 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .shopping-source-toggle:focus-visible {

@@ -93,6 +93,27 @@ test("rebuild conserva categoría, estado comprado y metadatos en coincidencia e
   assert.equal(result[0].purchaseSessionId.toString(), previous.purchaseSessionId.toString());
 });
 
+test("rebuild conserva purchased al normalizar kg a g", () => {
+  const ingredientId = id();
+  const previous = {
+    ...builtItem({ ingredientId, quantity: 1, unit: "kg" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T10:00:00.000Z")
+  };
+  const rebuilt = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 1500, unit: "g" });
+
+  const result = mergeRebuiltShoppingItems([rebuilt], [previous]);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].unit, "g");
+  assert.equal(result[0].status, "purchased");
+  assert.equal(result[0].itemId.toString(), previous.itemId.toString());
+  assert.equal(result[0].purchasedBy.toString(), previous.purchasedBy.toString());
+});
+
 test("no transfiere purchased entre unidades incompatibles", () => {
   const ingredientId = id();
   const previous = {

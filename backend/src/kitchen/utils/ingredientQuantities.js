@@ -1,13 +1,13 @@
 import { normalizeIngredientName } from "./normalize.js";
 
 const MASS_UNITS = new Map([
-  ["g", { family: "mass", factor: 1 }],
-  ["kg", { family: "mass", factor: 1000 }]
+  ["g", { family: "mass", factor: 1, baseUnit: "g" }],
+  ["kg", { family: "mass", factor: 1000, baseUnit: "g" }]
 ]);
 
 const VOLUME_UNITS = new Map([
-  ["ml", { family: "volume", factor: 1 }],
-  ["l", { family: "volume", factor: 1000 }]
+  ["ml", { family: "volume", factor: 1, baseUnit: "ml" }],
+  ["l", { family: "volume", factor: 1000, baseUnit: "ml" }]
 ]);
 
 const UNIT_ALIASES = new Map([
@@ -35,7 +35,7 @@ export function normalizeQuantityUnit(unit) {
 function unitDescriptor(unit) {
   const normalized = normalizeQuantityUnit(unit);
   return MASS_UNITS.get(normalized) || VOLUME_UNITS.get(normalized) || (
-    normalized ? { family: `exact:${normalized}`, factor: 1 } : null
+    normalized ? { family: `exact:${normalized}`, factor: 1, baseUnit: normalized } : null
   );
 }
 
@@ -98,7 +98,7 @@ function applyQuantityToBaseUnit(quantity) {
   const descriptor = unitDescriptor(quantity.unit);
   return {
     amount: quantity.amount * descriptor.factor,
-    unit: quantity.unit,
+    unit: descriptor.baseUnit,
     family: descriptor.family
   };
 }
@@ -116,7 +116,7 @@ export function mergeCompatibleQuantities(current, next) {
   const right = applyQuantityToBaseUnit(next);
   return {
     amount: left.amount + right.amount,
-    unit: current.unit
+    unit: left.unit
   };
 }
 

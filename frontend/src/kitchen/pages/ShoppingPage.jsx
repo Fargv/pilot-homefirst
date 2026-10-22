@@ -188,6 +188,13 @@ function formatTripDate(value) {
   return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function formatMealType(value) {
+  const mealType = String(value || "").trim().toLowerCase();
+  if (mealType === "lunch") return "Comida";
+  if (mealType === "dinner") return "Cena";
+  return mealType ? `Otra comida (${mealType})` : "Otra comida";
+}
+
 function slugColor(slug = "") {
   const normalized = String(slug || "otros");
   const seed = normalized.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -1484,7 +1491,7 @@ export default function ShoppingPage() {
                                           const amountLabel = amount != null && Number.isFinite(Number(amount)) && source.quantity?.unit
                                             ? ` · ${amount} ${source.quantity.unit}` : "";
                                           const roleLabel = source.role === "acompanamiento" ? "Acompañamiento" : source.role === "principal" ? "Principal" : "Extra";
-                                          return <span key={`${source.dishId || source.dishName}-${index}`}>{dayLabel} · {source.mealType || "comida"} · {roleLabel}: {source.dishName || "Plato"}{amountLabel}</span>;
+                                        return <span key={`${source.dishId || source.dishName}-${index}`}>{dayLabel} · {formatMealType(source.mealType)} · {roleLabel}: {source.dishName || "Plato"}{amountLabel}</span>;
                                         }) : <span>Plato asociado (detalle no disponible)</span>}
                                     </div>
                                   </div>
