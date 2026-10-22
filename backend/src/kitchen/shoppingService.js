@@ -173,7 +173,8 @@ export function mergeShoppingIngredientContribution(merged, ingredient, dayDishI
     quantity: null,
     unit: null,
     occurrences: 0,
-    fromDishes: []
+    fromDishes: [],
+    sources: []
   };
 
   current.occurrences += Number(ingredient.occurrences) || 1;
@@ -186,8 +187,10 @@ export function mergeShoppingIngredientContribution(merged, ingredient, dayDishI
   }
   current.fromDishes = Array.from(new Set([
     ...current.fromDishes.map(String),
+    ...(ingredient.sources || []).map((source) => source?.dishId).filter(Boolean).map(String),
     ...dayDishIds.filter(Boolean).map(String)
   ]));
+  current.sources.push(...(ingredient.sources || []));
   merged.set(key, current);
   return merged;
 }
@@ -303,7 +306,13 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
       overrides: day.ingredientOverrides,
       baseExclusions: day.baseIngredientExclusions,
       includeMain: shouldIncludeMainInShopping(day),
-      includeSide: shouldIncludeSideInShopping(day)
+      includeSide: shouldIncludeSideInShopping(day),
+      sourceContext: {
+        date: day?.date || null,
+        mealType: day?.mealType || null,
+        mainDishId: day?.mainDishId || null,
+        sideDishId: day?.sideDishId || null
+      }
     });
     if (process.env.NODE_ENV !== "production") {
       const baseDishIngredients = [
@@ -329,8 +338,7 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
     }
 
     for (const ingredient of ingredients) {
-      const dayDishIds = [day.mainDishId, day.sideDishId].filter(Boolean).map(String);
-      mergeShoppingIngredientContribution(merged, ingredient, dayDishIds);
+      mergeShoppingIngredientContribution(merged, ingredient);
     }
   }
 

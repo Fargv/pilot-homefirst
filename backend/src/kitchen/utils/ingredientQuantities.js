@@ -1,13 +1,13 @@
 import { normalizeIngredientName } from "./normalize.js";
 
 const MASS_UNITS = new Map([
-  ["g", { family: "mass", factor: 1 }],
-  ["kg", { family: "mass", factor: 1000 }]
+  ["g", { family: "mass", factor: 1, baseUnit: "g" }],
+  ["kg", { family: "mass", factor: 1000, baseUnit: "g" }]
 ]);
 
 const VOLUME_UNITS = new Map([
-  ["ml", { family: "volume", factor: 1 }],
-  ["l", { family: "volume", factor: 1000 }]
+  ["ml", { family: "volume", factor: 1, baseUnit: "ml" }],
+  ["l", { family: "volume", factor: 1000, baseUnit: "ml" }]
 ]);
 
 const UNIT_ALIASES = new Map([
@@ -35,7 +35,7 @@ export function normalizeQuantityUnit(unit) {
 function unitDescriptor(unit) {
   const normalized = normalizeQuantityUnit(unit);
   return MASS_UNITS.get(normalized) || VOLUME_UNITS.get(normalized) || (
-    normalized ? { family: `exact:${normalized}`, factor: 1 } : null
+    normalized ? { family: `exact:${normalized}`, factor: 1, baseUnit: normalized } : null
   );
 }
 
@@ -98,7 +98,7 @@ function applyQuantityToBaseUnit(quantity) {
   const descriptor = unitDescriptor(quantity.unit);
   return {
     amount: quantity.amount * descriptor.factor,
-    unit: quantity.unit,
+    unit: descriptor.baseUnit,
     family: descriptor.family
   };
 }
@@ -116,7 +116,7 @@ export function mergeCompatibleQuantities(current, next) {
   const right = applyQuantityToBaseUnit(next);
   return {
     amount: left.amount + right.amount,
-    unit: current.unit
+    unit: left.unit
   };
 }
 
@@ -124,7 +124,7 @@ function contributionKey(identityKey, quantity) {
   return `${identityKey}|${quantity ? quantityBucket(quantity.unit) : "none"}`;
 }
 
-function addContribution(groups, ingredient, quantity) {
+function addContribution(groups, ingredient, quantity, source = null) {
   const identity = identityParts(ingredient);
   if (!identity.canonicalName && !identity.ingredientId) return;
 
@@ -137,12 +137,14 @@ function addContribution(groups, ingredient, quantity) {
       canonicalName: identity.canonicalName,
       quantity: quantity ? { ...quantity } : null,
       unit: quantity?.unit || null,
-      occurrences: 1
+      occurrences: 1,
+      sources: source ? [{ ...source, quantity: quantity ? { ...quantity } : null }] : []
     });
     return;
   }
 
   existing.occurrences += 1;
+  if (source) existing.sources.push({ ...source, quantity: quantity ? { ...quantity } : null });
   if (quantity) {
     existing.quantity = mergeCompatibleQuantities(existing.quantity, quantity);
     existing.unit = existing.quantity?.unit || quantity.unit;
@@ -186,7 +188,8 @@ export function consolidateDayIngredients({
   includeMain = true,
   includeSide = true,
   overrides = [],
-  baseExclusions = []
+  baseExclusions = [],
+  sourceContext = null
 } = {}) {
   const exclusions = new Set(
     (Array.isArray(baseExclusions) ? baseExclusions : [])
@@ -196,27 +199,28 @@ export function consolidateDayIngredients({
   const groups = new Map();
   const baseIdentityKeys = new Set();
 
-  for (const { dish, include } of [
-    { dish: mainDish, include: includeMain },
-    { dish: sideDish, include: includeSide }
+  for (const { dish, include, role, dishId } of [
+    { dish: mainDish, include: includeMain, role: "principal", dishId: sourceContext?.mainDishId },
+    { dish: sideDish, include: includeSide, role: "acompanamiento", dishId: sourceContext?.sideDishId }
   ]) {
     for (const { ingredient, recipe } of sourceIngredients(dish, day, include)) {
       if (shouldExclude(ingredient, exclusions)) continue;
       baseIdentityKeys.add(identityParts(ingredient).key);
       const matches = recipe.filter((item) => recipeMatchesIngredient(item, ingredient));
       if (!matches.length) {
-        addContribution(groups, ingredient, null);
+        addContribution(groups, ingredient, null, { ...sourceContext, role, dishId: dishId ? String(dishId) : null, dishName: dish?.name || "Plato" });
         continue;
       }
       for (const recipeIngredient of matches) {
-        addContribution(groups, ingredient, readScaledIngredientQuantity(recipeIngredient, dish, day));
+        const quantity = readScaledIngredientQuantity(recipeIngredient, dish, day);
+        addContribution(groups, ingredient, quantity, { ...sourceContext, role, dishId: dishId ? String(dishId) : null, dishName: dish?.name || "Plato" });
       }
     }
   }
 
   for (const override of Array.isArray(overrides) ? overrides : []) {
     if (baseIdentityKeys.has(identityParts(override).key)) continue;
-    addContribution(groups, override, null);
+    addContribution(groups, override, null, { ...sourceContext, role: "extra", dishId: null, dishName: "Ingredientes añadidos" });
   }
 
   return Array.from(groups.values());

@@ -5,6 +5,7 @@ import {
   mergeRebuiltShoppingItems,
   mergeShoppingIngredientContribution
 } from "./shoppingService.js";
+import { consolidateDayIngredients } from "./utils/ingredientQuantities.js";
 
 function id() {
   return new mongoose.Types.ObjectId();
@@ -90,6 +91,27 @@ test("rebuild conserva categoría, estado comprado y metadatos en coincidencia e
   assert.equal(result[0].status, "purchased");
   assert.equal(result[0].purchasedBy.toString(), previous.purchasedBy.toString());
   assert.equal(result[0].purchaseSessionId.toString(), previous.purchaseSessionId.toString());
+});
+
+test("rebuild conserva purchased al normalizar kg a g", () => {
+  const ingredientId = id();
+  const previous = {
+    ...builtItem({ ingredientId, quantity: 1, unit: "kg" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T10:00:00.000Z")
+  };
+  const rebuilt = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 1500, unit: "g" });
+
+  const result = mergeRebuiltShoppingItems([rebuilt], [previous]);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].unit, "g");
+  assert.equal(result[0].status, "purchased");
+  assert.equal(result[0].itemId.toString(), previous.itemId.toString());
+  assert.equal(result[0].purchasedBy.toString(), previous.purchasedBy.toString());
 });
 
 test("no transfiere purchased entre unidades incompatibles", () => {
@@ -236,4 +258,52 @@ test("regeneraciones repetidas son idempotentes para itemId y purchased", () => 
   assert.equal(second[0].purchasedBy.toString(), previousPlan.purchasedBy.toString());
   assert.equal(second[1].itemId.toString(), manual.itemId.toString());
   assert.equal(second[1].status, "pending");
+});
+
+test("sources conserva cada día, rol y cantidad de principales y acompañamientos repetidos", () => {
+  const ingredientId = id();
+  const dish = (name, amount) => ({
+    _id: id(), name,
+    ingredients: [{ ingredientId, name: "Tomate", canonicalName: "tomate" }],
+    recipe: { ingredients: [{ ingredientId, name: "Tomate", quantity: { amount, unit: "g" } }] }
+  });
+  const main1 = dish("Guiso", 100);
+  const side1 = dish("Ensalada", 50);
+  const day1 = consolidateDayIngredients({
+    mainDish: main1, sideDish: side1, day: { servings: 1 },
+    sourceContext: { date: "2026-10-26", mealType: "lunch", mainDishId: main1._id, sideDishId: side1._id }
+  });
+  const main2 = dish("Guiso", 100);
+  const day2 = consolidateDayIngredients({
+    mainDish: main2, day: { servings: 1 }, includeSide: false,
+    sourceContext: { date: "2026-10-28", mealType: "dinner", mainDishId: main2._id }
+  });
+  const merged = new Map();
+  for (const ingredient of [...day1, ...day2]) mergeShoppingIngredientContribution(merged, ingredient);
+  const item = mergeRebuiltShoppingItems(Array.from(merged.values()), [])[0];
+
+  assert.equal(item.quantity, 250);
+  assert.equal(item.unit, "g");
+  assert.equal(item.sources.length, 3);
+  assert.deepEqual(item.sources.map((source) => source.role), ["principal", "acompanamiento", "principal"]);
+  assert.deepEqual(item.sources.map((source) => source.quantity.amount), [100, 50, 100]);
+  assert.deepEqual(item.sources.map((source) => source.date), ["2026-10-26", "2026-10-26", "2026-10-28"]);
+  assert.equal(item.fromDishes.length, 3);
+});
+
+test("unidades incompatibles generan fuentes separadas sin sumar cantidades", () => {
+  const ingredientId = id();
+  const merged = new Map();
+  for (const [amount, unit, date, dishId] of [[100, "g", "2026-10-26", id()], [1, "unidad", "2026-10-27", id()]]) {
+    mergeShoppingIngredientContribution(merged, {
+      ...builtItem({ ingredientId, quantity: null, unit: null }),
+      quantity: amount,
+      unit,
+      sources: [{ date, mealType: "lunch", role: "principal", dishId: String(dishId), dishName: "Plato", quantity: { amount, unit } }]
+    });
+  }
+  const result = mergeRebuiltShoppingItems(Array.from(merged.values()), []);
+  assert.equal(result.length, 2);
+  assert.deepEqual(result.map((item) => item.unit).sort(), ["g", "unidad"]);
+  assert.deepEqual(result.map((item) => item.sources[0].quantity.amount), [100, 1]);
 });

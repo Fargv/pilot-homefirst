@@ -11,6 +11,14 @@ const ShoppingItemSchema = new mongoose.Schema(
     unit: { type: String, default: null },
     occurrences: { type: Number, default: 1 },
     fromDishes: { type: [mongoose.Schema.Types.ObjectId], ref: "KitchenDish", default: [] },
+    sources: { type: [{
+      date: { type: Date, default: null },
+      mealType: { type: String, default: null },
+      role: { type: String, enum: ["principal", "acompanamiento", "extra"], default: null },
+      dishId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenDish", default: null },
+      dishName: { type: String, default: null },
+      quantity: { amount: { type: Number, default: null }, unit: { type: String, default: null } }
+    }], default: [] },
     source: { type: String, enum: ["plan", "manual"], default: null },
     status: { type: String, enum: ["pending", "purchased"], default: "pending" },
     purchasedBy: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenUser", default: null },
