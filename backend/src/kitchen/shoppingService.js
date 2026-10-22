@@ -4,8 +4,12 @@ import { KitchenDish } from "./models/KitchenDish.js";
 import { KitchenIngredient } from "./models/KitchenIngredient.js";
 import { Category } from "./models/Category.js";
 import { buildScopedFilter } from "./householdScope.js";
-import { combineDayIngredients } from "./utils/ingredients.js";
 import { normalizeIngredientName } from "./utils/normalize.js";
+import {
+  consolidateDayIngredients,
+  getQuantityConsolidationKey,
+  mergeCompatibleQuantities
+} from "./utils/ingredientQuantities.js";
 import { CATALOG_SCOPES } from "./utils/catalogScopes.js";
 import { ensureDefaultCategory } from "./utils/categoryMatching.js";
 import { resolveDishCatalogForHousehold } from "./utils/dishCatalog.js";
@@ -107,6 +111,85 @@ function filterValidShoppingItems(items = [], context = "unknown") {
   });
 
   return { valid, filteredCount };
+}
+
+function isManualShoppingItem(item) {
+  if (item?.source === "manual") return true;
+  if (item?.source === "plan") return false;
+  return !Array.isArray(item?.fromDishes) || item.fromDishes.length === 0;
+}
+
+function isPlanShoppingItem(item) {
+  return !isManualShoppingItem(item);
+}
+
+export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallbackCategoryId = null) {
+  const previousPlanMap = new Map(
+    previousItems
+      .filter((item) => isPlanShoppingItem(item))
+      .map((item) => [getQuantityConsolidationKey(item), item])
+  );
+  const rebuiltItems = builtItems.map((item, index) => {
+    const shoppingItem = {
+      ...item,
+      quantity: item.quantity?.amount ?? item.quantity ?? null,
+      unit: item.quantity?.unit || item.unit || null,
+      source: "plan"
+    };
+    const normalizedItem = ensureValidShoppingItemShape(shoppingItem, index, fallbackCategoryId);
+    const key = getQuantityConsolidationKey(normalizedItem);
+    const previous = previousPlanMap.get(key);
+    const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
+    return {
+      ...normalizedItem,
+      itemId: previous?.itemId || normalizedItem.itemId,
+      categoryId: normalizedItem.categoryId || fallbackCategoryId || null,
+      fromDishes: normalizedItem.fromDishes,
+      status: nextStatus,
+      purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
+      purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
+      storeId: nextStatus === "purchased" ? previous?.storeId || null : null,
+      purchaseSessionId: nextStatus === "purchased" ? previous?.purchaseSessionId || null : null
+    };
+  });
+
+  const preservedManualItems = previousItems
+    .filter((item) => isManualShoppingItem(item))
+    .map((item, index) => ensureValidShoppingItemShape(item, rebuiltItems.length + index, fallbackCategoryId));
+
+  return [...rebuiltItems, ...preservedManualItems];
+}
+
+export function mergeShoppingIngredientContribution(merged, ingredient, dayDishIds = []) {
+  const normalizedCanonical = normalizeIngredientName(ingredient.canonicalName || ingredient.displayName);
+  const key = getQuantityConsolidationKey(ingredient);
+  if (!key) return merged;
+
+  const current = merged.get(key) || {
+    ingredientId: ingredient.ingredientId || null,
+    categoryId: null,
+    displayName: ingredient.displayName,
+    canonicalName: normalizedCanonical,
+    quantity: null,
+    unit: null,
+    occurrences: 0,
+    fromDishes: []
+  };
+
+  current.occurrences += Number(ingredient.occurrences) || 1;
+  if (ingredient.quantity && ingredient.unit) {
+    const nextQuantity = { amount: ingredient.quantity.amount, unit: ingredient.unit };
+    current.quantity = current.quantity
+      ? mergeCompatibleQuantities(current.quantity, nextQuantity)
+      : nextQuantity;
+    current.unit = current.quantity?.unit || ingredient.unit;
+  }
+  current.fromDishes = Array.from(new Set([
+    ...current.fromDishes.map(String),
+    ...dayDishIds.filter(Boolean).map(String)
+  ]));
+  merged.set(key, current);
+  return merged;
 }
 
 export async function resolveShoppingItemIngredientData(items, effectiveHouseholdId, options = {}) {
@@ -213,9 +296,10 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
     }
     const main = day.mainDishId ? dishMap.get(day.mainDishId.toString()) : null;
     const side = day.sideDishId ? dishMap.get(day.sideDishId.toString()) : null;
-    const ingredients = combineDayIngredients({
+    const ingredients = consolidateDayIngredients({
       mainDish: main,
       sideDish: side,
+      day,
       overrides: day.ingredientOverrides,
       baseExclusions: day.baseIngredientExclusions,
       includeMain: shouldIncludeMainInShopping(day),
@@ -245,24 +329,8 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
     }
 
     for (const ingredient of ingredients) {
-      const normalizedCanonical = normalizeIngredientName(ingredient.canonicalName || ingredient.displayName);
-      const key = ingredient.ingredientId ? String(ingredient.ingredientId) : normalizedCanonical;
-      if (!key) continue;
-      const current = merged.get(key) || {
-        ingredientId: ingredient.ingredientId || null,
-        categoryId: null,
-        displayName: ingredient.displayName,
-        canonicalName: normalizedCanonical,
-        quantity: null,
-        unit: null,
-        occurrences: 0,
-        fromDishes: []
-      };
-
-      current.occurrences += 1;
       const dayDishIds = [day.mainDishId, day.sideDishId].filter(Boolean).map(String);
-      current.fromDishes = Array.from(new Set([...current.fromDishes.map(String), ...dayDishIds]));
-      merged.set(key, current);
+      mergeShoppingIngredientContribution(merged, ingredient, dayDishIds);
     }
   }
 
@@ -278,22 +346,11 @@ export async function rebuildShoppingList(weekStartDate, effectiveHouseholdId) {
     fallbackCategoryId: fallbackCategory?._id || null
   });
 
-  const previousMap = new Map(list.items.map((item) => [item.ingredientId ? String(item.ingredientId) : item.canonicalName, item]));
-  const rebuiltItems = resolvedBuiltItems.resolvedItems.map((item, index) => {
-    const normalizedItem = ensureValidShoppingItemShape(item, index, fallbackCategory?._id || null);
-    const previous = previousMap.get(item.ingredientId ? String(item.ingredientId) : item.canonicalName);
-    const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
-    return {
-      ...normalizedItem,
-      categoryId: normalizedItem.categoryId || fallbackCategory?._id || null,
-      fromDishes: normalizedItem.fromDishes,
-      status: nextStatus,
-      purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
-      purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
-      storeId: nextStatus === "purchased" ? previous?.storeId || null : null,
-      purchaseSessionId: nextStatus === "purchased" ? previous?.purchaseSessionId || null : null
-    };
-  });
+  const rebuiltItems = mergeRebuiltShoppingItems(
+    resolvedBuiltItems.resolvedItems,
+    list.items,
+    fallbackCategory?._id || null
+  );
 
   const { valid } = filterValidShoppingItems(rebuiltItems, "rebuildShoppingList");
   const updatedList = await KitchenShoppingList.findOneAndUpdate(

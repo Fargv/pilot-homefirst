@@ -1,0 +1,239 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import mongoose from "mongoose";
+import {
+  mergeRebuiltShoppingItems,
+  mergeShoppingIngredientContribution
+} from "./shoppingService.js";
+
+function id() {
+  return new mongoose.Types.ObjectId();
+}
+
+function builtItem(overrides = {}) {
+  return {
+    ingredientId: overrides.ingredientId || id(),
+    displayName: overrides.displayName || "Tomate",
+    canonicalName: overrides.canonicalName || "tomate",
+    categoryId: overrides.categoryId || id(),
+    quantity: overrides.quantity ?? null,
+    unit: overrides.unit ?? null,
+    occurrences: overrides.occurrences ?? 1,
+    fromDishes: overrides.fromDishes ?? [id()]
+  };
+}
+
+test("rebuild conserva manuales y todos sus metadatos", () => {
+  const ingredientId = id();
+  const manual = {
+    itemId: id(),
+    ingredientId,
+    displayName: "Leche vegetal",
+    canonicalName: "leche vegetal",
+    quantity: null,
+    unit: null,
+    occurrences: 3,
+    source: "manual",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T09:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id(),
+    fromDishes: []
+  };
+
+  const result = mergeRebuiltShoppingItems([builtItem()], [manual]);
+  assert.equal(result.length, 2);
+  assert.equal(result[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(result[1].occurrences, manual.occurrences);
+  assert.equal(result[1].source, "manual");
+  assert.equal(result[1].status, "purchased");
+  assert.equal(result[1].purchasedBy.toString(), manual.purchasedBy.toString());
+  assert.equal(result[1].purchaseSessionId.toString(), manual.purchaseSessionId.toString());
+});
+
+test("rebuild conserva manuales legacy sin source cuando no tienen platos", () => {
+  const manual = {
+    itemId: id(),
+    ingredientId: id(),
+    displayName: "Papel de horno",
+    canonicalName: "papel de horno",
+    quantity: null,
+    unit: null,
+    occurrences: 1,
+    status: "pending",
+    fromDishes: []
+  };
+
+  const result = mergeRebuiltShoppingItems([], [manual]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].displayName, "Papel de horno");
+});
+
+test("rebuild conserva categoría, estado comprado y metadatos en coincidencia exacta", () => {
+  const ingredientId = id();
+  const previous = {
+    ...builtItem({ ingredientId, quantity: 100, unit: "g" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T10:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const rebuilt = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 250, unit: "g" });
+  const result = mergeRebuiltShoppingItems([rebuilt], [previous]);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].categoryId.toString(), rebuilt.categoryId.toString());
+  assert.equal(result[0].status, "purchased");
+  assert.equal(result[0].purchasedBy.toString(), previous.purchasedBy.toString());
+  assert.equal(result[0].purchaseSessionId.toString(), previous.purchaseSessionId.toString());
+});
+
+test("no transfiere purchased entre unidades incompatibles", () => {
+  const ingredientId = id();
+  const previous = {
+    ...builtItem({ ingredientId, quantity: 500, unit: "g" }),
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date(),
+    fromDishes: [id()],
+    source: "plan"
+  };
+  const rebuilt = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 2, unit: "unidad" });
+  const result = mergeRebuiltShoppingItems([rebuilt], [previous]);
+
+  assert.equal(result[0].status, "pending");
+  assert.equal(result[0].purchasedBy, null);
+  assert.equal(result[0].purchasedAt, null);
+});
+
+test("legacy recipe sin cantidad conserva presencia al regenerar", () => {
+  const result = mergeRebuiltShoppingItems([builtItem({ quantity: null, unit: null })], []);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].quantity, null);
+  assert.equal(result[0].unit, null);
+  assert.equal(result[0].source, "plan");
+});
+
+test("varios días agregan cantidades, occurrences y fromDishes", () => {
+  const ingredientId = id();
+  const firstDishId = id();
+  const secondDishId = id();
+  const merged = new Map();
+  mergeShoppingIngredientContribution(merged, {
+    ...builtItem({ ingredientId, quantity: null, unit: "g" }),
+    quantity: { amount: 100, unit: "g" }
+  }, [firstDishId.toString()]);
+  mergeShoppingIngredientContribution(
+    merged,
+    {
+      ...builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: null, unit: "g" }),
+      quantity: { amount: 150, unit: "g" }
+    },
+    [secondDishId.toString()]
+  );
+  const result = mergeRebuiltShoppingItems(Array.from(merged.values()), []);
+
+  assert.equal(result.length, 1);
+  assert.equal(result[0].quantity, 250);
+  assert.equal(result[0].occurrences, 2);
+  assert.deepEqual(result[0].fromDishes.sort(), [firstDishId.toString(), secondDishId.toString()].sort());
+});
+
+test("manual comprado y plan pendiente con la misma identidad sobreviven separados", () => {
+  const ingredientId = id();
+  const manual = {
+    ...builtItem({ ingredientId, quantity: 1, unit: "unidad" }),
+    itemId: id(),
+    fromDishes: [],
+    source: "manual",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T11:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const plan = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 2, unit: "unidad" });
+
+  const result = mergeRebuiltShoppingItems([plan], [manual]);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].source, "plan");
+  assert.equal(result[0].status, "pending");
+  assert.equal(result[0].purchasedBy, null);
+  assert.equal(result[1].source, "manual");
+  assert.equal(result[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(result[1].status, "purchased");
+  assert.equal(result[1].purchasedBy.toString(), manual.purchasedBy.toString());
+  assert.equal(result[1].purchaseSessionId.toString(), manual.purchaseSessionId.toString());
+});
+
+test("plan comprado y manual pendiente con la misma identidad no cruzan estado", () => {
+  const ingredientId = id();
+  const planPrevious = {
+    ...builtItem({ ingredientId, quantity: 2, unit: "unidad" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T12:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const manual = {
+    ...builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 2, unit: "unidad" }),
+    itemId: id(),
+    source: "manual",
+    fromDishes: [],
+    status: "pending",
+    purchasedBy: null,
+    purchasedAt: null,
+    storeId: null,
+    purchaseSessionId: null
+  };
+
+  const result = mergeRebuiltShoppingItems([builtItem({ ingredientId, quantity: 2, unit: "unidad" })], [planPrevious, manual]);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].source, "plan");
+  assert.equal(result[0].itemId.toString(), planPrevious.itemId.toString());
+  assert.equal(result[0].status, "purchased");
+  assert.equal(result[0].purchasedBy.toString(), planPrevious.purchasedBy.toString());
+  assert.equal(result[1].source, "manual");
+  assert.equal(result[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(result[1].status, "pending");
+  assert.equal(result[1].purchasedBy, null);
+});
+
+test("regeneraciones repetidas son idempotentes para itemId y purchased", () => {
+  const ingredientId = id();
+  const previousPlan = {
+    ...builtItem({ ingredientId, quantity: 250, unit: "g" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T13:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const manual = {
+    ...builtItem({ ingredientId, quantity: 250, unit: "g" }),
+    itemId: id(),
+    source: "manual",
+    fromDishes: [],
+    status: "pending"
+  };
+  const built = [builtItem({ ingredientId, quantity: 500, unit: "g" })];
+
+  const first = mergeRebuiltShoppingItems(built, [previousPlan, manual]);
+  const second = mergeRebuiltShoppingItems(built, first);
+  assert.equal(second.length, 2);
+  assert.equal(second[0].itemId.toString(), previousPlan.itemId.toString());
+  assert.equal(second[0].status, "purchased");
+  assert.equal(second[0].purchasedBy.toString(), previousPlan.purchasedBy.toString());
+  assert.equal(second[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(second[1].status, "pending");
+});

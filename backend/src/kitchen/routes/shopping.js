@@ -472,6 +472,7 @@ async function addShoppingItem(req, res) {
         displayName: ingredient.name,
         canonicalName: normalizedCanonicalName,
         occurrences: Number.isFinite(Number(occurrences)) && Number(occurrences) > 0 ? Number(occurrences) : 1,
+        source: "manual",
         status: "pending",
         storeId: await validateStoreSelection(storeId, effectiveHouseholdId),
         fromDishes: []

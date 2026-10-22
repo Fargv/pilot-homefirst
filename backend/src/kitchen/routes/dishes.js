@@ -7,9 +7,7 @@ import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscriptionServi
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { normalizeIngredientList, normalizeIngredientName } from "../utils/normalize.js";
-import { combineDayIngredients } from "../utils/ingredients.js";
 import { KitchenWeekPlan } from "../models/KitchenWeekPlan.js";
-import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
 import { getWeekStart } from "../utils/dates.js";
 import { requireAuth } from "../middleware.js";
 import { getEffectiveHouseholdId, getOptionalHouseholdId, handleHouseholdError } from "../householdScope.js";
@@ -20,6 +18,7 @@ import {
   isDiodUser
 } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
+import { rebuildShoppingList } from "../shoppingService.js";
 
 const router = express.Router();
 
@@ -109,18 +108,6 @@ async function resolveDishCategoryId(rawValue) {
   return category._id;
 }
 
-function shouldIncludeMainInShopping(day) {
-  if (day?.isLeftovers) return false;
-  if (typeof day?.includeMainIngredients === "boolean") return day.includeMainIngredients;
-  return day?.mealType === "dinner" ? false : true;
-}
-
-function shouldIncludeSideInShopping(day) {
-  if (day?.isLeftovers) return false;
-  if (typeof day?.includeSideIngredients === "boolean") return day.includeSideIngredients;
-  return day?.mealType === "dinner" ? false : true;
-}
-
 async function rebuildFutureShoppingListsSafe({ householdId, dishId, context }) {
   try {
     await rebuildFutureShoppingLists({ householdId, dishId });
@@ -134,51 +121,6 @@ async function rebuildFutureShoppingListsSafe({ householdId, dishId, context }) 
     });
     return "El plato se guardo, pero no se pudo actualizar la lista de compra.";
   }
-}
-
-async function rebuildShoppingListForPlan(plan, householdId) {
-  const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-  const dishes = await resolveDishCatalogForHousehold({
-    Model: KitchenDish,
-    householdId,
-    ids: dishIds
-  });
-  const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
-
-  const merged = new Map();
-  plan.days.forEach((day) => {
-    if (day?.isLeftovers) return;
-    const ingredients = combineDayIngredients({
-      mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
-      sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
-      overrides: day.ingredientOverrides,
-      baseExclusions: day.baseIngredientExclusions,
-      includeMain: shouldIncludeMainInShopping(day),
-      includeSide: shouldIncludeSideInShopping(day)
-    });
-
-    ingredients.forEach((item) => {
-      if (!item.canonicalName || merged.has(item.canonicalName)) return;
-      merged.set(item.canonicalName, {
-        displayName: item.displayName,
-        canonicalName: item.canonicalName,
-        status: "need"
-      });
-    });
-  });
-
-  const list = await KitchenShoppingList.findOneAndUpdate(
-    { householdId, weekStart: plan.weekStart },
-    { $setOnInsert: { householdId, weekStart: plan.weekStart, items: [] } },
-    { new: true, upsert: true }
-  );
-
-  const previousByCanonical = new Map((list.items || []).map((item) => [item.canonicalName, item.status]));
-  list.items = Array.from(merged.values()).map((item) => ({
-    ...item,
-    status: previousByCanonical.get(item.canonicalName) || "need"
-  }));
-  await list.save();
 }
 
 async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
@@ -218,7 +160,7 @@ async function unassignDishFromCurrentAndFutureWeeks({ householdId, dishId }) {
     }
     if (planChanged) {
       await plan.save();
-      await rebuildShoppingListForPlan(plan, householdId);
+      await rebuildShoppingList(plan.weekStart, householdId);
       affectedWeeks += 1;
     }
   }
@@ -261,7 +203,7 @@ async function repointDishInPlans({ householdId, fromDishId, toDishId }) {
     }
     if (planChanged) {
       await plan.save();
-      await rebuildShoppingListForPlan(plan, householdId);
+      await rebuildShoppingList(plan.weekStart, householdId);
       affectedWeeks += 1;
     }
   }
@@ -280,48 +222,7 @@ async function rebuildFutureShoppingLists({ householdId, dishId }) {
   });
 
   for (const plan of plans) {
-    const dishIds = plan.days.flatMap((day) => [day.mainDishId, day.sideDishId]).filter(Boolean);
-    const dishes = await resolveDishCatalogForHousehold({
-      Model: KitchenDish,
-      householdId,
-      ids: dishIds
-    });
-    const dishMap = new Map(dishes.map((entry) => [String(entry._id), entry]));
-
-    const merged = new Map();
-    plan.days.forEach((day) => {
-      if (day?.isLeftovers) return;
-      const ingredients = combineDayIngredients({
-        mainDish: day.mainDishId ? dishMap.get(String(day.mainDishId)) : null,
-        sideDish: day.sideDishId ? dishMap.get(String(day.sideDishId)) : null,
-        overrides: day.ingredientOverrides,
-        baseExclusions: day.baseIngredientExclusions,
-        includeMain: shouldIncludeMainInShopping(day),
-        includeSide: shouldIncludeSideInShopping(day)
-      });
-
-      ingredients.forEach((item) => {
-        if (!item.canonicalName || merged.has(item.canonicalName)) return;
-        merged.set(item.canonicalName, {
-          displayName: item.displayName,
-          canonicalName: item.canonicalName,
-          status: "need"
-        });
-      });
-    });
-
-    const list = await KitchenShoppingList.findOneAndUpdate(
-      { householdId, weekStart: plan.weekStart },
-      { $setOnInsert: { householdId, weekStart: plan.weekStart, items: [] } },
-      { new: true, upsert: true }
-    );
-
-    const previousByCanonical = new Map((list.items || []).map((item) => [item.canonicalName, item.status]));
-    list.items = Array.from(merged.values()).map((item) => ({
-      ...item,
-      status: previousByCanonical.get(item.canonicalName) || "need"
-    }));
-    await list.save();
+    await rebuildShoppingList(plan.weekStart, householdId);
   }
 }
 
