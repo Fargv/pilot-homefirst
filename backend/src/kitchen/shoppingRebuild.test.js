@@ -143,3 +143,97 @@ test("varios días agregan cantidades, occurrences y fromDishes", () => {
   assert.equal(result[0].occurrences, 2);
   assert.deepEqual(result[0].fromDishes.sort(), [firstDishId.toString(), secondDishId.toString()].sort());
 });
+
+test("manual comprado y plan pendiente con la misma identidad sobreviven separados", () => {
+  const ingredientId = id();
+  const manual = {
+    ...builtItem({ ingredientId, quantity: 1, unit: "unidad" }),
+    itemId: id(),
+    fromDishes: [],
+    source: "manual",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T11:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const plan = builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 2, unit: "unidad" });
+
+  const result = mergeRebuiltShoppingItems([plan], [manual]);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].source, "plan");
+  assert.equal(result[0].status, "pending");
+  assert.equal(result[0].purchasedBy, null);
+  assert.equal(result[1].source, "manual");
+  assert.equal(result[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(result[1].status, "purchased");
+  assert.equal(result[1].purchasedBy.toString(), manual.purchasedBy.toString());
+  assert.equal(result[1].purchaseSessionId.toString(), manual.purchaseSessionId.toString());
+});
+
+test("plan comprado y manual pendiente con la misma identidad no cruzan estado", () => {
+  const ingredientId = id();
+  const planPrevious = {
+    ...builtItem({ ingredientId, quantity: 2, unit: "unidad" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T12:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const manual = {
+    ...builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: 2, unit: "unidad" }),
+    itemId: id(),
+    source: "manual",
+    fromDishes: [],
+    status: "pending",
+    purchasedBy: null,
+    purchasedAt: null,
+    storeId: null,
+    purchaseSessionId: null
+  };
+
+  const result = mergeRebuiltShoppingItems([builtItem({ ingredientId, quantity: 2, unit: "unidad" })], [planPrevious, manual]);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].source, "plan");
+  assert.equal(result[0].itemId.toString(), planPrevious.itemId.toString());
+  assert.equal(result[0].status, "purchased");
+  assert.equal(result[0].purchasedBy.toString(), planPrevious.purchasedBy.toString());
+  assert.equal(result[1].source, "manual");
+  assert.equal(result[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(result[1].status, "pending");
+  assert.equal(result[1].purchasedBy, null);
+});
+
+test("regeneraciones repetidas son idempotentes para itemId y purchased", () => {
+  const ingredientId = id();
+  const previousPlan = {
+    ...builtItem({ ingredientId, quantity: 250, unit: "g" }),
+    itemId: id(),
+    source: "plan",
+    status: "purchased",
+    purchasedBy: id(),
+    purchasedAt: new Date("2026-10-23T13:00:00.000Z"),
+    storeId: id(),
+    purchaseSessionId: id()
+  };
+  const manual = {
+    ...builtItem({ ingredientId, quantity: 250, unit: "g" }),
+    itemId: id(),
+    source: "manual",
+    fromDishes: [],
+    status: "pending"
+  };
+  const built = [builtItem({ ingredientId, quantity: 500, unit: "g" })];
+
+  const first = mergeRebuiltShoppingItems(built, [previousPlan, manual]);
+  const second = mergeRebuiltShoppingItems(built, first);
+  assert.equal(second.length, 2);
+  assert.equal(second[0].itemId.toString(), previousPlan.itemId.toString());
+  assert.equal(second[0].status, "purchased");
+  assert.equal(second[0].purchasedBy.toString(), previousPlan.purchasedBy.toString());
+  assert.equal(second[1].itemId.toString(), manual.itemId.toString());
+  assert.equal(second[1].status, "pending");
+});

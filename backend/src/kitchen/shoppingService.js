@@ -119,9 +119,16 @@ function isManualShoppingItem(item) {
   return !Array.isArray(item?.fromDishes) || item.fromDishes.length === 0;
 }
 
+function isPlanShoppingItem(item) {
+  return !isManualShoppingItem(item);
+}
+
 export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallbackCategoryId = null) {
-  const previousMap = new Map(previousItems.map((item) => [getQuantityConsolidationKey(item), item]));
-  const matchedPreviousKeys = new Set();
+  const previousPlanMap = new Map(
+    previousItems
+      .filter((item) => isPlanShoppingItem(item))
+      .map((item) => [getQuantityConsolidationKey(item), item])
+  );
   const rebuiltItems = builtItems.map((item, index) => {
     const shoppingItem = {
       ...item,
@@ -131,11 +138,11 @@ export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallba
     };
     const normalizedItem = ensureValidShoppingItemShape(shoppingItem, index, fallbackCategoryId);
     const key = getQuantityConsolidationKey(normalizedItem);
-    const previous = previousMap.get(key);
-    if (previous) matchedPreviousKeys.add(key);
+    const previous = previousPlanMap.get(key);
     const nextStatus = previous?.status === "purchased" ? "purchased" : "pending";
     return {
       ...normalizedItem,
+      itemId: previous?.itemId || normalizedItem.itemId,
       categoryId: normalizedItem.categoryId || fallbackCategoryId || null,
       fromDishes: normalizedItem.fromDishes,
       status: nextStatus,
@@ -148,7 +155,6 @@ export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallba
 
   const preservedManualItems = previousItems
     .filter((item) => isManualShoppingItem(item))
-    .filter((item) => !matchedPreviousKeys.has(getQuantityConsolidationKey(item)))
     .map((item, index) => ensureValidShoppingItemShape(item, rebuiltItems.length + index, fallbackCategoryId));
 
   return [...rebuiltItems, ...preservedManualItems];
