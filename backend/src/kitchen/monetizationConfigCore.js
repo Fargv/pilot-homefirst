@@ -26,6 +26,8 @@ export function createSubscriptionsConfigReader({ read, cacheTtlMs = 30_000, log
       pendingRead = readValue().then((value) => {
         // A write can invalidate this process while a read is in flight. Do
         // not let the older read repopulate the cache after that invalidation.
+        // The already-started caller still receives its old snapshot; callers
+        // needing the latest value must issue a new read after invalidation.
         if (readGeneration === generation) {
           cachedValue = value;
           cacheExpiresAt = Date.now() + cacheTtlMs;

@@ -32,6 +32,32 @@ test("coalesces concurrent reads, caches, and supports invalidation", async () =
   assert.equal(reads, 2);
 });
 
+test("an in-flight read resolved after invalidation cannot repopulate the cache", async () => {
+  let reads = 0;
+  let resolveOldRead;
+  const reader = createSubscriptionsConfigReader({
+    read: () => {
+      reads += 1;
+      if (reads === 1) {
+        return new Promise((resolve) => { resolveOldRead = resolve; });
+      }
+      return Promise.resolve({ subscriptionsEnabled: true });
+    }
+  });
+
+  const oldRequest = reader.getSubscriptionsEnabled();
+  reader.reset();
+  const freshRequest = reader.getSubscriptionsEnabled();
+  assert.equal(await freshRequest, true);
+
+  // A request that was already waiting can still receive its old snapshot;
+  // it must not overwrite the newer process-local cache when it completes.
+  resolveOldRead({ subscriptionsEnabled: false });
+  assert.equal(await oldRequest, false);
+  assert.equal(await reader.getSubscriptionsEnabled(), true);
+  assert.equal(reads, 2);
+});
+
 test("ON preserves Basic and OFF grants only the explicit functional allowlist", async () => {
   const current = { budget: false, fullWeekRandomization: false, singleDayRandomization: true, dietRandomization: false, dinners: false, basics: false, futureField: false };
   const on = resolveFunctionalCapabilities(current, true);

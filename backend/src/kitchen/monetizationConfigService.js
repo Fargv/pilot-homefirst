@@ -52,7 +52,9 @@ export function createMonetizationConfigStore({
 
       // This invalidates the current process. Other Render instances may
       // still serve their short-lived cached value until their TTL expires;
-      // callers must not assume cross-process invalidation is immediate.
+      // callers must not assume cross-process invalidation is immediate. A
+      // read that was already awaiting the old snapshot may also complete
+      // with that old value, but it cannot repopulate this cache.
       resetCache();
       return serializeMonetizationConfig(document);
     }

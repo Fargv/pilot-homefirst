@@ -4798,6 +4798,9 @@ function MonetizationSection() {
         Controla las capacidades funcionales de suscripción para nuevos usos del producto. El valor predeterminado es ON.
         Este interruptor es independiente de <code>PAYMENTS_ENABLED</code>: Bites, pagos, Stripe y compras de catálogo siguen operativos.
       </p>
+      <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", borderRadius: 8, padding: "10px 12px", fontSize: 12, marginBottom: 16, maxWidth: 760 }}>
+        Alcance MON-001D: poner OFF solo cambia capacidades backend. Todavía no oculta upgrades ni precios ni cambia onboarding o retos semanales; el lanzamiento gratuito completo queda para MON-001E/F. No lo actives como sustituto de esos cambios.
+      </div>
 
       <Card style={{ maxWidth: 760, border: `1px solid ${enabled ? "#86efac" : "#fca5a5"}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
