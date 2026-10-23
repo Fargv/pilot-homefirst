@@ -198,12 +198,12 @@ function formatShoppingSourceDay(source) {
   return SHOPPING_DAY_INITIALS[(date.getUTCDay() + 6) % 7];
 }
 
-function getShoppingRecipeReferences(sources) {
+function getCompactShoppingRecipeReferences(references) {
   const recipes = new Map();
-  for (const source of sources || []) {
-    const key = source?.dishId || source?.dishName || "recipe";
-    const recipe = recipes.get(key) || { name: source?.dishName || "Plato", days: new Set() };
-    recipe.days.add(formatShoppingSourceDay(source));
+  for (const reference of references || []) {
+    const key = reference?.key?.split("|")[0] || reference?.dishName || "recipe";
+    const recipe = recipes.get(key) || { name: reference?.dishName || "Plato", days: new Set() };
+    recipe.days.add(formatShoppingSourceDay({ day: reference?.date }));
     recipes.set(key, recipe);
   }
   return [...recipes.values()].map((recipe) => ({
@@ -1503,8 +1503,7 @@ export default function ShoppingPage() {
                           <div className="shopping-items-flat-list">
                             {group.items.map((item) => {
                               const key = itemKey(item);
-                              const sources = Array.isArray(item.sources) ? item.sources : [];
-                              const recipeReferences = getShoppingRecipeReferences(sources);
+                              const recipeReferences = getCompactShoppingRecipeReferences(getShoppingRecipeReferences(item));
                               const hasMultipleRecipes = recipeReferences.length > 1;
                               return (
                                 <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>

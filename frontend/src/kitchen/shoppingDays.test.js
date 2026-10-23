@@ -191,7 +191,7 @@ test("referencias de compra usan abreviaturas españolas sin romper la fila prin
   const styles = readFileSync(new URL("./kitchen.css", import.meta.url), "utf8");
   assert.match(component, /SHOPPING_DAY_INITIALS\s*=\s*\[\"L\",\s*\"M\",\s*\"X\",\s*\"J\",\s*\"V\",\s*\"S\",\s*\"D\"\]/);
   assert.match(component, /formatShoppingSourceDay\(source\)/);
-  assert.match(component, /getShoppingRecipeReferences\(sources\)/);
+  assert.match(component, /getCompactShoppingRecipeReferences\(getShoppingRecipeReferences\(item\)\)/);
   assert.match(component, /\{recipeReferences\.length\} recetas/);
   assert.match(component, /label: `\$\{recipe\.name\} ·/);
   assert.doesNotMatch(component, /roleLabel.*amountLabel/);
