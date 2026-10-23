@@ -26,6 +26,10 @@ import { BitesTransaction } from "../models/BitesTransaction.js";
 import { HiddenMaster } from "../models/HiddenMaster.js";
 import { PurchaseSession } from "../models/PurchaseSession.js";
 import {
+  getMonetizationConfig,
+  updateSubscriptionsEnabled
+} from "../monetizationConfigService.js";
+import {
   applyAdminSubscriptionActivation,
   applyAdminSubscriptionDeactivation,
   buildHouseholdSubscriptionResponse
@@ -33,6 +37,35 @@ import {
 import { adminGetHouseholdCycleState } from "../weeklyEngine.js";
 
 const router = express.Router();
+
+// Global subscriptions switch. This only changes subscription capability
+// resolution; it does not touch Bites, catalog purchases, Stripe, or active
+// household subscription records.
+router.get("/monetization-config", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const config = await getMonetizationConfig();
+    return res.json({ ok: true, config });
+  } catch (error) {
+    console.error("[admin/monetization] GET failed", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo cargar la configuración de monetización." });
+  }
+});
+
+router.put("/monetization-config", requireAuth, requireDiod, async (req, res) => {
+  try {
+    const config = await updateSubscriptionsEnabled({
+      subscriptionsEnabled: req.body?.subscriptionsEnabled,
+      updatedBy: req.kitchenUser._id
+    });
+    return res.json({ ok: true, config });
+  } catch (error) {
+    if (error?.code === "SUBSCRIPTIONS_ENABLED_INVALID") {
+      return res.status(400).json({ ok: false, code: error.code, error: error.message });
+    }
+    console.error("[admin/monetization] PUT failed", { error: error?.message });
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la configuración de monetización." });
+  }
+});
 
 function normalizeActiveHouseholdIdInput(body = {}) {
   const hasActiveHouseholdId = Object.prototype.hasOwnProperty.call(body, "activeHouseholdId");

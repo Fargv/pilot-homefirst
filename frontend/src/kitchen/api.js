@@ -297,3 +297,14 @@ export function savePlansAdminConfig(plans) {
     body: JSON.stringify({ plans })
   });
 }
+
+export function getMonetizationAdminConfig() {
+  return apiRequest("/api/admin/monetization-config");
+}
+
+export function saveMonetizationAdminConfig(subscriptionsEnabled) {
+  return apiRequest("/api/admin/monetization-config", {
+    method: "PUT",
+    body: JSON.stringify({ subscriptionsEnabled })
+  });
+}

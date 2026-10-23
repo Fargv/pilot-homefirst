@@ -1,6 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { apiRequest, getPlansAdminConfig, hasLegacyToken, savePlansAdminConfig } from "../api.js";
+import {
+  apiRequest,
+  getMonetizationAdminConfig,
+  getPlansAdminConfig,
+  hasLegacyToken,
+  saveMonetizationAdminConfig,
+  savePlansAdminConfig
+} from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -4738,6 +4745,103 @@ function BitesEconomySection({ householdContext, onClearHouseholdContext }) {
 
 // ─── PlansSection ─────────────────────────────────────────────────────────────
 
+function MonetizationSection() {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getMonetizationAdminConfig();
+      setConfig(data.config);
+    } catch (err) {
+      setError(err.message || "Error cargando la configuración de suscripciones.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleToggle = async () => {
+    const nextValue = !config.subscriptionsEnabled;
+    const action = nextValue ? "activar" : "desactivar";
+    const confirmed = window.confirm(
+      `¿Confirmas ${action} las capacidades de suscripción?\n\n` +
+      "No se cancelarán suscripciones activas ni se modificarán Stripe, Bites o compras de catálogo."
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      const data = await saveMonetizationAdminConfig(nextValue);
+      setConfig(data.config);
+    } catch (err) {
+      setError(err.message || "No se pudo actualizar la configuración de suscripciones.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div style={{ padding: 32, color: "#6366f1" }}>Cargando...</div>;
+  if (!config) return <div style={{ padding: 32, color: "#ef4444" }}>{error || "No se pudo cargar la configuración."}</div>;
+
+  const enabled = Boolean(config.subscriptionsEnabled);
+  return (
+    <div>
+      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Interruptor de suscripciones</h2>
+      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 20, maxWidth: 760 }}>
+        Controla las capacidades funcionales de suscripción para nuevos usos del producto. El valor predeterminado es ON.
+        Este interruptor es independiente de <code>PAYMENTS_ENABLED</code>: Bites, pagos, Stripe y compras de catálogo siguen operativos.
+      </p>
+      <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", borderRadius: 8, padding: "10px 12px", fontSize: 12, marginBottom: 16, maxWidth: 760 }}>
+        Alcance MON-001D: poner OFF solo cambia capacidades backend. Todavía no oculta upgrades ni precios ni cambia onboarding o retos semanales; el lanzamiento gratuito completo queda para MON-001E/F. No lo actives como sustituto de esos cambios.
+      </div>
+
+      <Card style={{ maxWidth: 760, border: `1px solid ${enabled ? "#86efac" : "#fca5a5"}` }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 5 }}>Estado actual</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: enabled ? "#15803d" : "#b91c1c" }}>
+              {enabled ? "Suscripciones ON" : "Suscripciones OFF"}
+            </div>
+            <div style={{ fontSize: 13, color: "#4b5563", marginTop: 8 }}>
+              {enabled
+                ? "Se aplican las capacidades según el plan de cada hogar."
+                : "Las capacidades funcionales de suscripción quedan disponibles sin cancelar planes ni cobros."}
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={handleToggle}
+            disabled={saving}
+            style={{
+              ...ABT.save,
+              minWidth: 150,
+              background: enabled ? "#b42318" : "#15803d",
+              opacity: saving ? 0.65 : 1
+            }}
+          >
+            {saving ? "Guardando..." : enabled ? "Desactivar" : "Activar"}
+          </button>
+        </div>
+        <div style={{ marginTop: 18, paddingTop: 12, borderTop: "1px solid #e5e7eb", fontSize: 12, color: "#6b7280" }}>
+          Última actualización: {formatDateTime(config.updatedAt)}
+          {config.updatedBy ? ` · Admin ${config.updatedBy}` : " · Valor predeterminado, aún no persistido"}
+        </div>
+      </Card>
+
+      {error && <div style={{ color: "#b42318", fontSize: 13, marginTop: 12 }}>{error}</div>}
+    </div>
+  );
+}
+
 const PLAN_KEYS = ["basic", "pro", "premium"];
 const PLAN_DISPLAY = { basic: "Basic", pro: "Pro", premium: "Premium" };
 
@@ -7484,6 +7588,7 @@ export default function AdminPanelPage() {
             { key: "master",       label: "Master" },
             { key: "catalog_packs",label: "Catálogo" },
             { key: "bites_economy",label: "Bites" },
+            { key: "monetization", label: "Suscripciones" },
             { key: "plans",        label: "Planes" },
             { key: "categories",   label: "Categorías" },
             { key: "onboarding",   label: "Onboarding" },
@@ -7556,6 +7661,8 @@ export default function AdminPanelPage() {
           <CatalogPacksSection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
         ) : tab === "bites_economy" ? (
           <BitesEconomySection householdContext={householdContext} onClearHouseholdContext={clearHouseholdContext} />
+        ) : tab === "monetization" ? (
+          <MonetizationSection />
         ) : tab === "plans" ? (
           <PlansSection />
         ) : tab === "categories" ? (
