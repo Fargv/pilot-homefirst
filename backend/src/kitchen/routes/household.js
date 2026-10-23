@@ -29,6 +29,7 @@ import {
   buildHouseholdSubscriptionResponse
 } from "../subscriptionService.js";
 import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
+import { resolveHouseholdLicenseForResponse } from "../householdResponseCore.js";
 import {
   assertCanAddNonUserDinerToHousehold,
   assertCanAddUserToHousehold,
@@ -95,9 +96,16 @@ function parseCycleStartDayInput(value) {
   return { ok: true, value: parsed };
 }
 
-async function buildHouseholdResponse(household, license = null) {
+async function buildHouseholdResponse(household, { license = null, usage = null } = {}) {
   const access = await resolveHouseholdCapabilities(household);
   const { budget: budgetFeatureEnabled, dietRandomization: dietFeatureEnabled } = access.functional;
+  const resolvedLicense = await resolveHouseholdLicenseForResponse({
+    household,
+    license,
+    usage,
+    countUsage: countHouseholdLicenseUsage,
+    buildLicenseSummary: buildHouseholdLicenseSummary
+  });
   return {
     id: household._id,
     name: household.name || "Mi household",
@@ -126,7 +134,7 @@ async function buildHouseholdResponse(household, license = null) {
       planUpdatedAt: household.planUpdatedAt || null
     },
     featureAvailability: access.functional,
-    license: license || await buildHouseholdLicenseSummary(household)
+    license: resolvedLicense
   };
 }
 
@@ -250,11 +258,7 @@ router.get("/summary", requireAuth, async (req, res) => {
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    const license = await buildHouseholdLicenseSummary(
-      household,
-      await countHouseholdLicenseUsage(household._id)
-    );
-    return res.json({ ok: true, household: await buildHouseholdResponse(household, license) });
+    return res.json({ ok: true, household: await buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;

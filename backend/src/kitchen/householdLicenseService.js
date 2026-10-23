@@ -85,7 +85,7 @@ export async function countHouseholdLicenseUsage(householdId) {
 export async function buildHouseholdLicenseSummary(household, usage = null, { subscriptionsEnabled } = {}) {
   const plan = normalizeSubscriptionPlan(household?.subscriptionPlan);
   const access = await resolveHouseholdCapabilities(household, { subscriptionsEnabled });
-  const resolvedUsage = usage || { users: 0, nonUserDiners: 0 };
+  const resolvedUsage = usage || await countHouseholdLicenseUsage(household?._id);
   const effectiveLicense = buildEffectiveLicenseState({
     limits: getPlanLimits(plan),
     usage: resolvedUsage,
