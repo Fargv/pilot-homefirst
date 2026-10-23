@@ -205,6 +205,20 @@ function formatShoppingSourceDay(source) {
   return SHOPPING_DAY_INITIALS[(date.getUTCDay() + 6) % 7];
 }
 
+function getShoppingRecipeReferences(sources) {
+  const recipes = new Map();
+  for (const source of sources || []) {
+    const key = source?.dishId || source?.dishName || "recipe";
+    const recipe = recipes.get(key) || { name: source?.dishName || "Plato", days: new Set() };
+    recipe.days.add(formatShoppingSourceDay(source));
+    recipes.set(key, recipe);
+  }
+  return [...recipes.values()].map((recipe) => ({
+    ...recipe,
+    label: `${recipe.name} · ${[...recipe.days].join("/")}`
+  }));
+}
+
 function slugColor(slug = "") {
   const normalized = String(slug || "otros");
   const seed = normalized.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -1500,8 +1514,8 @@ export default function ShoppingPage() {
                             {group.items.map((item) => {
                               const key = itemKey(item);
                               const sources = Array.isArray(item.sources) ? item.sources : [];
-                              const recipeNames = [...new Map(sources.map((source) => [source.dishId || source.dishName || "recipe", source.dishName || "Plato"])).values()];
-                              const hasMultipleRecipes = recipeNames.length > 1;
+                              const recipeReferences = getShoppingRecipeReferences(sources);
+                              const hasMultipleRecipes = recipeReferences.length > 1;
                               return (
                                 <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
                                   <div className="shopping-item-main">
@@ -1525,9 +1539,9 @@ export default function ShoppingPage() {
                                           aria-expanded={ingredientDetailOpenId === key}
                                           aria-controls={`shopping-source-${key}`}
                                           onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
-                                        >{recipeNames.length} recetas <ChevronSmallIcon className="shopping-source-chevron" /></button>
+                                        >{recipeReferences.length} recetas <ChevronSmallIcon className="shopping-source-chevron" /></button>
                                       ) : (
-                                        <span className="shopping-source-summary">{recipeNames[0] || "Plato"} · {formatShoppingSourceDay(sources[0])}</span>
+                                        <span className="shopping-source-summary">{recipeReferences[0]?.label || "Plato · —"}</span>
                                       )}
                                     </div>
                                     {!selectedDays.size ? <div className="shopping-item-controls">
@@ -1551,12 +1565,7 @@ export default function ShoppingPage() {
                                     </div> : null}
                                   </div>
                                   {hasMultipleRecipes ? <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
-                                    {sources.map((source, index) => {
-                                      const amount = source.quantity?.amount;
-                                      const amountLabel = amount != null && Number.isFinite(Number(amount)) && source.quantity?.unit ? ` · ${amount} ${source.quantity.unit}` : "";
-                                      const roleLabel = source.role === "acompanamiento" ? "Acompañamiento" : source.role === "principal" ? "Principal" : "Extra";
-                                      return <span key={`${source.dishId || source.dishName}-${index}`}><b>{formatShoppingSourceDay(source)}</b> · {formatMealType(source.mealType)} · {roleLabel}: {source.dishName || "Plato"}{amountLabel}</span>;
-                                    })}
+                                    {recipeReferences.map((recipe) => <span key={recipe.name}>{recipe.label}</span>)}
                                   </div> : null}
                                 </div>
                               );
