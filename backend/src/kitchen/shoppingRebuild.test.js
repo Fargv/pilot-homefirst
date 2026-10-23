@@ -294,7 +294,49 @@ test("sources conserva cada día, rol y cantidad de principales y acompañamient
   assert.deepEqual(item.sources.map((source) => source.day), ["2026-10-26", "2026-10-26", "2026-10-28"]);
   assert.deepEqual(item.sources.map((source) => source.dishName), ["Guiso", "Ensalada", "Guiso"]);
   assert.deepEqual(item.sources.map((source) => source.mealType), ["lunch", "lunch", "dinner"]);
-  assert.equal(item.fromDishes.length, 3);
+  assert.deepEqual(item.sources.map((source) => String(source.dishId)), [String(main1._id), String(side1._id), String(main2._id)]);
+  assert.deepEqual(item.fromDishes.map(String), [String(main1._id), String(side1._id), String(main2._id)]);
+});
+
+test("override crea fuente extra sin inventar plato ni cantidad y conserva fromDishes reales", () => {
+  const ingredientId = id();
+  const mainDish = {
+    _id: id(),
+    name: "Guiso",
+    ingredients: [{ ingredientId, name: "Tomate", canonicalName: "tomate" }],
+    recipe: { ingredients: [{ ingredientId, name: "Tomate", quantity: { amount: 100, unit: "g" } }] }
+  };
+  const extraId = id();
+  const contributions = consolidateDayIngredients({
+    mainDish,
+    day: { servings: 1 },
+    includeSide: false,
+    overrides: [{ ingredientId: extraId, name: "Ajo", canonicalName: "ajo", quantity: { amount: 2, unit: "dientes" } }],
+    sourceContext: {
+      day: "2026-10-26",
+      date: "2026-10-26",
+      mealType: "lunch",
+      mainDishId: mainDish._id
+    }
+  });
+  const merged = new Map();
+  for (const ingredient of contributions) mergeShoppingIngredientContribution(merged, ingredient);
+  const items = mergeRebuiltShoppingItems(Array.from(merged.values()), []);
+  const tomato = items.find((item) => item.canonicalName === "tomate");
+  const garlic = items.find((item) => item.canonicalName === "ajo");
+
+  assert.deepEqual(tomato.fromDishes.map(String), [String(mainDish._id)]);
+  assert.equal(tomato.sources[0].role, "principal");
+  assert.equal(tomato.sources[0].dishId.toString(), mainDish._id.toString());
+  assert.deepEqual(tomato.sources[0].quantity, { amount: 100, unit: "g" });
+  assert.deepEqual(garlic.fromDishes, []);
+  assert.equal(garlic.sources.length, 1);
+  assert.equal(garlic.sources[0].role, "extra");
+  assert.equal(garlic.sources[0].day, "2026-10-26");
+  assert.equal(garlic.sources[0].mealType, "lunch");
+  assert.equal(garlic.sources[0].dishId, null);
+  assert.equal(garlic.sources[0].dishName, "Ingredientes añadidos");
+  assert.equal(garlic.sources[0].quantity, null);
 });
 
 test("unidades incompatibles generan fuentes separadas sin sumar cantidades", () => {

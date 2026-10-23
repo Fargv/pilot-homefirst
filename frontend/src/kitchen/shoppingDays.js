@@ -19,6 +19,12 @@ export function hasReliableShoppingDays(item) {
   return Array.isArray(item?.sources) && item.sources.some((source) => getSourceDay(source) !== "");
 }
 
+export function isManualShoppingItem(item) {
+  if (item?.source === "manual") return true;
+  if (item?.source === "plan") return false;
+  return !Array.isArray(item?.fromDishes) || item.fromDishes.length === 0;
+}
+
 function getSourceDay(source) {
   const day = String(source?.day || "").slice(0, 10);
   if (/^\d{4}-\d{2}-\d{2}$/.test(day)) return day;
@@ -34,7 +40,7 @@ export function filterShoppingGroups(groups, selectedDays, weekStart) {
   return (groups || []).map((group) => ({
     ...group,
     items: (group.items || []).filter((item) => {
-      if (item.source === "manual") return false;
+      if (isManualShoppingItem(item)) return false;
       const sources = Array.isArray(item.sources) ? item.sources : [];
       // Legacy plan entries without trustworthy dates stay visible in their own group.
       if (!hasReliableShoppingDays(item)) return false;
@@ -48,7 +54,7 @@ export function filterShoppingItems(items, selectedDays, weekStart) {
   const dates = getWeekDayDates(weekStart);
   const dayKeys = new Set([...selectedDays].map((key) => dates[SHOPPING_DAYS.findIndex((day) => day.key === key)]).filter(Boolean));
   return (items || []).filter((item) => {
-    if (item.source === "manual") return true;
+    if (isManualShoppingItem(item)) return true;
     if (!hasReliableShoppingDays(item)) return true;
     const sources = item.sources;
     return sources.some((source) => dayKeys.has(getSourceDay(source)));
@@ -61,12 +67,12 @@ export function getVisiblePendingGroups(groups, selectedDays, weekStart) {
   const manuals = (groups || []).map((group) => ({
     ...group,
     _section: "Añadidos manualmente",
-    items: (group.items || []).filter((item) => item.source === "manual")
+    items: (group.items || []).filter(isManualShoppingItem)
   })).filter((group) => group.items.length);
   const legacy = (groups || []).map((group) => ({
     ...group,
     _section: "Sin día asignado",
-    items: (group.items || []).filter((item) => item.source !== "manual" && !hasReliableShoppingDays(item))
+    items: (group.items || []).filter((item) => !isManualShoppingItem(item) && !hasReliableShoppingDays(item))
   })).filter((group) => group.items.length);
   return [...plan, ...manuals, ...legacy];
 }
@@ -76,7 +82,7 @@ export function getDayCoverage(items, dayKey, weekStart) {
   if (!date) return { purchased: 0, total: 0 };
   const byCanonical = new Map();
   for (const item of items || []) {
-    if (item.source === "manual" || !(item.sources || []).some((source) => getSourceDay(source) === date)) continue;
+    if (isManualShoppingItem(item) || !(item.sources || []).some((source) => getSourceDay(source) === date)) continue;
     const identity = String(item.canonicalName || item.displayName || item.ingredientId || "").trim().toLocaleLowerCase("es");
     if (!identity) continue;
     const rows = byCanonical.get(identity) || [];

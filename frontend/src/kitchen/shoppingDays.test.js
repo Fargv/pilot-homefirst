@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { applyOptimisticShoppingStatusChange } from "./shoppingOptimisticState.js";
-import { filterShoppingGroups, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, getWeekDayDates, hasReliableShoppingDays, SHOPPING_DAYS } from "./shoppingDays.js";
+import { filterShoppingGroups, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, getWeekDayDates, hasReliableShoppingDays, isManualShoppingItem, SHOPPING_DAYS } from "./shoppingDays.js";
 
 const week = "2026-10-19";
 const shared = { displayName: "Tomate", source: "plan", status: "purchased", sources: [{ day: "2026-10-19", quantity: 2, unit: "ud" }, { day: "2026-10-21", quantity: 3, unit: "ud" }] };
@@ -46,6 +46,38 @@ test("legacy pendiente y comprado siguen visibles y etiquetables al filtrar día
   }
 });
 
+test("manual legacy sin source/fromDishes conserva identidad y estado, filtrado o semanal", () => {
+  for (const status of ["pending", "purchased"]) {
+    const manualLegacy = {
+      itemId: `manual-${status}`,
+      status,
+      fromDishes: [],
+      sources: [],
+      occurrences: 3,
+      quantity: 250,
+      unit: "g",
+      purchasedBy: status === "purchased" ? "user-1" : null
+    };
+    assert.equal(isManualShoppingItem(manualLegacy), true);
+
+    const weekView = getVisiblePendingGroups([{ items: [manualLegacy] }], new Set(), week);
+    assert.equal(weekView[0].items[0], manualLegacy);
+    const filteredView = getVisiblePendingGroups([{ items: [manualLegacy] }], new Set(["monday"]), week);
+    assert.equal(filteredView[0]._section, "Añadidos manualmente");
+    assert.equal(filteredView[0].items[0], manualLegacy);
+
+    assert.equal(filterShoppingItems([manualLegacy], new Set(), week)[0], manualLegacy);
+    assert.equal(filterShoppingItems([manualLegacy], new Set(["monday"]), week)[0], manualLegacy);
+    assert.deepEqual({ itemId: manualLegacy.itemId, status: manualLegacy.status, occurrences: manualLegacy.occurrences, quantity: manualLegacy.quantity, unit: manualLegacy.unit, purchasedBy: manualLegacy.purchasedBy }, {
+      itemId: `manual-${status}`, status, occurrences: 3, quantity: 250, unit: "g", purchasedBy: status === "purchased" ? "user-1" : null
+    });
+  }
+  const planLegacy = { itemId: "plan-legacy", source: "plan", fromDishes: ["dish-1"], sources: [], status: "purchased" };
+  assert.equal(isManualShoppingItem(planLegacy), false);
+  assert.equal(getVisiblePendingGroups([{ items: [planLegacy] }], new Set(["monday"]), week)[0]._section, "Sin día asignado");
+  assert.equal(filterShoppingItems([planLegacy], new Set(["monday"]), week)[0], planLegacy);
+});
+
 test("cobertura usa un solo estado comprado global para cada ingrediente requerido ese día", () => {
   assert.deepEqual(getDayCoverage([shared], "monday", week), { purchased: 1, total: 1 });
   assert.deepEqual(getDayCoverage([{ ...shared, status: "pending" }], "wednesday", week), { purchased: 0, total: 1 });
@@ -55,8 +87,8 @@ test("cobertura usa un solo estado comprado global para cada ingrediente requeri
 
 test("unidades incompatibles del mismo ingrediente y día cuentan como una cobertura", () => {
   const identityRows = [
-    { canonicalName: "tomate", status: "purchased", sources: [{ day: "2026-10-19" }] },
-    { canonicalName: "tomate", status: "pending", sources: [{ day: "2026-10-19" }] }
+    { source: "plan", canonicalName: "tomate", status: "purchased", sources: [{ day: "2026-10-19" }] },
+    { source: "plan", canonicalName: "tomate", status: "pending", sources: [{ day: "2026-10-19" }] }
   ];
   assert.deepEqual(getDayCoverage(identityRows, "monday", week), { purchased: 0, total: 1 });
   assert.deepEqual(getDayCoverage(identityRows.map((item) => ({ ...item, status: "purchased" })), "monday", week), { purchased: 1, total: 1 });
@@ -90,6 +122,7 @@ test("selector anuncia estados y mantiene objetivos táctiles accesibles en móv
   assert.match(component, /aria-pressed=\{checked\}/);
   assert.match(component, /aria-pressed=\{!selectedDays\.size\}/);
   assert.match(component, /Sin día asignado/);
+  assert.match(component, /Añadidos manualmente/);
   assert.match(component, /Las cantidades de ocurrencias se muestran en «Toda la semana»/);
   assert.match(styles, /\.shopping-day-option\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*48px/s);
   assert.match(styles, /\.shopping-day-clear\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*44px/s);

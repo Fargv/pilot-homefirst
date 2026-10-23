@@ -29,7 +29,7 @@ import {
   getShoppingItemKey,
   reconcileShoppingPayloadWithPendingMutations
 } from "../shoppingOptimisticState.js";
-import { SHOPPING_DAYS, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, hasReliableShoppingDays } from "../shoppingDays.js";
+import { SHOPPING_DAYS, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, hasReliableShoppingDays, isManualShoppingItem } from "../shoppingDays.js";
 
 function RefreshIcon(props) {
   return (
@@ -1511,7 +1511,7 @@ export default function ShoppingPage() {
                                       onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
                                     >¿Para qué?</button>
                                     <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
-                                        {item.source === "manual" || (!item.source && !(item.fromDishes || []).length) ? (
+                                        {isManualShoppingItem(item) ? (
                                           <span>Añadido manualmente</span>
                                         ) : (item.sources || []).length ? item.sources.map((source, index) => {
                                           const sourceDate = source.date ? new Date(source.date) : null;
@@ -1656,8 +1656,8 @@ export default function ShoppingPage() {
                         <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
                           <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span></button>
                           <span className="shopping-item-text">{item.displayName}</span>
-                          {selectedDays.size && item.source === "manual" ? <span className="shopping-day-item-note">Añadido manualmente</span> : null}
-                          {selectedDays.size && item.source !== "manual" && !hasReliableShoppingDays(item) ? <span className="shopping-day-item-note">Sin día asignado</span> : null}
+                          {isManualShoppingItem(item) ? <span className="shopping-day-item-note">Añadidos manualmente</span> : null}
+                          {!isManualShoppingItem(item) && selectedDays.size && !hasReliableShoppingDays(item) ? <span className="shopping-day-item-note">Sin día asignado</span> : null}
                           {!selectedDays.size && item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
                           <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
                             <MinusIcon />
