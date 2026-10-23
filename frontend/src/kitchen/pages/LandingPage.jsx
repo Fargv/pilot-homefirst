@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import lunchfyIcon from "../../assets/brand/Lunchfy_icon.png";
 import lunchfyLogo from "../../assets/brand/Lunchfy_logo1.png";
+import { useMonetization } from "../monetization.jsx";
 import "../landing.css";
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -239,7 +240,7 @@ function PhoneMockup() {
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
 
-function LandingNav() {
+function LandingNav({ subscriptionsEnabled }) {
   return (
     <header className="lp-nav">
       <div className="lp-nav-inner">
@@ -250,7 +251,7 @@ function LandingNav() {
         <nav className="lp-nav-links" aria-label="Secciones">
           <a href="#about" className="lp-nav-link">Qué es</a>
           <a href="#features" className="lp-nav-link">Funciones</a>
-          <a href="#precios" className="lp-nav-link">Precios</a>
+          {subscriptionsEnabled === true ? <a href="#precios" className="lp-nav-link">Precios</a> : null}
           <a href="#faq" className="lp-nav-link">FAQ</a>
         </nav>
         <div className="lp-nav-actions">
@@ -488,7 +489,10 @@ function LandingVideo() {
 
 // ── News ──────────────────────────────────────────────────────────────────────
 
-function LandingNews() {
+function LandingNews({ subscriptionsEnabled }) {
+  const visibleNews = subscriptionsEnabled === true
+    ? NEWS
+    : NEWS.filter((item) => !item.desc.includes("Pro Beta"));
   return (
     <section className="lp-section lp-section-alt">
       <div className="lp-section-inner">
@@ -497,7 +501,7 @@ function LandingNews() {
           <p className="lp-section-subtitle">Lo último que hemos añadido a Lunchfy.</p>
         </div>
         <div className="lp-news-grid">
-          {NEWS.map((item, i) => (
+          {visibleNews.map((item, i) => (
             <article
               key={item.title}
               className="lp-news-card"
@@ -611,7 +615,7 @@ function LandingFinalCTA() {
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 
-function LandingFooter() {
+function LandingFooter({ subscriptionsEnabled }) {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-inner">
@@ -622,7 +626,7 @@ function LandingFooter() {
         <nav className="lp-footer-nav" aria-label="Pie de página">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/signup">Registrarse</Link>
-          <a href="#precios">Precios</a>
+          {subscriptionsEnabled === true ? <a href="#precios">Precios</a> : null}
           <Link to="/privacidad">Privacidad</Link>
           <Link to="/terminos">Términos</Link>
         </nav>
@@ -635,6 +639,7 @@ function LandingFooter() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const { subscriptionsEnabled } = useMonetization();
   useEffect(() => {
     const bar = document.getElementById("lp-progress-bar");
     const updateBar = () => {
@@ -674,20 +679,20 @@ export default function LandingPage() {
   return (
     <div className="lp-root">
       <div id="lp-progress-bar" className="lp-progress-bar" aria-hidden="true" />
-      <LandingNav />
+      <LandingNav subscriptionsEnabled={subscriptionsEnabled} />
       <main>
         <LandingHero />
         <LandingWhat />
         <LandingFeatures />
         <LandingHowItWorks />
-        <LandingPricing />
+        {subscriptionsEnabled === true ? <LandingPricing /> : null}
         <LandingVideo />
-        <LandingNews />
+        <LandingNews subscriptionsEnabled={subscriptionsEnabled} />
         <LandingPrivacy />
         <LandingFAQ />
         <LandingFinalCTA />
       </main>
-      <LandingFooter />
+      <LandingFooter subscriptionsEnabled={subscriptionsEnabled} />
     </div>
   );
 }

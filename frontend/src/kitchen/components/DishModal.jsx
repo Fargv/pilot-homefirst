@@ -9,6 +9,7 @@ import { normalizeIngredientName } from "../utils/normalize.js";
 import { useAuth } from "../auth.jsx";
 import { emitOnboardingEvent, ONBOARDING_EVENTS } from "./tour/guidedOnboardingEvents.js";
 import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 
 const EMPTY_FORM = {
   name: "",
@@ -82,6 +83,7 @@ export default function DishModal({
   onRevertOriginal = undefined
 }) {
   const { user } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
@@ -99,8 +101,9 @@ export default function DishModal({
   const ingredientCache = useRef(new Map());
 
   const isDiod = user?.globalRole === "diod";
-  const isPro = isDiod || canRandomizeFullWeek(user);
-  const canDinnerDishes = isDiod || canUseDinnersFeature(user);
+  const subscriptionAccess = { ...user, subscriptionsEnabled: subscriptionsEnabled === true };
+  const isPro = isDiod || canRandomizeFullWeek(subscriptionAccess);
+  const canDinnerDishes = isDiod || canUseDinnersFeature(subscriptionAccess);
 
   const hasExistingRecipe = hasRecipeContent(recipe);
   const shouldEditRecipe = isPro && (recipeEditing || !persistedRecipeHasContent);

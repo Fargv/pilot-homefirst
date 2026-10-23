@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { apiRequest } from "../api.js";
 import { canUseBasicsFeature } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth.jsx";
 
@@ -352,6 +353,7 @@ export default function BasicsPopup({
 }) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const [basics, setBasics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -360,7 +362,7 @@ export default function BasicsPopup({
   const [selected, setSelected] = useState(new Set());
   const backdropRef = useRef(null);
 
-  const basicsEnabled = canUseBasicsFeature(plan);
+  const basicsEnabled = canUseBasicsFeature({ ...plan, subscriptionsEnabled: subscriptionsEnabled === true });
   const householdId = user?.activeHouseholdId || user?.householdId || "";
 
   const loadBasics = useCallback(async () => {

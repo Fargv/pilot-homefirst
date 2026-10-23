@@ -10,6 +10,7 @@ import {
 } from "../api.js";
 import { useAuth } from "../auth.jsx";
 import { useTheme } from "../../context/ThemeContext.jsx";
+import { useMonetization } from "../monetization.jsx";
 import Card from "../components/ui/Card.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
@@ -4746,6 +4747,7 @@ function BitesEconomySection({ householdContext, onClearHouseholdContext }) {
 // ─── PlansSection ─────────────────────────────────────────────────────────────
 
 function MonetizationSection() {
+  const { setSubscriptionsEnabled } = useMonetization();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -4780,6 +4782,7 @@ function MonetizationSection() {
     try {
       const data = await saveMonetizationAdminConfig(nextValue);
       setConfig(data.config);
+      setSubscriptionsEnabled(Boolean(data.config?.subscriptionsEnabled));
     } catch (err) {
       setError(err.message || "No se pudo actualizar la configuración de suscripciones.");
     } finally {
@@ -4799,7 +4802,7 @@ function MonetizationSection() {
         Este interruptor es independiente de <code>PAYMENTS_ENABLED</code>: Bites, pagos, Stripe y compras de catálogo siguen operativos.
       </p>
       <div style={{ background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e", borderRadius: 8, padding: "10px 12px", fontSize: 12, marginBottom: 16, maxWidth: 760 }}>
-        Alcance MON-001D: poner OFF solo cambia capacidades backend. Todavía no oculta upgrades ni precios ni cambia onboarding o retos semanales; el lanzamiento gratuito completo queda para MON-001E/F. No lo actives como sustituto de esos cambios.
+        Alcance MON-001E: poner OFF oculta suscripciones, upgrades y límites comerciales en la experiencia de usuario, y mantiene separados los pagos de packs y Bites. No cambia planes activos, Stripe, onboarding ni el currículo semanal; esos últimos ajustes quedan para MON-001F.
       </div>
 
       <Card style={{ maxWidth: 760, border: `1px solid ${enabled ? "#86efac" : "#fca5a5"}` }}>

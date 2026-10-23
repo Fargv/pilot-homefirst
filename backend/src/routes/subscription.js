@@ -6,11 +6,16 @@ import {
   applySubscriptionRequest,
   buildHouseholdSubscriptionResponse
 } from "../kitchen/subscriptionService.js";
+import { getSubscriptionsEnabled } from "../kitchen/monetizationConfigService.js";
+import { buildSubscriptionsDisabledPayload } from "../kitchen/subscriptionCommerceCore.js";
 
 const router = express.Router();
 
 router.post("/request", requireAuth, async (req, res) => {
   try {
+    if (!(await getSubscriptionsEnabled())) {
+      return res.status(403).json(buildSubscriptionsDisabledPayload());
+    }
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const household = await Household.findById(effectiveHouseholdId);
     if (!household) {

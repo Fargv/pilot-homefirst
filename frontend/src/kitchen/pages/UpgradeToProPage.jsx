@@ -10,6 +10,8 @@ import {
   undoCancelSubscription
 } from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
+import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
 const PAYMENTS_MODE = import.meta.env.VITE_PAYMENTS_MODE || "disabled";
@@ -111,6 +113,7 @@ function CrossIcon() {
 
 export default function UpgradeToProPage() {
   const navigate = useNavigate();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const [searchParams] = useSearchParams();
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
@@ -137,12 +140,19 @@ export default function UpgradeToProPage() {
   const from = searchParams.get("from") || "";
   const backPath = from || "/kitchen/configuracion";
 
+  useEffect(() => {
+    if (subscriptionsEnabled === false) {
+      navigate("/kitchen/semana", { replace: true });
+    }
+  }, [navigate, subscriptionsEnabled]);
+
   const selectedPlan = useMemo(
     () => PLANS.find((plan) => plan.id === requestedPlan) || null,
     [requestedPlan]
   );
 
   useEffect(() => {
+    if (subscriptionsEnabled !== true) return undefined;
     let active = true;
     const loadSummary = async () => {
       setSummaryLoading(true);
@@ -166,7 +176,7 @@ export default function UpgradeToProPage() {
     };
     void loadSummary();
     return () => { active = false; };
-  }, []);
+  }, [subscriptionsEnabled]);
 
   const handlePlanAction = async (planId) => {
     if (planId === "basic") return;
@@ -294,6 +304,15 @@ export default function UpgradeToProPage() {
 
   const isOnPaidActivePlan = ["pro", "premium"].includes(subscriptionPlan) && subscriptionStatus === "active";
   const featuresToLose = FEATURES_BY_PLAN[subscriptionPlan] || [];
+
+  if (subscriptionsEnabled !== true) {
+    return (
+      <AppLoadingScreen
+        title="Cargando Lunchfy"
+        subtitle="Estamos comprobando las opciones disponibles para tu hogar."
+      />
+    );
+  }
 
   return (
     <KitchenLayout>
