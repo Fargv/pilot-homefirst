@@ -21,6 +21,14 @@ export function createSubscriptionsConfigReader({ read, cacheTtlMs = 30_000, log
   return {
     getSubscriptionsEnabled({ forceRefresh = false } = {}) {
       if (!forceRefresh && cacheExpiresAt > Date.now()) return Promise.resolve(cachedValue);
+      if (pendingRead && forceRefresh) {
+        // A critical caller (for example subscription checkout) must not join
+        // a read that started before an admin switch. The old promise is left
+        // to settle, but its generation is now stale and cannot repopulate
+        // this reader's cache.
+        generation += 1;
+        pendingRead = null;
+      }
       if (pendingRead) return pendingRead;
       const readGeneration = generation;
       pendingRead = readValue().then((value) => {

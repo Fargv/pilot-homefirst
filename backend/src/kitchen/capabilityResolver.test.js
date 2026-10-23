@@ -58,6 +58,25 @@ test("an in-flight read resolved after invalidation cannot repopulate the cache"
   assert.equal(reads, 2);
 });
 
+test("force refresh does not join a stale in-flight read", async () => {
+  let reads = 0;
+  let resolveOldRead;
+  const reader = createSubscriptionsConfigReader({
+    read: () => {
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => { resolveOldRead = resolve; });
+      return Promise.resolve({ subscriptionsEnabled: false });
+    }
+  });
+
+  const oldRequest = reader.getSubscriptionsEnabled();
+  assert.equal(await reader.getSubscriptionsEnabled({ forceRefresh: true }), false);
+  resolveOldRead({ subscriptionsEnabled: true });
+  assert.equal(await oldRequest, true);
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
+  assert.equal(reads, 2);
+});
+
 test("ON preserves Basic and OFF grants only the explicit functional allowlist", async () => {
   const current = { budget: false, fullWeekRandomization: false, singleDayRandomization: true, dietRandomization: false, dinners: false, basics: false, futureField: false };
   const on = resolveFunctionalCapabilities(current, true);
