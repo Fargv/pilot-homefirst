@@ -17,9 +17,9 @@ import { findActiveInvitationByToken, atomicClaimInvitation } from "../invitatio
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { isEmailRegisteredInClerk, isClerkAuthEnabled, pingClerkApi, resolveClerkIdentityFromToken } from "../clerkAuth.js";
 import { isProLikeHousehold, normalizeSubscriptionPlan } from "../subscriptionService.js";
+import { getSubscriptionsEnabled } from "../monetizationConfigService.js";
 import { initOnboarding } from "../onboardingEngine.js";
 import { checkBetaAccess, markBetaInviteUsed } from "../betaService.js";
-import { getSubscriptionsEnabled } from "../monetizationConfigService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -1210,12 +1210,12 @@ router.post("/clerk/onboarding", async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   try {
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
     let householdName = null;
     let subscriptionPlan = "basic";
     const effectiveHouseholdId = req.user?.activeHouseholdId || req.user?.householdId || null;
     let planSource = "manual";
     let betaProActive = false;
-    const subscriptionsEnabled = await getSubscriptionsEnabled();
     if (effectiveHouseholdId) {
       const household = await Household.findById(effectiveHouseholdId)
         .select("name subscriptionPlan planSource betaPro")

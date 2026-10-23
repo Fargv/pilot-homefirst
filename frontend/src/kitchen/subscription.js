@@ -44,6 +44,9 @@ export function isProLikeHousehold(householdOrUser, now = new Date()) {
     const normalizedPlan = normalizeSubscriptionPlan(householdOrUser);
     return normalizedPlan === "pro" || normalizedPlan === "premium";
   }
+  // When subscriptions are disabled, paid capabilities are available as
+  // product functionality without exposing a plan or changing its stored
+  // value.
   if (householdOrUser?.subscriptionsEnabled === false) return true;
   const normalizedPlan = normalizeSubscriptionPlan(householdOrUser?.subscriptionPlan);
   if (normalizedPlan === "premium") return true;
@@ -110,8 +113,25 @@ export function countLicenseUsage(members) {
   }, { users: 0, nonUserDiners: 0 });
 }
 
-export function buildLicenseState(plan, usage = {}) {
+export function buildLicenseState(plan, usage = {}, subscriptionsEnabled = true) {
   const normalizedPlan = normalizeSubscriptionPlan(plan);
+  if (subscriptionsEnabled === false) {
+    return {
+      plan: normalizedPlan,
+      limits: {
+        maxUsers: LICENSE_LIMIT_UNLIMITED,
+        maxNonUserDiners: LICENSE_LIMIT_UNLIMITED
+      },
+      usage: {
+        users: Number(usage?.users || 0),
+        nonUserDiners: Number(usage?.nonUserDiners || 0)
+      },
+      capabilities: {
+        canAddUser: true,
+        canAddNonUserDiner: true
+      }
+    };
+  }
   const limits = getPlanLimits(normalizedPlan);
   const resolvedUsage = {
     users: Number(usage?.users || 0),

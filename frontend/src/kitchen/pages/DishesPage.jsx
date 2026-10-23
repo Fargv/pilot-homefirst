@@ -18,6 +18,7 @@ import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
 import { canUseDinnersFeature } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { DishGridSkeleton, DishesPageSkeleton } from "../components/ScreenSkeletons.jsx";
@@ -116,6 +117,7 @@ function ChevronIcon(props) {
 //   everything else                       → household-created ("Mis platos")
 export default function DishesPage() {
   const { user } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const navigate = useNavigate();
   const { notify: notifyOnboarding, state: onboardingState } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
@@ -201,7 +203,7 @@ export default function DishesPage() {
     dishNames: {}
   });
   const isDiodGlobalMode = user?.globalRole === "diod" && !user?.activeHouseholdId;
-  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature(user);
+  const canUseDinners = isDiodGlobalMode || canUseDinnersFeature({ ...user, subscriptionsEnabled: subscriptionsEnabled === true });
 
   // Close any open kebab menu on outside click
   useEffect(() => {

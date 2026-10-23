@@ -10,13 +10,15 @@ import {
 } from "../kitchen/householdScope.js";
 import { buildDisplayName, isValidEmail, normalizeEmail, normalizeRole } from "./utils.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../kitchen/householdLicenseService.js";
+import { getSubscriptionsEnabled } from "../kitchen/monetizationConfigService.js";
 
 const router = express.Router();
 
 router.get("/bootstrap-needed", async (req, res) => {
   try {
     const total = await KitchenUser.countDocuments();
-    res.json({ needed: total === 0 });
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
+    res.json({ needed: total === 0, subscriptionsEnabled });
   } catch (error) {
     res.status(500).json({ ok: false, error: "No se pudo comprobar el estado de usuarios." });
   }

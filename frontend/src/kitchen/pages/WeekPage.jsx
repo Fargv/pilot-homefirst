@@ -457,12 +457,12 @@ export default function WeekPage() {
   const subscriptionAccess = useMemo(
     () => ({
       subscriptionPlan,
-      subscriptionsEnabled,
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
-      betaPro: user?.betaPro
+      betaPro: user?.betaPro,
+      subscriptionsEnabled: subscriptionsEnabled === true
     }),
-    [subscriptionPlan, subscriptionsEnabled, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";
@@ -527,7 +527,9 @@ export default function WeekPage() {
     if (!canUseFullWeekRandomization) {
       setWeekNotice({
         type: "error",
-        message: "Full week randomization is included in Pro and Premium plans."
+        message: subscriptionsEnabled === true
+          ? "Full week randomization is included in Pro and Premium plans."
+          : "No se pudo activar la randomización semanal."
       });
       return;
     }
@@ -573,7 +575,9 @@ export default function WeekPage() {
       if (isWeekRandomizationUnavailableError(err)) {
         setWeekNotice({
           type: "error",
-          message: "Full week randomization is included in Pro and Premium plans."
+          message: subscriptionsEnabled === true
+            ? "Full week randomization is included in Pro and Premium plans."
+            : "No se pudo activar la randomización semanal."
         });
         return;
       }
@@ -584,7 +588,7 @@ export default function WeekPage() {
     } finally {
       setWeekRandomizing(false);
     }
-  }, [canUseFullWeekRandomization, selectedMealType]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canUseFullWeekRandomization, selectedMealType, subscriptionsEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleConfirmWeekDelete = useCallback(async () => {
     if (weekDeleteBusy) return;
@@ -2484,7 +2488,10 @@ export default function WeekPage() {
                         </div>
                       </div>
                     ) : (
-                      <ProGateButton className="kitchen-week-randomize-btn">
+                      <ProGateButton
+                        className="kitchen-week-randomize-btn"
+                        onClick={subscriptionsEnabled === true ? undefined : () => openRandomizeMenu(null)}
+                      >
                         <DiceIcon /> Randomizar
                       </ProGateButton>
                     )

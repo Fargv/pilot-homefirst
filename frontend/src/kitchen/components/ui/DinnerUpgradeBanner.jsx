@@ -1,12 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth.jsx";
+import { useSubscriptionsEnabled } from "../../monetization.jsx";
 
 export default function DinnerUpgradeBanner({ onClose, className = "" }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  if (user?.subscriptionsEnabled === false) return null;
+  const subscriptionsEnabled = useSubscriptionsEnabled();
+  if (subscriptionsEnabled !== true) return null;
 
   return (
     <div className={`dinner-upgrade-banner ${className}`.trim()} role="region" aria-label="Función Pro">

@@ -21,6 +21,7 @@ const IS_DEV = import.meta.env.DEV;
 import KitchenLayout from "../Layout.jsx";
 import { useAuth } from "../auth.jsx";
 import { canUseDietRandomization } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import { resolvePackCoverImageUrl } from "../utils/packImages.js";
 import BitesIcon from "../components/BitesIcon.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
@@ -861,6 +862,7 @@ function DietPackInstallModal({ pack, onUseAsDefault, onDecline }) {
 
 export default function CatalogPage() {
   const { user } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1077,7 +1079,8 @@ export default function CatalogPage() {
             subscriptionPlan: plan,
             planSource: user?.planSource,
             betaProActive: user?.betaProActive,
-            betaPro: user?.betaPro
+            betaPro: user?.betaPro,
+            subscriptionsEnabled: subscriptionsEnabled === true
           })
           && !isDietPackModalDismissed(String(pack.id))
         ) {
@@ -1099,7 +1102,7 @@ export default function CatalogPage() {
         showToast(err.message || "Error al instalar el pack.", "error");
       }
     }
-  }, [loadCatalog, showToast, plan, user]);
+  }, [loadCatalog, showToast, plan, user, subscriptionsEnabled]);
 
   const handleBuyBundle = useCallback((_bundle) => {
     const bundle = _bundle || {};

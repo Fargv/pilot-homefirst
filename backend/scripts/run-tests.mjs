@@ -9,6 +9,8 @@ const result = spawnSync(
     "src/kitchen/householdResponseCore.test.js",
     "src/kitchen/monetizationConfigAdmin.test.js",
     "src/kitchen/launchFreeMode.test.js",
+    "src/kitchen/subscriptionCommerceCore.test.js",
+    "src/routes/checkoutPreflight.test.js",
     "src/stab001.test.js"
   ],
   { cwd: process.cwd(), env: { ...process.env, NODE_ENV: "test" }, stdio: "inherit" }

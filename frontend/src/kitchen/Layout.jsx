@@ -18,6 +18,7 @@ import CookingSessionBanner from "./components/cooking/CookingSessionBanner.jsx"
 import CookingSessionStepper from "./components/cooking/CookingSessionStepper.jsx";
 import useMobileRouteSwipeNavigation from "./hooks/useMobileRouteSwipeNavigation.js";
 import { isProLikeHousehold } from "./subscription.js";
+import { useSubscriptionsEnabled } from "./monetization.jsx";
 import { useActiveWeek } from "./weekContext.jsx";
 import { emitOnboardingEvent, ONBOARDING_EVENTS } from "./components/tour/guidedOnboardingEvents.js";
 import {
@@ -201,6 +202,7 @@ function BetaProUnlockedModal({ onDismiss }) {
 
 export default function KitchenLayout({ children, containerClassName = "" }) {
   const { user, logout, refreshUser, setUser } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const { appTheme, mode: themeMode, setMode, canUsePremiumThemes, syncThemeFromUser } = useTheme();
   const [themeModeSaving, setThemeModeSaving] = useState(false);
   const { betaProEvent, dismissBetaProEvent } = useWeeklyChallenge();
@@ -300,10 +302,11 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
         subscriptionPlan: user.subscriptionPlan,
         planSource: user.planSource,
         betaProActive: user.betaProActive,
-        betaPro: user.betaPro
+        betaPro: user.betaPro,
+        subscriptionsEnabled: subscriptionsEnabled === true
       })
     });
-  }, [syncThemeFromUser, user?.betaPro, user?.betaProActive, user?.id, user?.planSource, user?.subscriptionPlan, user?.themeId]);
+  }, [subscriptionsEnabled, syncThemeFromUser, user?.betaPro, user?.betaProActive, user?.id, user?.planSource, user?.subscriptionPlan, user?.themeId]);
 
   useEffect(() => {
     const onPointerDown = (event) => {
@@ -479,7 +482,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                 {userInitials}
               </span>
               <span className="kitchen-user-name">{userName}</span>
-              {user?.subscriptionPlan && (
+              {subscriptionsEnabled === true && user?.subscriptionPlan && (
                 <span className={`kitchen-user-plan-badge plan-${String(user.subscriptionPlan).toLowerCase()}${user.planSource === "beta_pro" ? " plan-beta-pro" : ""}`}>
                   {user.planSource === "beta_pro"
                     ? "Pro Beta"
@@ -535,7 +538,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración
                 </button>
-                {user?.subscriptionsEnabled !== false ? (
+                {subscriptionsEnabled === true ? (
                   <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/upgrade"); onNavigate(); }}>
                     <CreditCardIcon className="kitchen-user-menu-icon" />
                     Suscripción / Plan
@@ -607,7 +610,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
           </div>
         )}
       />
-      {betaProEvent && user?.subscriptionsEnabled !== false ? (
+      {betaProEvent && subscriptionsEnabled === true ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
       <div className={`kitchen-container hf-page-enter ${containerClassName}`.trim()}>

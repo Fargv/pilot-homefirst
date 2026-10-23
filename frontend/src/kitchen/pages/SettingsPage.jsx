@@ -358,6 +358,11 @@ export default function SettingsPage() {
   const activePanel = ((searchParams.get("section") || "").toLowerCase() === "household-invitations"
     ? "share"
     : (searchParams.get("section") || "").toLowerCase());
+  useEffect(() => {
+    if (subscriptionsEnabled === false && activePanel === "plan") {
+      navigate("/kitchen/configuracion", { replace: true });
+    }
+  }, [activePanel, navigate, subscriptionsEnabled]);
   const isHub = !activePanel;
   const userInitials = (user?.initials || getUserInitialsPreference(user?.id) || initialsFromName(user?.displayName || "")).slice(0, 3);
   const selectedColor = useMemo(
@@ -367,12 +372,12 @@ export default function SettingsPage() {
   const subscriptionAccess = useMemo(
     () => ({
       subscriptionPlan,
-      subscriptionsEnabled,
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
-      betaPro: user?.betaPro
+      betaPro: user?.betaPro,
+      subscriptionsEnabled: subscriptionsEnabled === true
     }),
-    [subscriptionPlan, subscriptionsEnabled, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionAccess);
   const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
@@ -382,8 +387,8 @@ export default function SettingsPage() {
   const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
-    () => buildLicenseState(subscriptionPlan, memberUsage),
-    [memberUsage, subscriptionPlan]
+    () => buildLicenseState(subscriptionPlan, memberUsage, subscriptionsEnabled === true),
+    [memberUsage, subscriptionPlan, subscriptionsEnabled]
   );
   const canAddMoreUsers = licenseState.capabilities.canAddUser;
   const canAddMoreNonUserDiners = licenseState.capabilities.canAddNonUserDiner;
@@ -1668,8 +1673,12 @@ export default function SettingsPage() {
           )}
           <p className="hh-summary-meta">
             {members.length} {members.length === 1 ? "miembro" : "miembros"}
-            {" · "}
-            <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+            {subscriptionsEnabled === true ? (
+              <>
+                {" · "}
+                <span className={subscriptionBadgeClassName(subscriptionPlan)}>{formatSubscriptionPlanLabel(subscriptionPlan)}</span>
+              </>
+            ) : null}
           </p>
           {(() => {
             const owner = members.find((m) => !m.isPlaceholder && (m.role === "owner" || m.role === "admin"));
@@ -1714,7 +1723,7 @@ export default function SettingsPage() {
       ) : null}
 
       {/* 3 · Plan limit notice */}
-      {canManageHousehold && (!canAddMoreUsers || !canAddMoreNonUserDiners) ? (
+      {subscriptionsEnabled === true && canManageHousehold && (!canAddMoreUsers || !canAddMoreNonUserDiners) ? (
         <div className="hh-plan-status">
           <div className="hh-plan-status-head">
             <svg viewBox="0 0 20 20" width="15" height="15" fill="none" aria-hidden="true">
@@ -2353,11 +2362,11 @@ export default function SettingsPage() {
             {userInitials}
           </div>
         }
-        primaryAction={
+        primaryAction={subscriptionsEnabled === true ? (
           <span className={`settings-header-plan-badge${isPaidPlan ? " is-paid" : ""}`}>
             {formatSubscriptionPlanLabel(subscriptionPlan)}
           </span>
-        }
+        ) : null}
         className="settings-header settings-header-compact"
       />
       <div className={`kitchen-card kitchen-block-gap${!loading && isHub ? " settings-hub-shell" : ""}`}>
@@ -2366,7 +2375,7 @@ export default function SettingsPage() {
         {success ? <div className="kitchen-alert success">{success}</div> : null}
         {loading ? <SettingsPageSkeleton /> : null}
 
-        {!loading && pendingDowngradeAt && (
+        {!loading && subscriptionsEnabled === true && pendingDowngradeAt && (
           <div className="settings-downgrade-banner">
             <span className="settings-downgrade-banner-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
@@ -2519,9 +2528,9 @@ export default function SettingsPage() {
               </div>
             ) : null}
 
-            {/* ── Sección 4: Plan ──────────────────────────────── */}
+            {/* ── Sección 4: Finanzas y plan ─────────────────────── */}
             <div className="settings-section">
-              <p className="settings-section-label">Plan</p>
+              <p className="settings-section-label">{subscriptionsEnabled === true ? "Plan" : "Finanzas y herramientas"}</p>
               <div className="settings-section-group">
                 <button type="button" className={`settings-nav-row${!budgetFeatureEnabled ? " settings-nav-row-locked" : ""}`} onClick={openBudgetPanel}>
                   <span className="settings-nav-row-icon settings-nav-icon-budget" aria-hidden="true">
@@ -2554,7 +2563,7 @@ export default function SettingsPage() {
                     <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </button>
-                {subscriptionsEnabled ? <button type="button" className="settings-nav-row settings-nav-row-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
+                {subscriptionsEnabled === true ? <button type="button" className="settings-nav-row settings-nav-row-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
                   <span className="settings-nav-row-icon settings-nav-icon-upgrade" aria-hidden="true">
                     <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
                       <path d="M10 3l2.5 5h5l-4 3 1.5 5.5L10 13.5 5 16.5 6.5 11l-4-3h5L10 3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
