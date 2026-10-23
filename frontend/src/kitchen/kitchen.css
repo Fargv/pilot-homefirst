@@ -6552,7 +6552,8 @@ body {
 }
 
 .shopping-item-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -6589,9 +6590,7 @@ body {
 }
 
 .shopping-item-name-col {
-  flex: 1;
   min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .shopping-source-summary {
@@ -6600,7 +6599,7 @@ body {
   color: color-mix(in srgb, var(--category-text, #64748b) 78%, #475569);
   font-size: 0.76rem;
   line-height: 1.3;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .shopping-source-toggle {
@@ -6667,6 +6666,13 @@ body {
 
   .shopping-item-main {
     align-items: flex-start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .shopping-item-controls {
+    grid-column: 2;
+    justify-self: start;
+    margin-left: 0;
   }
 
   .shopping-item-controls {
@@ -30070,16 +30076,19 @@ body,
 .shopping-day-option.is-selected { background: var(--accent-soft, #e9f5ef); }
 .shopping-item-flat {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  gap: 7px;
+  gap: 0 10px;
   padding: 5px 0;
+}
+.shopping-item-flat .shopping-item-main {
+  grid-column: 1 / -1;
 }
 .shopping-item-flat .shopping-item-name-col { min-width: 0; }
 .shopping-item-flat .shopping-item-text {
   display: block;
   font-size: .95rem;
   line-height: 1.25;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .shopping-item-flat .shopping-source-toggle {
   min-height: 44px;
@@ -30106,3 +30115,19 @@ body,
 .shopping-item-flat .shopping-item-controls { gap: 0; }
 .shopping-item-flat .shopping-qty-button,
 .shopping-item-flat .shopping-check { min-width: 44px; min-height: 44px; }
+
+@media (min-width: 480px) {
+  .shopping-item-flat .shopping-item-main {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 479px) {
+  .shopping-item-flat .shopping-item-main {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .shopping-item-flat .shopping-item-controls {
+    grid-column: 2;
+    margin-left: 0;
+  }
+}
