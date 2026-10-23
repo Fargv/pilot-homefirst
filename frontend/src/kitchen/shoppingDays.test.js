@@ -49,13 +49,28 @@ test("las referencias de receta se deduplican por plato y día y omiten manuales
   ] };
   const original = structuredClone(item);
   assert.deepEqual(getShoppingRecipeReferences(item), [
-    { dishName: "Sopa", date: "2026-10-21" },
-    { dishName: "Sopa", date: "2026-10-22" },
-    { dishName: "Tarta", date: "2026-10-21" }
+    { key: "dish:soup|2026-10-21", dishName: "Sopa", date: "2026-10-21" },
+    { key: "dish:soup|2026-10-22", dishName: "Sopa", date: "2026-10-22" },
+    { key: "dish:pie|2026-10-21", dishName: "Tarta", date: "2026-10-21" }
   ]);
   assert.deepEqual(item, original, "abrir el resumen no modifica fuentes ni datos de compra");
   assert.deepEqual(getShoppingRecipeReferences({ source: "manual", sources: [{ day: "2026-10-21", dishName: "No inventar" }] }), []);
   assert.deepEqual(getShoppingRecipeReferences({ source: "plan", fromDishes: ["old"], sources: [] }), []);
+});
+
+test("keys de recetas distinguen IDs distintos con el mismo nombre y día", () => {
+  const references = getShoppingRecipeReferences({ source: "plan", sources: [
+    { dishId: "dish-101", dishName: "Sopa de verduras", day: "2026-10-21" },
+    { dishId: "dish-202", dishName: "Sopa de verduras", day: "2026-10-21" },
+    { dishName: "Sopa de verduras", day: "2026-10-21" }
+  ] });
+  assert.equal(references.length, 3);
+  assert.deepEqual(references.map(({ key }) => key), [
+    "dish:dish-101|2026-10-21",
+    "dish:dish-202|2026-10-21",
+    "name:sopa de verduras|2026-10-21"
+  ]);
+  assert.equal(new Set(references.map(({ key }) => key)).size, references.length);
 });
 
 test("un ingrediente compartido aparece en cualquiera de sus días sin duplicarse", () => {

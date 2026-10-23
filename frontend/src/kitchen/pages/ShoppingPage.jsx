@@ -1502,7 +1502,7 @@ export default function ShoppingPage() {
                                       onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
                                     >{recipeReferences.length === 1 ? <><span>{recipeReferences[0].dishName} · {new Date(`${recipeReferences[0].date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</span><ChevronRight size={14} aria-hidden="true" /></> : <><span>{recipeReferences.length} recetas</span><ChevronRight size={14} aria-hidden="true" /></>}</button> : null}
                                     <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
-                                      {recipeReferences.length ? <ul>{recipeReferences.map((reference) => <li key={`${reference.dishName}-${reference.date}`}>{reference.dishName} — {new Date(`${reference.date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</li>)}</ul> : null}
+                                      {recipeReferences.length ? <ul>{recipeReferences.map((reference) => <li key={reference.key}>{reference.dishName} — {new Date(`${reference.date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</li>)}</ul> : null}
                                     </div>
                                   </div>
                                   {!selectedDays.size ? <div className="shopping-item-controls">

@@ -42,8 +42,10 @@ export function getShoppingRecipeReferences(item) {
     const date = getSourceDay(source);
     const dishName = String(source?.dishName || "").trim();
     if (!date || !dishName) continue;
-    const key = `${String(source.dishId || dishName).toLocaleLowerCase("es")}|${date}`;
-    if (!references.has(key)) references.set(key, { dishName, date });
+    const dishId = String(source?.dishId ?? "").trim();
+    const identity = dishId ? `dish:${dishId}` : `name:${dishName.toLocaleLowerCase("es")}`;
+    const key = `${identity}|${date}`;
+    if (!references.has(key)) references.set(key, { key, dishName, date });
   }
   return [...references.values()];
 }
