@@ -8,6 +8,7 @@ export function createSubscriptionsConfigReader({ read, cacheTtlMs = 30_000, log
   let cachedValue = DEFAULT_SUBSCRIPTIONS_ENABLED;
   let cacheExpiresAt = 0;
   let pendingRead = null;
+  let generation = 0;
   const readValue = async () => {
     try {
       const document = await read();
@@ -21,13 +22,25 @@ export function createSubscriptionsConfigReader({ read, cacheTtlMs = 30_000, log
     getSubscriptionsEnabled({ forceRefresh = false } = {}) {
       if (!forceRefresh && cacheExpiresAt > Date.now()) return Promise.resolve(cachedValue);
       if (pendingRead) return pendingRead;
+      const readGeneration = generation;
       pendingRead = readValue().then((value) => {
-        cachedValue = value;
-        cacheExpiresAt = Date.now() + cacheTtlMs;
+        // A write can invalidate this process while a read is in flight. Do
+        // not let the older read repopulate the cache after that invalidation.
+        if (readGeneration === generation) {
+          cachedValue = value;
+          cacheExpiresAt = Date.now() + cacheTtlMs;
+        }
         return value;
-      }).finally(() => { pendingRead = null; });
+      }).finally(() => {
+        if (readGeneration === generation) pendingRead = null;
+      });
       return pendingRead;
     },
-    reset() { cachedValue = DEFAULT_SUBSCRIPTIONS_ENABLED; cacheExpiresAt = 0; pendingRead = null; }
+    reset() {
+      generation += 1;
+      cachedValue = DEFAULT_SUBSCRIPTIONS_ENABLED;
+      cacheExpiresAt = 0;
+      pendingRead = null;
+    }
   };
 }
