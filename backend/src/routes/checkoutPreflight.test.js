@@ -17,14 +17,14 @@ function createResponse() {
   };
 }
 
-async function invoke({ type, paymentsEnabled = true, subscriptionsEnabled = true }) {
+async function invoke({ type, paymentsEnabled = true, subscriptionsEnabled = true, readSubscriptions = null }) {
   const req = { body: { type } };
   const res = createResponse();
   let nextCalls = 0;
   let nextError = null;
   const middleware = createCheckoutPreflight({
     isPaymentsEnabled: () => paymentsEnabled,
-    getSubscriptionsEnabled: async () => subscriptionsEnabled
+    getSubscriptionsEnabled: readSubscriptions || (async () => subscriptionsEnabled)
   });
   await middleware(req, res, (error) => {
     nextCalls += 1;
@@ -66,4 +66,29 @@ test("checkout preflight still honors the existing payments switch", async () =>
   assert.equal(result.res.statusCode, 403);
   assert.equal(result.res.body.code, "PAYMENTS_DISABLED");
   assert.equal(result.nextCalls, 0);
+});
+
+test("subscription checkout fails closed when the persisted switch cannot be read", async () => {
+  const result = await invoke({
+    type: "subscription",
+    readSubscriptions: async ({ failClosed }) => {
+      assert.equal(failClosed, true);
+      return false;
+    }
+  });
+  assert.equal(result.res.statusCode, 403);
+  assert.equal(result.res.body.code, "SUBSCRIPTIONS_DISABLED");
+  assert.equal(result.nextCalls, 0);
+});
+
+test("pack and Bites checkout stay independent when the switch cannot be read", async () => {
+  for (const type of ["pack", "bites"]) {
+    const result = await invoke({
+      type,
+      readSubscriptions: async () => { throw new Error("database unavailable"); }
+    });
+    assert.equal(result.res.statusCode, 200);
+    assert.equal(result.nextCalls, 1);
+    assert.equal(result.nextError, null);
+  }
 });

@@ -27,8 +27,14 @@ export function createCheckoutPreflight({
         });
       }
 
-      if (isSubscriptionCheckoutBlocked(type, await getSubscriptionsEnabled())) {
-        return res.status(403).json(buildSubscriptionsDisabledPayload());
+      if (type === "subscription") {
+        // A new subscription is authorized only when the persisted switch was
+        // read successfully. Other paid products remain independent of this
+        // switch and must not be blocked by a monetization-config outage.
+        const subscriptionsEnabled = await getSubscriptionsEnabled({ forceRefresh: true, failClosed: true });
+        if (isSubscriptionCheckoutBlocked(type, subscriptionsEnabled)) {
+          return res.status(403).json(buildSubscriptionsDisabledPayload());
+        }
       }
 
       return next();
