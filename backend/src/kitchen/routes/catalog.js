@@ -40,6 +40,8 @@ import {
 } from "../bitesService.js";
 import { unlockPackWithBites } from "../bitesPackUnlockCore.js";
 import { syncPackToStripe, isStripeSyncAvailable } from "../stripeSync.js";
+import { assertValidPersonalization } from "../personalizationContract.js";
+import { catalogMetadataHash, copyPersonalizationFromTemplate } from "../catalogMetadata.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,10 +131,7 @@ function normalizeDishTemplateForHash(template = {}) {
 }
 
 function catalogContentHash(template) {
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(normalizeDishTemplateForHash(template)))
-    .digest("hex");
+  return catalogMetadataHash(template, normalizeDishTemplateForHash);
 }
 
 function dishFieldsFromTemplate(template, robotType = null) {
@@ -141,7 +140,7 @@ function dishFieldsFromTemplate(template, robotType = null) {
   if (robotType && template.recipe?.robotSteps?.[robotType]) {
     steps = template.recipe.robotSteps[robotType];
   }
-  return {
+  return copyPersonalizationFromTemplate(template, {
     name: template.name,
     isDinner: Boolean(template.isDinner),
     special: Boolean(template.special),
@@ -158,7 +157,13 @@ function dishFieldsFromTemplate(template, robotType = null) {
       servings: template.recipe?.servings || null,
       baseServings: template.recipe?.baseServings || null
     }
-  };
+  });
+}
+
+function validatePackPersonalization(dishes = []) {
+  dishes.forEach((dish, index) => {
+    if (dish?.personalization !== undefined) assertValidPersonalization(dish.personalization, `dishes[${index}].personalization`);
+  });
 }
 
 function assertPublishedPackComposition(currentDishes = [], incomingDishes = []) {
@@ -1116,6 +1121,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
     if (!slug || !title) {
       return res.status(400).json({ ok: false, error: "slug y title son obligatorios." });
     }
+    validatePackPersonalization(dishes || []);
 
     const pack = new CatalogPack({
       slug, title, subtitle, description, coverImage, tags, cuisineType,
@@ -1141,7 +1147,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ ok: false, error: "Ya existe un pack con ese slug." });
     }
-    return res.status(500).json({ ok: false, error: error.message || "Error al crear el pack." });
+    return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al crear el pack." });
   }
 });
 
@@ -1170,6 +1176,7 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
       if (!Array.isArray(req.body.dishes)) {
         return res.status(400).json({ ok: false, error: "dishes debe ser un array." });
       }
+      validatePackPersonalization(req.body.dishes);
       if (isPublished) {
         const incomingDishes = req.body.dishes.map((dish, index) => ({
           ...dish,
