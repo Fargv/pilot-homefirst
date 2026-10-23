@@ -1,4 +1,5 @@
 import express from "express";
+import visualOnboardingRoutes from "./visualOnboarding.js";
 import mongoose from "mongoose";
 import { requireAuth, requireDiod } from "../middleware.js";
 import { getEffectiveHouseholdId } from "../householdScope.js";
@@ -27,6 +28,10 @@ import {
 } from "../guidedTourService.js";
 
 const router = express.Router();
+
+// Resumable state for the future visual setup flow. This is separate from the
+// challenge onboarding and the guided tutorial below.
+router.use("/visual", visualOnboardingRoutes);
 
 // ─── User: get state ──────────────────────────────────────────────────────────
 
