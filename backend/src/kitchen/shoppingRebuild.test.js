@@ -141,22 +141,21 @@ test("legacy recipe sin cantidad conserva presencia al regenerar", () => {
   assert.equal(result[0].source, "plan");
 });
 
-test("varios días agregan cantidades, occurrences y fromDishes", () => {
+test("varios días agregan cantidades, occurrences, fromDishes y fuentes diarias", () => {
   const ingredientId = id();
   const firstDishId = id();
   const secondDishId = id();
   const merged = new Map();
   mergeShoppingIngredientContribution(merged, {
-    ...builtItem({ ingredientId, quantity: null, unit: "g" }),
-    quantity: { amount: 100, unit: "g" }
-  }, [firstDishId.toString()]);
+    ...builtItem({ ingredientId, quantity: { amount: 100, unit: "g" }, unit: "g", fromDishes: [] }),
+    sources: [{ day: "2026-10-19", date: "2026-10-19", mealType: "lunch", role: "principal", dishId: firstDishId.toString(), dishName: "Guiso", quantity: { amount: 100, unit: "g" } }]
+  });
   mergeShoppingIngredientContribution(
     merged,
     {
-      ...builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: null, unit: "g" }),
-      quantity: { amount: 150, unit: "g" }
+      ...builtItem({ ingredientId: new mongoose.Types.ObjectId(String(ingredientId)), quantity: { amount: 150, unit: "g" }, unit: "g", fromDishes: [] }),
+      sources: [{ day: "2026-10-20", date: "2026-10-20", mealType: "dinner", role: "principal", dishId: secondDishId.toString(), dishName: "Guiso", quantity: { amount: 150, unit: "g" } }]
     },
-    [secondDishId.toString()]
   );
   const result = mergeRebuiltShoppingItems(Array.from(merged.values()), []);
 
@@ -164,6 +163,10 @@ test("varios días agregan cantidades, occurrences y fromDishes", () => {
   assert.equal(result[0].quantity, 250);
   assert.equal(result[0].occurrences, 2);
   assert.deepEqual(result[0].fromDishes.sort(), [firstDishId.toString(), secondDishId.toString()].sort());
+  assert.deepEqual(result[0].sources, [
+    { day: "2026-10-19", date: "2026-10-19", mealType: "lunch", role: "principal", dishId: firstDishId.toString(), dishName: "Guiso", quantity: { amount: 100, unit: "g" } },
+    { day: "2026-10-20", date: "2026-10-20", mealType: "dinner", role: "principal", dishId: secondDishId.toString(), dishName: "Guiso", quantity: { amount: 150, unit: "g" } }
+  ]);
 });
 
 test("manual comprado y plan pendiente con la misma identidad sobreviven separados", () => {
@@ -271,12 +274,12 @@ test("sources conserva cada día, rol y cantidad de principales y acompañamient
   const side1 = dish("Ensalada", 50);
   const day1 = consolidateDayIngredients({
     mainDish: main1, sideDish: side1, day: { servings: 1 },
-    sourceContext: { date: "2026-10-26", mealType: "lunch", mainDishId: main1._id, sideDishId: side1._id }
+    sourceContext: { day: "2026-10-26", date: "2026-10-26", mealType: "lunch", mainDishId: main1._id, sideDishId: side1._id }
   });
   const main2 = dish("Guiso", 100);
   const day2 = consolidateDayIngredients({
     mainDish: main2, day: { servings: 1 }, includeSide: false,
-    sourceContext: { date: "2026-10-28", mealType: "dinner", mainDishId: main2._id }
+    sourceContext: { day: "2026-10-28", date: "2026-10-28", mealType: "dinner", mainDishId: main2._id }
   });
   const merged = new Map();
   for (const ingredient of [...day1, ...day2]) mergeShoppingIngredientContribution(merged, ingredient);
@@ -288,6 +291,9 @@ test("sources conserva cada día, rol y cantidad de principales y acompañamient
   assert.deepEqual(item.sources.map((source) => source.role), ["principal", "acompanamiento", "principal"]);
   assert.deepEqual(item.sources.map((source) => source.quantity.amount), [100, 50, 100]);
   assert.deepEqual(item.sources.map((source) => source.date), ["2026-10-26", "2026-10-26", "2026-10-28"]);
+  assert.deepEqual(item.sources.map((source) => source.day), ["2026-10-26", "2026-10-26", "2026-10-28"]);
+  assert.deepEqual(item.sources.map((source) => source.dishName), ["Guiso", "Ensalada", "Guiso"]);
+  assert.deepEqual(item.sources.map((source) => source.mealType), ["lunch", "lunch", "dinner"]);
   assert.equal(item.fromDishes.length, 3);
 });
 

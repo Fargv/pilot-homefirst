@@ -145,6 +145,7 @@ export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallba
       itemId: previous?.itemId || normalizedItem.itemId,
       categoryId: normalizedItem.categoryId || fallbackCategoryId || null,
       fromDishes: normalizedItem.fromDishes,
+      sources: normalizedItem.sources,
       status: nextStatus,
       purchasedBy: nextStatus === "purchased" ? previous?.purchasedBy || null : null,
       purchasedAt: nextStatus === "purchased" ? previous?.purchasedAt || null : null,
@@ -160,7 +161,7 @@ export function mergeRebuiltShoppingItems(builtItems, previousItems = [], fallba
   return [...rebuiltItems, ...preservedManualItems];
 }
 
-export function mergeShoppingIngredientContribution(merged, ingredient, dayDishIds = []) {
+export function mergeShoppingIngredientContribution(merged, ingredient) {
   const normalizedCanonical = normalizeIngredientName(ingredient.canonicalName || ingredient.displayName);
   const key = getQuantityConsolidationKey(ingredient);
   if (!key) return merged;
@@ -187,8 +188,7 @@ export function mergeShoppingIngredientContribution(merged, ingredient, dayDishI
   }
   current.fromDishes = Array.from(new Set([
     ...current.fromDishes.map(String),
-    ...(ingredient.sources || []).map((source) => source?.dishId).filter(Boolean).map(String),
-    ...dayDishIds.filter(Boolean).map(String)
+    ...(ingredient.sources || []).map((source) => source?.dishId).filter(Boolean).map(String)
   ]));
   current.sources.push(...(ingredient.sources || []));
   merged.set(key, current);
@@ -309,6 +309,10 @@ async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
       includeSide: shouldIncludeSideInShopping(day),
       sourceContext: {
         date: day?.date || null,
+        day: (() => {
+          const date = day?.date ? new Date(day.date) : null;
+          return date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : null;
+        })(),
         mealType: day?.mealType || null,
         mainDishId: day?.mainDishId || null,
         sideDishId: day?.sideDishId || null

@@ -29,6 +29,7 @@ import {
   getShoppingItemKey,
   reconcileShoppingPayloadWithPendingMutations
 } from "../shoppingOptimisticState.js";
+import { SHOPPING_DAYS, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, hasReliableShoppingDays } from "../shoppingDays.js";
 
 function RefreshIcon(props) {
   return (
@@ -270,6 +271,7 @@ export default function ShoppingPage() {
   const navigationContext = React.useContext(NavigationContext);
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
   const [tab, setTab] = useState("pending");
+  const [selectedDays, setSelectedDays] = useState(() => new Set());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stores, setStores] = useState([]);
   const [selectedStoreId, setSelectedStoreId] = useState("");
@@ -1204,6 +1206,17 @@ export default function ShoppingPage() {
     if (!Array.isArray(purchasedByStoreDay)) return null;
     return purchasedByStoreDay.reduce((acc, group) => acc + (group.items?.length || 0), 0);
   }, [purchasedByStoreDay]);
+  const allShoppingItems = useMemo(() => [
+    ...(pendingByCategory || []).flatMap((group) => group.items || []),
+    ...(purchasedByStoreDay || []).flatMap((group) => group.items || [])
+  ], [pendingByCategory, purchasedByStoreDay]);
+  const visiblePendingGroups = useMemo(() => {
+    return getVisiblePendingGroups(pendingByCategory, selectedDays, weekStart);
+  }, [pendingByCategory, selectedDays, weekStart]);
+  const visiblePurchasedGroups = useMemo(() => (purchasedByStoreDay || []).map((group) => ({
+    ...group,
+    items: filterShoppingItems(group.items, selectedDays, weekStart)
+  })).filter((group) => group.items.length), [purchasedByStoreDay, selectedDays, weekStart]);
   const hasExactSuggestion = Array.isArray(quickSuggestions) && quickSuggestions.some((item) => normalizeQuery(item?.name) === normalizeQuery(quickQuery));
   const currentPendingCanonicals = useMemo(() => {
     if (!Array.isArray(pendingByCategory)) return new Set();
@@ -1379,6 +1392,23 @@ export default function ShoppingPage() {
             </span>
           </div>
         ) : null}
+        <section className="shopping-day-filter" aria-label="Filtrar por días">
+          <div className="shopping-day-filter-head">
+            <strong>{selectedDays.size ? "Días seleccionados" : "Toda la semana"}</strong>
+            <button type="button" className="shopping-day-clear" aria-pressed={!selectedDays.size} onClick={() => setSelectedDays(new Set())}>Toda la semana</button>
+          </div>
+          <div className="shopping-day-options" role="group" aria-label="Días de la semana">
+            {SHOPPING_DAYS.map((day) => {
+              const coverage = getDayCoverage(allShoppingItems, day.key, weekStart);
+              const checked = selectedDays.has(day.key);
+              return <button key={day.key} type="button" className={`shopping-day-option${checked ? " is-selected" : ""}`} aria-pressed={checked} aria-label={`${day.label}${coverage.total ? `: cobertura de ingredientes ${coverage.purchased} de ${coverage.total}` : ": sin ingredientes requeridos"}`} onClick={() => setSelectedDays((previous) => { const next = new Set(previous); if (next.has(day.key)) next.delete(day.key); else next.add(day.key); return next; })}>
+                <span>{day.label}</span>
+                {coverage.total ? <small>{coverage.purchased}/{coverage.total}</small> : <small>—</small>}
+              </button>;
+            })}
+          </div>
+          <p className="shopping-day-coverage-note">Cobertura de ingredientes comprados por día. El estado comprado es compartido.</p>
+        </section>
       </PageHeader>
       <div className="shopping-page-shell" data-tour-id="shopping-list">
         <div className="kitchen-card shopping-main-card">
@@ -1427,13 +1457,14 @@ export default function ShoppingPage() {
               <div className="shopping-categories-wrap">
               {!Array.isArray(pendingByCategory) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
-              ) : pendingByCategory.length === 0 ? (
+              ) : visiblePendingGroups.length === 0 ? (
                 <div className="shopping-empty-state">
                   {purchasedCount ? <EmptyCheckIcon /> : <EmptyListIcon />}
-                  <h4>{purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
+                  <h4>{selectedDays.size ? "No hay ingredientes pendientes para estos días." : purchasedCount ? "Todo comprado por esta semana." : "No hay nada por comprar todavía."}</h4>
                 </div>
               ) : (
                 <>
+                  {selectedDays.size ? <p className="shopping-day-quantity-note">Las cantidades de ocurrencias se muestran en «Toda la semana».</p> : null}
                   <div className="shopping-global-actions-row">
                     <button
                       type="button"
@@ -1444,16 +1475,16 @@ export default function ShoppingPage() {
                     </button>
                   </div>
                   <div className="shopping-categories shopping-categories-grid">
-                    {(stablePendingByCategory || []).map((group) => {
+                    {visiblePendingGroups.map((group, groupIndex) => {
                       const category = { name: group.categoryInfo?.name || "Sin categoría", ...slugColor(group.categoryInfo?.slug), ...group.categoryInfo };
                       return (
                         <div
                           className="shopping-category-card"
-                          key={group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}
+                          key={`${group._section || "plan"}-${group.categoryId || group.categoryInfo?.slug || group.categoryInfo?.name}-${groupIndex}`}
                           style={{ "--category-bg": category.colorBg, "--category-text": category.colorText }}
                         >
                           <div className="shopping-category-head">
-                            <h4>{category.name.toUpperCase()}</h4>
+                            <h4>{group._section ? `${group._section} · ${category.name}` : category.name.toUpperCase()}</h4>
                             <span className="shopping-category-count">{group.items.length}</span>
                           </div>
                           <div className="shopping-items-flat-list">
@@ -1495,7 +1526,7 @@ export default function ShoppingPage() {
                                         }) : <span>Plato asociado (detalle no disponible)</span>}
                                     </div>
                                   </div>
-                                  <div className="shopping-item-controls">
+                                  {!selectedDays.size ? <div className="shopping-item-controls">
                                     <button
                                       className="shopping-qty-button"
                                       type="button"
@@ -1513,7 +1544,7 @@ export default function ShoppingPage() {
                                     >
                                       <PlusIcon />
                                     </button>
-                                  </div>
+                                  </div> : null}
                                 </div>
                               );
                             })}
@@ -1532,8 +1563,8 @@ export default function ShoppingPage() {
             <div className="shopping-categories">
               {!Array.isArray(purchasedByStoreDay) ? (
                 <div className="shopping-empty-state"><EmptyStateIcon /><h4>No se pudo cargar la lista.</h4></div>
-              ) : purchasedByStoreDay.length === 0 ? (
-                <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>No hay nada comprado esta semana.</h4></div>
+              ) : visiblePurchasedGroups.length === 0 ? (
+                <div className="shopping-empty-state"><EmptyHistoryIcon /><h4>{selectedDays.size ? "No hay ingredientes comprados para estos días." : "No hay nada comprado esta semana."}</h4></div>
               ) : (
               <>
               <div className="shopping-unmark-bar">
@@ -1545,7 +1576,7 @@ export default function ShoppingPage() {
                   Descomprar todo
                 </button>
               </div>
-              {purchasedByStoreDay.map((group) => (
+              {visiblePurchasedGroups.map((group) => (
                 <div className="shopping-category-card shopping-purchased-card" key={`${group.purchasedDate}-${group.storeId || "none"}`}>
                   <div className="shopping-purchased-card-head">
                     <div className="shopping-purchased-card-meta">
@@ -1625,7 +1656,9 @@ export default function ShoppingPage() {
                         <div className={`shopping-item purchased ${transitioningItemKey === key ? "is-leaving" : ""} ${recentlyMovedItemKey === key ? "is-entering" : ""}`} key={key}>
                           <button className="shopping-check is-checked" type="button" onClick={() => setItemStatus(item, "pending")}><span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span></button>
                           <span className="shopping-item-text">{item.displayName}</span>
-                          {item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
+                          {selectedDays.size && item.source === "manual" ? <span className="shopping-day-item-note">Añadido manualmente</span> : null}
+                          {selectedDays.size && item.source !== "manual" && !hasReliableShoppingDays(item) ? <span className="shopping-day-item-note">Sin día asignado</span> : null}
+                          {!selectedDays.size && item.occurrences > 1 ? <span className="shopping-item-amount">x{item.occurrences}</span> : null}
                           <button className="shopping-remove-item" type="button" onClick={() => removeItem(item)} aria-label={`Eliminar ${item.displayName}`} title="Eliminar">
                             <MinusIcon />
                           </button>

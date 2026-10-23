@@ -12,6 +12,7 @@ const ShoppingItemSchema = new mongoose.Schema(
     occurrences: { type: Number, default: 1 },
     fromDishes: { type: [mongoose.Schema.Types.ObjectId], ref: "KitchenDish", default: [] },
     sources: { type: [{
+      day: { type: String, trim: true, default: null },
       date: { type: Date, default: null },
       mealType: { type: String, default: null },
       role: { type: String, enum: ["principal", "acompanamiento", "extra"], default: null },
