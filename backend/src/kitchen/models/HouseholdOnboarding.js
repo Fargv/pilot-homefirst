@@ -5,7 +5,9 @@ const CompletedChallengeSchema = new mongoose.Schema(
     challengeId: { type: mongoose.Schema.Types.ObjectId, ref: "OnboardingChallenge" },
     challengeKey: { type: String },
     completedAt: { type: Date, default: Date.now },
-    rewardBites: { type: Number, default: 0 }
+    rewardBites: { type: Number, default: 0 },
+    rewardGranted: { type: Boolean, default: false },
+    rewardIdempotencyKey: { type: String, default: "" }
   },
   { _id: false }
 );

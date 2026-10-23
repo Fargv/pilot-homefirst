@@ -24,8 +24,8 @@ import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import { canRandomizeFullWeek, canUseDinnersFeature, isWeekRandomizationUnavailableError } from "../subscription.js";
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
-import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import { useSubscriptionsEnabled } from "../monetization.jsx";
+import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { emitOnboardingEvent, onTourPrepare, ONBOARDING_EVENTS, TOUR_PREPARE } from "../components/tour/guidedOnboardingEvents.js";
@@ -461,7 +461,7 @@ export default function WeekPage() {
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro,
-      subscriptionsEnabled: subscriptionsEnabled === true
+      subscriptionsEnabled
     }),
     [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );

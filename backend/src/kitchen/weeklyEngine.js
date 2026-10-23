@@ -6,9 +6,10 @@ import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { Household } from "./models/Household.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenDish } from "./models/KitchenDish.js";
-import { BitesTransaction } from "./models/BitesTransaction.js";
+import { grantRewardBites } from "./rewardBitesService.js";
 import { recordMeaningfulActivity, tryUnlockBetaPro, checkAndGrantBetaPro, inspectBetaProEligibility, isPaidPlan } from "./betaProService.js";
 import { isProLikeHousehold } from "./subscriptionService.js";
+import { getSubscriptionsEnabled } from "./monetizationConfigService.js";
 
 // ─── Curriculum resolution ────────────────────────────────────────────────────
 
@@ -19,8 +20,8 @@ import { isProLikeHousehold } from "./subscriptionService.js";
  *
  * Accepts either a full Household document or just the subscriptionPlan string.
  */
-export function getHouseholdCurriculum(householdOrPlan) {
-  return isProLikeHousehold(householdOrPlan) ? "pro" : "basic";
+export function getHouseholdCurriculum(householdOrPlan, subscriptionsEnabled = true) {
+  return subscriptionsEnabled === false || isProLikeHousehold(householdOrPlan) ? "pro" : "basic";
 }
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
@@ -794,23 +795,14 @@ export async function getOrCreateProgress(householdId, weekStart, cycleWeekIndex
 // ─── Bites grant ──────────────────────────────────────────────────────────────
 
 async function _grantBites(householdId, amount, reason, metadata) {
-  const household = await Household.findById(householdId).lean();
-  if (!household) return;
-
-  const newFree = Math.min(
-    (household.freeBitesBalance ?? 0) + amount,
-    500 // basic carry-over cap
-  );
-
-  await Household.updateOne({ _id: household._id }, { $set: { freeBitesBalance: newFree } });
-
-  await BitesTransaction.create({
-    householdId: household._id,
-    type: "challenge_reward",
+  const rewardKey = metadata?.idempotencyKey
+    || `weekly:${householdId}:${metadata?.progressId || metadata?.challengeKey || reason}`;
+  return grantRewardBites({
+    householdId,
     amount,
-    balanceAfterFree: newFree,
-    balanceAfterPurchased: household.purchasedBitesBalance ?? 0,
+    type: "challenge_reward",
     reason,
+    idempotencyKey: rewardKey,
     metadata
   });
 }
@@ -818,30 +810,74 @@ async function _grantBites(householdId, amount, reason, metadata) {
 // ─── Reward grant ─────────────────────────────────────────────────────────────
 
 /**
- * Marks a challenge as reward-granted in progress and calls _grantBites.
- * Idempotent: does nothing if the reward was already granted.
+ * Applies a reward through the idempotent Bites ledger, then marks the
+ * progress entry as granted. Keeping the progress marker after the ledger
+ * means a failed credit remains recoverable on the next event.
  */
 export async function grantWeeklyReward(householdId, challengeKey, rewardBites, progress) {
-  const existing = (progress.completedChallenges || []).find(
-    (c) => c.challengeKey === challengeKey && c.rewardGranted === true
-  );
-  if (existing) return;
+  const entry = (progress?.completedChallenges || [])
+    .find((item) => item.challengeKey === challengeKey);
+  if (!entry || entry.rewardGranted === true || !entry.rewardIdempotencyKey) return false;
 
+  const numericRewardBites = Number(rewardBites ?? entry.rewardBites ?? 0);
+  if (!Number.isFinite(numericRewardBites) || numericRewardBites < 0) {
+    throw new Error(`Recompensa semanal inválida para ${challengeKey}.`);
+  }
+
+  // A zero-value challenge is still a real completed challenge, but it has no
+  // monetary side effect and therefore must not require a BitesTransaction.
+  if (numericRewardBites === 0) {
+    const zeroRewardUpdate = await HouseholdWeeklyProgress.updateOne(
+      {
+        _id: progress._id,
+        completedChallenges: {
+          $elemMatch: { challengeKey, rewardGranted: { $ne: true } }
+        }
+      },
+      { $set: { "completedChallenges.$.rewardGranted": true } }
+    );
+    if (zeroRewardUpdate.modifiedCount === 1) {
+      console.log(`[weekly] Zero-value reward marked: ${challengeKey} household=${householdId}`);
+      return true;
+    }
+    return false;
+  }
+
+  const reward = await _grantBites(
+    String(householdId),
+    numericRewardBites,
+    `Reto semanal completado: ${challengeKey}`,
+    {
+      source: "weekly_challenge",
+      challengeKey,
+      progressId: String(progress._id),
+      idempotencyKey: entry.rewardIdempotencyKey
+    }
+  );
+  if (!reward?.transactionId) {
+    throw new Error(`No se pudo registrar la recompensa semanal ${challengeKey}.`);
+  }
   await HouseholdWeeklyProgress.updateOne(
-    { _id: progress._id, "completedChallenges.challengeKey": challengeKey },
+    {
+      _id: progress._id,
+      completedChallenges: {
+        $elemMatch: { challengeKey, rewardGranted: { $ne: true } }
+      }
+    },
     { $set: { "completedChallenges.$.rewardGranted": true } }
   );
 
-  if (rewardBites > 0) {
-    await _grantBites(
-      String(householdId),
-      rewardBites,
-      `Reto semanal completado: ${challengeKey}`,
-      { source: "weekly_challenge", challengeKey }
-    );
-  }
+  console.log(`[weekly] Reward granted: ${challengeKey} (+${numericRewardBites} bites) household=${householdId}`);
+  return true;
+}
 
-  console.log(`[weekly] Reward granted: ${challengeKey} (+${rewardBites} bites) household=${householdId}`);
+async function recoverPendingWeeklyRewards(householdId, progress) {
+  const pendingRewards = (progress?.completedChallenges || [])
+    .filter((entry) => entry.rewardGranted !== true && entry.rewardIdempotencyKey);
+
+  for (const entry of pendingRewards) {
+    await grantWeeklyReward(householdId, entry.challengeKey, entry.rewardBites || 0, progress);
+  }
 }
 
 // ─── Bonus check ──────────────────────────────────────────────────────────────
@@ -850,10 +886,20 @@ export async function grantWeeklyReward(householdId, challengeKey, rewardBites, 
  * Checks if all non-bonus challenges for the week are complete, then grants bonus if so.
  */
 export async function checkAndGrantBonus(householdId, progress, challenges, bonusBites) {
-  if (progress.bonusGranted) return;
-
   const bonusChallenge = challenges.find((c) => c.triggerType === "bonus");
   if (!bonusChallenge) return;
+
+  // The claim may already exist while its ledger write is pending. Re-enter
+  // through the same idempotent grant path so a failed bonus is recoverable.
+  if (progress.bonusGranted) {
+    await grantWeeklyReward(
+      householdId,
+      bonusChallenge.key,
+      bonusBites ?? bonusChallenge.rewardBites,
+      progress
+    );
+    return;
+  }
 
   const mainChallenges = challenges.filter((c) => c.triggerType !== "bonus");
   const completedKeys = new Set((progress.completedChallenges || []).map((c) => c.challengeKey));
@@ -867,12 +913,18 @@ export async function checkAndGrantBonus(householdId, progress, challenges, bonu
       challengeKey: bonusChallenge.key,
       completedAt: new Date(),
       rewardBites: bonusChallenge.rewardBites,
-      rewardGranted: false
+      rewardGranted: false,
+      rewardIdempotencyKey: `weekly-progress:${progress._id}:${bonusChallenge.key}`
     };
-    await HouseholdWeeklyProgress.updateOne(
-      { _id: progress._id },
+    const bonusClaim = await HouseholdWeeklyProgress.updateOne(
+      {
+        _id: progress._id,
+        bonusGranted: { $ne: true },
+        completedChallenges: { $not: { $elemMatch: { challengeKey: bonusChallenge.key } } }
+      },
       { $push: { completedChallenges: bonusEntry }, $set: { bonusGranted: true } }
     );
+    if (bonusClaim.modifiedCount !== 1) return;
     const updatedProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
     if (updatedProgress) {
       await grantWeeklyReward(householdId, bonusChallenge.key, bonusChallenge.rewardBites, updatedProgress);
@@ -977,7 +1029,8 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
       .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
-    let curriculum = getHouseholdCurriculum(household);
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
+    let curriculum = getHouseholdCurriculum(household, subscriptionsEnabled);
 
     // Per-household cycle start: initialize on first weekly challenge interaction.
     // Falls back to current week for households that have never started challenges.
@@ -997,10 +1050,17 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     // Grant-week purgatory: when Beta Pro is granted during the current calendar week,
     // keep evaluating triggers against basic week 1 (already fully completed — no-ops).
     // Pro curriculum starts from the Monday after the grant week.
-    const betaProGranted = !!household?.betaPro?.unlockedAt;
+    const betaProGranted = subscriptionsEnabled && !!household?.betaPro?.unlockedAt;
     let effectiveWeekDate, cycleWeekIndex;
 
-    if (!betaProGranted) {
+    if (!subscriptionsEnabled) {
+      // Launch-free mode starts Pro curriculum at week 1 while keeping the
+      // existing household anchor and progress document. Basic progress in
+      // the same week remains intact because Pro keys are distinct.
+      effectiveWeekDate = getMondayOf(householdCycleStart);
+      cycleWeekIndex = 1;
+      curriculum = "pro";
+    } else if (!betaProGranted) {
       effectiveWeekDate = getMondayOf(householdCycleStart);
       cycleWeekIndex = 1;
     } else {
@@ -1029,6 +1089,12 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
     if (!challenges.length) return null;
 
     let progress = await getOrCreateProgress(householdId, effectiveWeekDate, cycleWeekIndex);
+
+    // A previous request may have completed the challenge but failed while
+    // writing its Bites ledger entry. Repair those entries before handling the
+    // new event; the reward service makes this retry balance-idempotent.
+    await recoverPendingWeeklyRewards(householdId, progress);
+    progress = await HouseholdWeeklyProgress.findById(progress._id).lean();
 
     const completedKeysBefore = new Set((progress.completedChallenges || []).map((c) => c.challengeKey));
     const newlyCompletedKeys = [];
@@ -1417,7 +1483,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       const freshProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
       for (const key of newlyCompletedKeys) {
         const def = challenges.find((c) => c.key === key);
-        if (def && def.rewardBites > 0) {
+        if (def && Number.isFinite(Number(def.rewardBites)) && def.rewardBites >= 0) {
           await grantWeeklyReward(householdId, key, def.rewardBites, freshProgress);
         }
       }
@@ -1425,7 +1491,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       await checkAndGrantBonus(householdId, latestProgress, challenges, cycleConfig.bonusBites);
 
       // Beta Pro unlock: only relevant for basic curriculum users
-      if (curriculum === "basic") {
+      if (subscriptionsEnabled && curriculum === "basic") {
         const betaProResult = await tryUnlockBetaPro(householdId);
         betaProUnlocked = betaProResult.unlocked;
       }
@@ -1447,12 +1513,14 @@ async function _markChallengeComplete(progressId, def) {
     challengeKey: def.key,
     completedAt: new Date(),
     rewardBites: def.rewardBites,
-    rewardGranted: false
+    rewardGranted: false,
+    rewardIdempotencyKey: `weekly-progress:${progressId}:${def.key}`
   };
-  await HouseholdWeeklyProgress.updateOne(
-    { _id: progressId },
+  const result = await HouseholdWeeklyProgress.updateOne(
+    { _id: progressId, "completedChallenges.challengeKey": { $ne: def.key } },
     { $push: { completedChallenges: entry } }
   );
+  return result.modifiedCount === 1;
 }
 
 // ─── Get state ────────────────────────────────────────────────────────────────
@@ -1477,7 +1545,8 @@ export async function getWeeklyState(householdId) {
     // Resolve curriculum and per-household cycle start
     const household = await Household.findById(householdId)
       .select("subscriptionPlan planSource betaPro weeklyChallengeCycleStartedAt").lean();
-    let curriculum = getHouseholdCurriculum(household);
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
+    let curriculum = getHouseholdCurriculum(household, subscriptionsEnabled);
 
     // Use per-household cycle anchor if set; fall back to current week (same as trigger init).
     const householdCycleStart = household?.weeklyChallengeCycleStartedAt ?? weekStartDate;
@@ -1490,10 +1559,15 @@ export async function getWeeklyState(householdId) {
     // (weeksElapsed === 0), keep showing the completed basic week 1 challenges until
     // the next Monday. Pro curriculum starts from the Monday AFTER the grant week
     // (proWeeksElapsed = weeksElapsed - 1 → cycleWeekIndex 1 on the first post-grant Mon).
-    const betaProGranted = !!household?.betaPro?.unlockedAt;
+    const betaProGranted = subscriptionsEnabled && !!household?.betaPro?.unlockedAt;
     let effectiveWeekDate, cycleWeekIndex, participationWeek;
 
-    if (!betaProGranted) {
+    if (!subscriptionsEnabled) {
+      effectiveWeekDate = getMondayOf(householdCycleStart);
+      cycleWeekIndex = 1;
+      participationWeek = 1;
+      curriculum = "pro";
+    } else if (!betaProGranted) {
       effectiveWeekDate = getMondayOf(householdCycleStart);
       cycleWeekIndex = 1;
       participationWeek = 1;
@@ -1575,6 +1649,7 @@ export async function getWeeklyState(householdId) {
 
     return {
       available: true,
+      subscriptionsEnabled,
       curriculum,              // "basic" | "pro" — frontend uses for UI decoration
       cycleWeekIndex,          // internal 1-4 rotation index (not shown to users)
       participationWeek,       // how many weeks user has been doing challenges (shown as "Semana N")

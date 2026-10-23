@@ -376,7 +376,7 @@ export default function SettingsPage() {
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro,
-      subscriptionsEnabled: subscriptionsEnabled === true
+      subscriptionsEnabled
     }),
     [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );
@@ -388,7 +388,7 @@ export default function SettingsPage() {
   const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
-    () => buildLicenseState(subscriptionPlan, memberUsage, subscriptionsEnabled === true),
+    () => buildLicenseState(subscriptionPlan, memberUsage, subscriptionsEnabled),
     [memberUsage, subscriptionPlan, subscriptionsEnabled]
   );
   const canAddMoreUsers = licenseState.capabilities.canAddUser;

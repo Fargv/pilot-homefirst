@@ -178,6 +178,12 @@ export default function UpgradeToProPage() {
     return () => { active = false; };
   }, [subscriptionsEnabled]);
 
+  useEffect(() => {
+    if (!summaryLoading && !subscriptionsEnabled) {
+      navigate(backPath, { replace: true });
+    }
+  }, [backPath, navigate, subscriptionsEnabled, summaryLoading]);
+
   const handlePlanAction = async (planId) => {
     if (planId === "basic") return;
     setLoadingPlanId(planId);

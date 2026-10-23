@@ -40,6 +40,7 @@ import { Household } from "./models/Household.js";
 import { HouseholdOnboarding } from "./models/HouseholdOnboarding.js";
 import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
 import { WeeklyChallengeDef } from "./models/WeeklyChallengeDef.js";
+import { getSubscriptionsEnabled } from "./monetizationConfigService.js";
 
 // Local copies to avoid circular dependency with weeklyEngine.js
 function _getMondayOf(date) {
@@ -159,6 +160,7 @@ export async function checkAllMainChallengesComplete(householdId) {
  */
 export async function tryUnlockBetaPro(householdId) {
   try {
+    if (!(await getSubscriptionsEnabled())) return { unlocked: false, reason: "subscriptions_disabled" };
     if (!isBetaProEnabled()) return { unlocked: false, reason: "disabled" };
 
     const household = await Household.findById(householdId).lean();
@@ -218,6 +220,7 @@ export async function tryUnlockBetaPro(householdId) {
  */
 export async function inspectBetaProEligibility(householdId) {
   try {
+    if (!(await getSubscriptionsEnabled())) return { result: "subscriptions_disabled" };
     if (!isBetaProEnabled()) return { result: "beta_pro_disabled" };
 
     const household = await Household.findById(householdId).lean();
@@ -264,6 +267,7 @@ export async function inspectBetaProEligibility(householdId) {
  */
 export async function checkAndGrantBetaPro(householdId) {
   try {
+    if (!(await getSubscriptionsEnabled())) return { result: "subscriptions_disabled" };
     if (!isBetaProEnabled()) return { result: "beta_pro_disabled" };
 
     const household = await Household.findById(householdId).lean();
@@ -343,6 +347,10 @@ async function _expireBetaPro(householdId, reason) {
  */
 export async function runLazyExpiryChecks(householdId) {
   try {
+    // OFF must not cause a plan/planSource mutation as a side effect of merely
+    // reading weekly state. Existing Beta Pro state is left untouched until
+    // subscriptions are enabled again.
+    if (!(await getSubscriptionsEnabled())) return { expired: false, reason: "subscriptions_disabled" };
     const household = await Household.findById(householdId)
       .select("betaPro planSource lastMeaningfulActivityAt subscriptionPlan subscriptionStatus stripeSubscriptionId")
       .lean();

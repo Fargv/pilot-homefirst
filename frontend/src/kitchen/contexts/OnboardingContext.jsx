@@ -17,7 +17,12 @@ export function OnboardingProvider({ children }) {
 
   // isEligible by plan — kept for callers that want to hint UI, but NOT used to gate loading.
   // Backend decides eligibility; a record may exist for any plan if admin-assigned.
-  const isEligible = Boolean(user && ["basic", "free"].includes(String(user.subscriptionPlan || "").toLowerCase()));
+  const isEligible = Boolean(
+    user && (
+      state?.subscriptionsEnabled === false
+      || ["basic", "free"].includes(String(user.subscriptionPlan || "").toLowerCase())
+    )
+  );
 
   const _processTriggerQueue = useCallback(async () => {
     if (triggeringRef.current || triggerQueueRef.current.length === 0) return;

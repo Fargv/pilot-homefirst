@@ -74,10 +74,12 @@ export function RewardToast({ event, onDismiss }) {
 }
 
 /** Small tasteful note shown before Beta Pro is unlocked */
-function BetaProHint({ onboardingDone, weeklyState }) {
+function BetaProHint({ onboardingDone, weeklyState, subscriptionsEnabled = true }) {
   const { user } = useAuth();
   const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
   const planSource = user?.planSource || "";
+
+  if (!subscriptionsEnabled) return null;
 
   // Only show for basic users who haven't unlocked Beta Pro yet
   if (plan === "pro" || plan === "premium") return null;
@@ -97,7 +99,7 @@ function BetaProHint({ onboardingDone, weeklyState }) {
 }
 
 /** Celebratory modal shown once when the onboarding guide is fully completed. */
-function OnboardingCompletionModal({ onDismiss }) {
+function OnboardingCompletionModal({ onDismiss, subscriptionsEnabled = true }) {
   return (
     <div
       className="onboarding-completion-backdrop"
@@ -139,7 +141,9 @@ function OnboardingCompletionModal({ onDismiss }) {
         <div className="onboarding-completion-next-hint">
           <p>
             Ahora tienes acceso a los <strong>retos semanales</strong>.
-            Completa los de tu primera semana para desbloquear <strong>Pro Beta</strong> si eres elegible.
+            {subscriptionsEnabled
+              ? <> Completa los de tu primera semana para desbloquear <strong>Pro Beta</strong> si eres elegible.</>
+              : " Tu hogar ya puede usar las funciones avanzadas durante el lanzamiento gratuito."}
           </p>
         </div>
 
@@ -234,7 +238,12 @@ export default function OnboardingBanner({ suppressEvents = false, closeOnRouteC
   if (state.status === "completed") {
     return (
       <>
-        {!suppressEvents && completionEvent && <OnboardingCompletionModal onDismiss={dismissCompletionEvent} />}
+        {!suppressEvents && completionEvent && (
+          <OnboardingCompletionModal
+            onDismiss={dismissCompletionEvent}
+            subscriptionsEnabled={state.subscriptionsEnabled !== false}
+          />
+        )}
         {!suppressEvents && rewardEvent && <RewardToast event={rewardEvent} onDismiss={dismissReward} />}
       </>
     );
@@ -312,7 +321,11 @@ export default function OnboardingBanner({ suppressEvents = false, closeOnRouteC
         </div>
 
         {/* Pre-unlock Beta Pro hint */}
-        <BetaProHint onboardingDone={false} weeklyState={weeklyState} />
+        <BetaProHint
+          onboardingDone={false}
+          weeklyState={weeklyState}
+          subscriptionsEnabled={state.subscriptionsEnabled !== false}
+        />
 
         {next ? (
           <div className="onboarding-guide-next" onClick={() => setPanelOpen(true)}>

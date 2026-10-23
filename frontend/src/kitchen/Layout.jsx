@@ -610,7 +610,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
           </div>
         )}
       />
-      {betaProEvent ? (
+      {betaProEvent && subscriptionsEnabled === true ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
       <div className={`kitchen-container hf-page-enter ${containerClassName}`.trim()}>
