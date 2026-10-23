@@ -44,6 +44,7 @@ export function isProLikeHousehold(householdOrUser, now = new Date()) {
     const normalizedPlan = normalizeSubscriptionPlan(householdOrUser);
     return normalizedPlan === "pro" || normalizedPlan === "premium";
   }
+  if (householdOrUser?.subscriptionsEnabled === false) return true;
   const normalizedPlan = normalizeSubscriptionPlan(householdOrUser?.subscriptionPlan);
   if (normalizedPlan === "premium") return true;
   if (String(householdOrUser?.planSource || "").toLowerCase() === "beta_pro") {

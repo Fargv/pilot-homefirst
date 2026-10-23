@@ -124,6 +124,7 @@ async function buildHouseholdResponse(household, { license = null, usage = null 
       ? (Array.isArray(household.randomizationDefaultDietPackIds) ? household.randomizationDefaultDietPackIds.map(String) : [])
       : [],
     ...buildHouseholdSubscriptionResponse(household),
+    subscriptionsEnabled: access.subscriptionsEnabled,
     hasActiveStripeSubscription: Boolean(household.stripeSubscriptionId),
     // Payment debug fields — always returned so admin/test UI can inspect state
     paymentMeta: {

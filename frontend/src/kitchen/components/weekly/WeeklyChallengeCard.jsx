@@ -290,7 +290,11 @@ export default function WeeklyChallengeCard({ closeOnRouteChange = false, mobile
   // Pre-unlock Beta Pro hint: show for Basic users who haven't unlocked it yet
   const plan = String(user?.subscriptionPlan || "basic").toLowerCase();
   const planSource = user?.planSource || "";
-  const showBetaProHint = (plan === "basic") && planSource !== "beta_pro" && user?.betaProActive !== true;
+  const showBetaProHint = weeklyState.subscriptionsEnabled !== false
+    && user?.subscriptionsEnabled !== false
+    && (plan === "basic")
+    && planSource !== "beta_pro"
+    && user?.betaProActive !== true;
 
   const openSheet = () => {
     writeCollapsedPref(false);

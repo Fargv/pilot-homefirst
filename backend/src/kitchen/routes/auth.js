@@ -19,6 +19,7 @@ import { isEmailRegisteredInClerk, isClerkAuthEnabled, pingClerkApi, resolveCler
 import { isProLikeHousehold, normalizeSubscriptionPlan } from "../subscriptionService.js";
 import { initOnboarding } from "../onboardingEngine.js";
 import { checkBetaAccess, markBetaInviteUsed } from "../betaService.js";
+import { getSubscriptionsEnabled } from "../monetizationConfigService.js";
 
 const DIOD_EMAIL = "admin@admin.com";
 
@@ -1214,6 +1215,7 @@ router.get("/me", requireAuth, async (req, res) => {
     const effectiveHouseholdId = req.user?.activeHouseholdId || req.user?.householdId || null;
     let planSource = "manual";
     let betaProActive = false;
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
     if (effectiveHouseholdId) {
       const household = await Household.findById(effectiveHouseholdId)
         .select("name subscriptionPlan planSource betaPro")
@@ -1232,7 +1234,8 @@ router.get("/me", requireAuth, async (req, res) => {
         ...buildSafeUserResponse(req.kitchenUser, householdName),
         subscriptionPlan,
         planSource,
-        betaProActive
+        betaProActive,
+        subscriptionsEnabled
       },
       auth: req.user
     });

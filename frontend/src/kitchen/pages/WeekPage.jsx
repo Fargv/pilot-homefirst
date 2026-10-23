@@ -295,6 +295,7 @@ export default function WeekPage() {
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [dinnersIncludeInShopping, setDinnersIncludeInShopping] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [householdPlanSource, setHouseholdPlanSource] = useState("");
   const [householdBetaProActive, setHouseholdBetaProActive] = useState(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -456,11 +457,12 @@ export default function WeekPage() {
   const subscriptionAccess = useMemo(
     () => ({
       subscriptionPlan,
+      subscriptionsEnabled,
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro
     }),
-    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+    [subscriptionPlan, subscriptionsEnabled, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
   );
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";
@@ -664,6 +666,7 @@ export default function WeekPage() {
       setIsNavLoading(false);
       setWeekNotice(null);
       setSubscriptionPlan("basic");
+      setSubscriptionsEnabled(true);
       setDinnersIncludeInShopping(false);
       setPlan(null);
       setDishes([]);
@@ -710,6 +713,7 @@ export default function WeekPage() {
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setDinnersIncludeInShopping(Boolean(householdData?.household?.dinnersIncludeInShopping));
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
+      setSubscriptionsEnabled(householdData?.household?.subscriptionsEnabled !== false);
       setHouseholdPlanSource(String(householdData?.household?.planSource || ""));
       setHouseholdBetaProActive(Boolean(householdData?.household?.betaProActive));
       hasEverLoadedRef.current = true;

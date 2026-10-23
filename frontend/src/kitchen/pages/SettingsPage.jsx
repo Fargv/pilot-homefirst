@@ -226,6 +226,7 @@ export default function SettingsPage() {
   const [monthlyBudget, setMonthlyBudget] = useState("");
   const [cycleStartDay, setCycleStartDay] = useState(1);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
@@ -366,11 +367,12 @@ export default function SettingsPage() {
   const subscriptionAccess = useMemo(
     () => ({
       subscriptionPlan,
+      subscriptionsEnabled,
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro
     }),
-    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+    [subscriptionPlan, subscriptionsEnabled, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
   );
   const budgetFeatureEnabled = canUseBudgetFeature(subscriptionAccess);
   const basicsFeatureEnabled = canUseBasicsFeature(subscriptionAccess);
@@ -625,6 +627,7 @@ export default function SettingsPage() {
       setMonthlyBudget(householdData?.household?.monthlyBudget === null || householdData?.household?.monthlyBudget === undefined ? "" : String(householdData.household.monthlyBudget));
       setCycleStartDay(Number(householdData?.household?.cycleStartDay) || 1);
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
+      setSubscriptionsEnabled(householdData?.household?.subscriptionsEnabled !== false);
       setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setSubscriptionEndsAt(householdData?.household?.subscriptionEndsAt || null);
@@ -998,6 +1001,7 @@ export default function SettingsPage() {
       setMonthlyBudget(data?.household?.monthlyBudget === null || data?.household?.monthlyBudget === undefined ? "" : String(data.household.monthlyBudget));
       setCycleStartDay(Number(data?.household?.cycleStartDay) || 1);
       setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
+      setSubscriptionsEnabled(data?.household?.subscriptionsEnabled !== false);
       setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setHouseholdPlanSource(String(data?.household?.planSource || ""));
@@ -2550,7 +2554,7 @@ export default function SettingsPage() {
                     <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
                 </button>
-                <button type="button" className="settings-nav-row settings-nav-row-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
+                {subscriptionsEnabled ? <button type="button" className="settings-nav-row settings-nav-row-upgrade" onClick={() => navigate("/kitchen/upgrade")}>
                   <span className="settings-nav-row-icon settings-nav-icon-upgrade" aria-hidden="true">
                     <svg viewBox="0 0 20 20" width="18" height="18" fill="none">
                       <path d="M10 3l2.5 5h5l-4 3 1.5 5.5L10 13.5 5 16.5 6.5 11l-4-3h5L10 3z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
@@ -2568,7 +2572,7 @@ export default function SettingsPage() {
                     )}
                     <svg className="settings-nav-row-chevron" viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   </span>
-                </button>
+                </button> : null}
               </div>
             </div>
 

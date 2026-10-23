@@ -535,10 +535,12 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
                   <SettingsIcon className="kitchen-user-menu-icon" />
                   Configuración
                 </button>
-                <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/upgrade"); onNavigate(); }}>
-                  <CreditCardIcon className="kitchen-user-menu-icon" />
-                  Suscripción / Plan
-                </button>
+                {user?.subscriptionsEnabled !== false ? (
+                  <button type="button" role="menuitem" onClick={() => { navigate("/kitchen/upgrade"); onNavigate(); }}>
+                    <CreditCardIcon className="kitchen-user-menu-icon" />
+                    Suscripción / Plan
+                  </button>
+                ) : null}
                 <div className="kitchen-user-menu-appearance" role="group" aria-label="Apariencia">
                   <span className="kitchen-user-menu-appearance-label">
                     <AppearanceIcon className="kitchen-user-menu-icon" />
@@ -605,7 +607,7 @@ export default function KitchenLayout({ children, containerClassName = "" }) {
           </div>
         )}
       />
-      {betaProEvent ? (
+      {betaProEvent && user?.subscriptionsEnabled !== false ? (
         <BetaProUnlockedModal onDismiss={dismissBetaProEvent} />
       ) : null}
       <div className={`kitchen-container hf-page-enter ${containerClassName}`.trim()}>

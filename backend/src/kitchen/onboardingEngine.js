@@ -5,6 +5,7 @@ import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
+import { getSubscriptionsEnabled } from "./monetizationConfigService.js";
 // Circular-safe: guidedTourService only calls back into grantOnboardingBites at
 // runtime (hoisted function declaration), never during module init.
 import { getGuidedTourConfig, isGuidedTourEnabled, normalizeGuidedTour } from "./guidedTourService.js";
@@ -261,10 +262,12 @@ export async function initOnboarding(householdId) {
 export async function getOnboardingState(householdId) {
   let onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
   if (!onboarding) {
-    // Auto-init only for plan-eligible users; admin-assigned users already have a record
+    // In the free launch every household gets the same onboarding entry point.
+    // The switch only changes access resolution; it never changes the household plan.
+    const subscriptionsEnabled = await getSubscriptionsEnabled();
     const household = await Household.findById(householdId).select("subscriptionPlan").lean();
     const plan = normalizeSubscriptionPlan(household?.subscriptionPlan);
-    if (["basic", "free"].includes(plan)) {
+    if (!subscriptionsEnabled || ["basic", "free"].includes(plan)) {
       await initOnboarding(householdId);
       onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
     }
@@ -299,6 +302,7 @@ export async function getOnboardingState(householdId) {
   };
 
   return {
+    subscriptionsEnabled: await getSubscriptionsEnabled(),
     status: onboarding.status,
     welcomeBitesGranted: onboarding.welcomeBitesGranted,
     completedCount: completedKeys.size,
@@ -326,11 +330,12 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
     let onboarding = await HouseholdOnboarding.findOne({ householdId });
 
     if (!onboarding) {
-      // Auto-init only for plan-eligible users; others only get onboarding via admin assign
+      // In OFF mode all households can enter onboarding, including existing Pro/Premium.
+      const subscriptionsEnabled = await getSubscriptionsEnabled();
       const household = await Household.findById(householdId).select("subscriptionPlan").lean();
       if (!household) return null;
       const plan = normalizeSubscriptionPlan(household.subscriptionPlan);
-      if (!["basic", "free"].includes(plan)) return null;
+      if (subscriptionsEnabled && !["basic", "free"].includes(plan)) return null;
       await initOnboarding(householdId);
       onboarding = await HouseholdOnboarding.findOne({ householdId });
     }
@@ -403,20 +408,24 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
       rewardBites: nextChallenge.rewardBites
     };
 
-    const newTotal = (onboarding.totalBitesEarned || 0) + nextChallenge.rewardBites;
     const newCompletedKeys = new Set([...completedKeys, nextChallenge.key]);
     const allDone = challenges.every((c) => newCompletedKeys.has(c.key));
 
-    await HouseholdOnboarding.updateOne(
-      { _id: onboarding._id },
-      {
-        $push: { completedChallenges: completedEntry },
-        $set: {
-          totalBitesEarned: newTotal,
-          ...(allDone ? { status: "completed", completedAt: now } : {})
-        }
-      }
+    const completionUpdate = {
+      $push: { completedChallenges: completedEntry },
+      $inc: { totalBitesEarned: nextChallenge.rewardBites }
+    };
+    if (allDone) completionUpdate.$set = { status: "completed", completedAt: now };
+
+    const completionResult = await HouseholdOnboarding.updateOne(
+      { _id: onboarding._id, "completedChallenges.challengeKey": { $ne: nextChallenge.key } },
+      completionUpdate
     );
+
+    // The challenge key is the idempotency key. A concurrent replay may have
+    // read the same incomplete state, but only one update is allowed to win.
+    // Re-read the guard in the update filter so the reward is conceded once.
+    if (completionResult.modifiedCount !== 1) return null;
 
     if (nextChallenge.rewardBites > 0) {
       await _grantBites(

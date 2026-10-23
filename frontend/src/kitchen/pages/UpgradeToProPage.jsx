@@ -123,6 +123,7 @@ export default function UpgradeToProPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
   const [pendingDowngradeAt, setPendingDowngradeAt] = useState(null);
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [hasActiveStripeSubscription, setHasActiveStripeSubscription] = useState(false);
   const [paymentMeta, setPaymentMeta] = useState(null);
   const [householdLicense, setHouseholdLicense] = useState(null);
@@ -153,6 +154,7 @@ export default function UpgradeToProPage() {
         setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
         setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
         setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
+        setSubscriptionsEnabled(data?.household?.subscriptionsEnabled !== false);
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
         setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
         setPaymentMeta(data?.household?.paymentMeta || null);
@@ -167,6 +169,12 @@ export default function UpgradeToProPage() {
     void loadSummary();
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!summaryLoading && !subscriptionsEnabled) {
+      navigate(backPath, { replace: true });
+    }
+  }, [backPath, navigate, subscriptionsEnabled, summaryLoading]);
 
   const handlePlanAction = async (planId) => {
     if (planId === "basic") return;
