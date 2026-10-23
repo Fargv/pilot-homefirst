@@ -1,7 +1,7 @@
 export const DEFAULT_SUBSCRIPTIONS_ENABLED = true;
 export const SUBSCRIPTION_FUNCTIONAL_CAPABILITIES = Object.freeze([
   "budget", "fullWeekRandomization", "singleDayRandomization",
-  "dietRandomization", "dinners", "basics"
+  "dietRandomization", "dinners", "basics", "premiumThemes"
 ]);
 
 export function createSubscriptionsConfigReader({ read, cacheTtlMs = 30_000, logger = console } = {}) {

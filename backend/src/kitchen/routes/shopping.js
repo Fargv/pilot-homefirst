@@ -34,7 +34,7 @@ import {
 } from "../purchaseSessionService.js";
 import { PurchaseSession } from "../models/PurchaseSession.js";
 import { KitchenShoppingList } from "../models/KitchenShoppingList.js";
-import { canUseBudgetFeature } from "../subscriptionService.js";
+import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
 
 const router = express.Router();
 
@@ -136,10 +136,11 @@ async function resolveHouseholdBudgetAccess(effectiveHouseholdId) {
   const household = await Household.findById(effectiveHouseholdId)
     .select("_id subscriptionPlan planSource betaPro monthlyBudget cycleStartDay")
     .lean();
+  const access = await resolveHouseholdCapabilities(household);
 
   return {
     household,
-    budgetFeatureEnabled: canUseBudgetFeature(household)
+    budgetFeatureEnabled: access.functional.budget
   };
 }
 

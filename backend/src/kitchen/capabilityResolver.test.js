@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { resolveFunctionalCapabilities } from "./capabilityResolverCore.js";
+import { buildEffectiveLicenseState } from "./householdLicenseCore.js";
 import { createSubscriptionsConfigReader } from "./monetizationConfigCore.js";
 
 const basic = { subscriptionPlan: "basic", subscriptionStatus: "inactive" };
@@ -36,7 +37,7 @@ test("ON preserves Basic and OFF grants only the explicit functional allowlist",
   const on = resolveFunctionalCapabilities(current, true);
   assert.equal(on.budget, false);
   const off = resolveFunctionalCapabilities(current, false);
-  assert.deepEqual(Object.keys(off).sort(), ["basics", "budget", "dietRandomization", "dinners", "fullWeekRandomization", "singleDayRandomization"].sort());
+  assert.deepEqual(Object.keys(off).sort(), ["basics", "budget", "dietRandomization", "dinners", "fullWeekRandomization", "premiumThemes", "singleDayRandomization"].sort());
   assert.ok(Object.values(off).every(Boolean));
   assert.equal(basic.subscriptionPlan, "basic");
   assert.equal(basic.subscriptionStatus, "inactive");
@@ -46,4 +47,19 @@ test("ON preserves Pro capabilities and does not create catalog entitlements", a
   const result = resolveFunctionalCapabilities({ budget: true }, true);
   assert.equal(result.budget, true);
   assert.equal(result.catalogIncludedPacks, undefined);
+});
+
+test("OFF removes functional user and diner limits without changing persisted plan data", () => {
+  const limits = { maxUsers: 3, maxNonUserDiners: 4 };
+  const usage = { users: 3, nonUserDiners: 4 };
+  const on = buildEffectiveLicenseState({ limits, usage, subscriptionsEnabled: true });
+  assert.deepEqual(on.limits, limits);
+  assert.equal(on.capabilities.canAddUser, false);
+  assert.equal(on.capabilities.canAddNonUserDiner, false);
+
+  const off = buildEffectiveLicenseState({ limits, usage, subscriptionsEnabled: false });
+  assert.deepEqual(off.limits, { maxUsers: null, maxNonUserDiners: null });
+  assert.equal(off.capabilities.canAddUser, true);
+  assert.equal(off.capabilities.canAddNonUserDiner, true);
+  assert.deepEqual(limits, { maxUsers: 3, maxNonUserDiners: 4 });
 });

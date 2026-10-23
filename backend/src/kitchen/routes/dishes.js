@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import crypto from "crypto";
 import { KitchenDish } from "../models/KitchenDish.js";
 import { Household } from "../models/Household.js";
-import { canRandomizeFullWeek, canUseDinnersFeature } from "../subscriptionService.js";
+import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
 import { KitchenDishCategory } from "../models/KitchenDishCategory.js";
 import { CatalogPack } from "../models/CatalogPack.js";
 import { normalizeIngredientList, normalizeIngredientName } from "../utils/normalize.js";
@@ -287,7 +287,8 @@ router.post("/", requireAuth, async (req, res) => {
     }
     if (dinnerDish && !isDiod) {
       const household = await Household.findById(effectiveHouseholdId).lean();
-      if (!canUseDinnersFeature(household)) {
+      const access = await resolveHouseholdCapabilities(household);
+      if (!access.functional.dinners) {
         return res.status(403).json({
           ok: false,
           error: "La creación de platos de cena requiere un plan Pro o Premium.",
@@ -707,7 +708,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
       const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
-      if (!household || !canRandomizeFullWeek(household)) {
+      const access = await resolveHouseholdCapabilities(household);
+      if (!household || !access.functional.fullWeekRandomization) {
         return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
       }
 
@@ -745,7 +747,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
     }
     if (!isDiod) {
       const household = await Household.findById(requiredHouseholdId).select("subscriptionPlan planSource betaPro").lean();
-      if (!household || !canRandomizeFullWeek(household)) {
+      const access = await resolveHouseholdCapabilities(household);
+      if (!household || !access.functional.fullWeekRandomization) {
         return res.status(403).json({ ok: false, error: "Esta funcionalidad requiere un plan PRO o superior.", code: "PRO_REQUIRED" });
       }
     }

@@ -1,7 +1,13 @@
 import { KitchenUser } from "./models/KitchenUser.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
+import { resolveHouseholdCapabilities } from "./capabilityResolver.js";
+import { LICENSE_LIMIT_UNLIMITED, buildEffectiveLicenseState } from "./householdLicenseCore.js";
 
-export const LICENSE_LIMIT_UNLIMITED = null;
+export { LICENSE_LIMIT_UNLIMITED } from "./householdLicenseCore.js";
+
+function isUnlimited(limit) {
+  return limit === LICENSE_LIMIT_UNLIMITED;
+}
 
 const PLAN_LIMITS = {
   basic: {
@@ -42,10 +48,6 @@ const NON_USER_DINER_FILTER = {
   ]
 };
 
-function isUnlimited(limit) {
-  return limit === LICENSE_LIMIT_UNLIMITED;
-}
-
 export function getPlanLimits(plan) {
   const normalizedPlan = normalizeSubscriptionPlan(plan);
   return PLAN_LIMITS[normalizedPlan] || PLAN_LIMITS.basic;
@@ -80,25 +82,19 @@ export async function countHouseholdLicenseUsage(householdId) {
   };
 }
 
-export function buildHouseholdLicenseSummary(household, usage = null) {
+export async function buildHouseholdLicenseSummary(household, usage = null, { subscriptionsEnabled } = {}) {
   const plan = normalizeSubscriptionPlan(household?.subscriptionPlan);
-  const limits = getPlanLimits(plan);
-  const resolvedUsage = usage || { users: 0, nonUserDiners: 0 };
+  const access = await resolveHouseholdCapabilities(household, { subscriptionsEnabled });
+  const resolvedUsage = usage || await countHouseholdLicenseUsage(household?._id);
+  const effectiveLicense = buildEffectiveLicenseState({
+    limits: getPlanLimits(plan),
+    usage: resolvedUsage,
+    subscriptionsEnabled: access.subscriptionsEnabled
+  });
 
   return {
     plan,
-    limits: {
-      maxUsers: limits.maxUsers,
-      maxNonUserDiners: limits.maxNonUserDiners
-    },
-    usage: {
-      users: Number(resolvedUsage.users || 0),
-      nonUserDiners: Number(resolvedUsage.nonUserDiners || 0)
-    },
-    capabilities: {
-      canAddUser: canAddUser(plan, resolvedUsage.users),
-      canAddNonUserDiner: canAddNonUserDiner(plan, resolvedUsage.nonUserDiners)
-    }
+    ...effectiveLicense
   };
 }
 
@@ -118,7 +114,8 @@ export function buildNonUserDinerLimitError() {
 
 export async function assertCanAddUserToHousehold(household) {
   const usage = await countHouseholdLicenseUsage(household?._id || household?.id || household);
-  if (!canAddUser(household?.subscriptionPlan, usage.users)) {
+  const access = await resolveHouseholdCapabilities(household);
+  if (access.subscriptionsEnabled && !canAddUser(household?.subscriptionPlan, usage.users)) {
     throw buildUserLimitError();
   }
   return usage;
@@ -126,7 +123,8 @@ export async function assertCanAddUserToHousehold(household) {
 
 export async function assertCanAddNonUserDinerToHousehold(household) {
   const usage = await countHouseholdLicenseUsage(household?._id || household?.id || household);
-  if (!canAddNonUserDiner(household?.subscriptionPlan, usage.nonUserDiners)) {
+  const access = await resolveHouseholdCapabilities(household);
+  if (access.subscriptionsEnabled && !canAddNonUserDiner(household?.subscriptionPlan, usage.nonUserDiners)) {
     throw buildNonUserDinerLimitError();
   }
   return usage;

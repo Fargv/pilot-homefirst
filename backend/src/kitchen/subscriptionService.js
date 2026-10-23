@@ -4,6 +4,7 @@ const FULL_WEEK_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
 const DIET_RANDOMIZATION_PLANS = new Set(["pro", "premium"]);
 const DINNER_PLANS = new Set(["pro", "premium"]);
 const BASICS_PLANS = new Set(["pro", "premium"]);
+const PREMIUM_THEME_PLANS = new Set(["pro", "premium"]);
 
 export const SUBSCRIPTION_PLANS = ["free", "basic", "pro", "premium"];
 export const REQUESTABLE_SUBSCRIPTION_PLANS = ["basic", "pro", "premium"];
@@ -89,6 +90,12 @@ export function canUseBasicsFeature(householdOrPlan) {
     : isProLikeHousehold(householdOrPlan);
 }
 
+export function canUsePremiumThemes(householdOrPlan) {
+  return isPlanString(householdOrPlan)
+    ? PREMIUM_THEME_PLANS.has(normalizeSubscriptionPlan(householdOrPlan))
+    : isProLikeHousehold(householdOrPlan);
+}
+
 export function buildHouseholdFeatureAvailability(household) {
   return {
     budget: canUseBudgetFeature(household),
@@ -96,7 +103,8 @@ export function buildHouseholdFeatureAvailability(household) {
     singleDayRandomization: canRandomizeSingleDay(household?.subscriptionPlan),
     dietRandomization: canUseDietRandomization(household),
     dinners: canUseDinnersFeature(household),
-    basics: canUseBasicsFeature(household)
+    basics: canUseBasicsFeature(household),
+    premiumThemes: canUsePremiumThemes(household)
   };
 }
 

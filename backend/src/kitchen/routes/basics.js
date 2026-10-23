@@ -15,7 +15,7 @@ import { HouseholdBasic } from "../models/HouseholdBasic.js";
 import { KitchenIngredient } from "../models/KitchenIngredient.js";
 import { Category } from "../models/Category.js";
 import { Household } from "../models/Household.js";
-import { canUseBasicsFeature } from "../subscriptionService.js";
+import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
 import { ensureShoppingList } from "../shoppingService.js";
 import { getWeekStart, parseISODate } from "../utils/dates.js";
 import { ensureDefaultCategory } from "../utils/categoryMatching.js";
@@ -35,9 +35,10 @@ async function resolveBasicsAccess(effectiveHouseholdId) {
     .select("subscriptionPlan planSource betaPro")
     .lean();
   const plan = household?.subscriptionPlan || "basic";
+  const access = await resolveHouseholdCapabilities(household);
   return {
     household,
-    basicsFeatureEnabled: canUseBasicsFeature(household),
+    basicsFeatureEnabled: access.functional.basics,
     plan
   };
 }

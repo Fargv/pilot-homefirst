@@ -26,7 +26,7 @@ import {
 import { buildScopedFilter, getEffectiveHouseholdId, handleHouseholdError } from "../householdScope.js";
 import { assertCanAddUserToHousehold, sendHouseholdLicenseError } from "../householdLicenseService.js";
 import { deleteClerkUserById } from "../clerkAuth.js";
-import { isProLikeHousehold } from "../subscriptionService.js";
+import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
 import { isThemeAvailableForPlan, isValidThemeId, normalizeThemeId } from "../themeService.js";
 
 const router = express.Router();
@@ -386,7 +386,8 @@ router.patch("/me", requireAuth, async (req, res) => {
       if (!household) {
         return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
       }
-      const planForTheme = isProLikeHousehold(household) ? "pro" : "basic";
+      const access = await resolveHouseholdCapabilities(household);
+      const planForTheme = access.functional.premiumThemes ? "pro" : "basic";
       if (!isThemeAvailableForPlan(nextThemeId, planForTheme)) {
         return res.status(403).json({
           ok: false,

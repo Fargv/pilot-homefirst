@@ -26,12 +26,10 @@ import {
   getInvitationStatus
 } from "../invitationService.js";
 import {
-  buildHouseholdFeatureAvailability,
-  buildHouseholdSubscriptionResponse,
-  canUseBudgetFeature,
-  canUseDietRandomization,
-  canUseDinnersFeature
+  buildHouseholdSubscriptionResponse
 } from "../subscriptionService.js";
+import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
+import { resolveHouseholdLicenseForResponse } from "../householdResponseCore.js";
 import {
   assertCanAddNonUserDinerToHousehold,
   assertCanAddUserToHousehold,
@@ -98,9 +96,16 @@ function parseCycleStartDayInput(value) {
   return { ok: true, value: parsed };
 }
 
-function buildHouseholdResponse(household, license = null) {
-  const budgetFeatureEnabled = canUseBudgetFeature(household);
-  const dietFeatureEnabled = canUseDietRandomization(household);
+async function buildHouseholdResponse(household, { license = null, usage = null } = {}) {
+  const access = await resolveHouseholdCapabilities(household);
+  const { budget: budgetFeatureEnabled, dietRandomization: dietFeatureEnabled } = access.functional;
+  const resolvedLicense = await resolveHouseholdLicenseForResponse({
+    household,
+    license,
+    usage,
+    countUsage: countHouseholdLicenseUsage,
+    buildLicenseSummary: buildHouseholdLicenseSummary
+  });
   return {
     id: household._id,
     name: household.name || "Mi household",
@@ -128,8 +133,8 @@ function buildHouseholdResponse(household, license = null) {
       paymentMode: household.paymentMode || null,
       planUpdatedAt: household.planUpdatedAt || null
     },
-    featureAvailability: buildHouseholdFeatureAvailability(household),
-    license: license || buildHouseholdLicenseSummary(household)
+    featureAvailability: access.functional,
+    license: resolvedLicense
   };
 }
 
@@ -253,11 +258,7 @@ router.get("/summary", requireAuth, async (req, res) => {
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    const license = buildHouseholdLicenseSummary(
-      household,
-      await countHouseholdLicenseUsage(household._id)
-    );
-    return res.json({ ok: true, household: buildHouseholdResponse(household, license) });
+    return res.json({ ok: true, household: await buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -282,7 +283,7 @@ router.patch("/name", requireAuth, requireRole("owner"), async (req, res) => {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    return res.json({ ok: true, household: buildHouseholdResponse(household) });
+    return res.json({ ok: true, household: await buildHouseholdResponse(household) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -319,7 +320,8 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (!household) {
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
-    const budgetFeatureEnabled = canUseBudgetFeature(household);
+    const access = await resolveHouseholdCapabilities(household);
+    const { budget: budgetFeatureEnabled, dietRandomization: dietFeatureEnabled, dinners: dinnersFeatureEnabled } = access.functional;
     const isBudgetMutation = req.body?.monthlyBudget !== undefined || req.body?.cycleStartDay !== undefined;
     if (!budgetFeatureEnabled && isBudgetMutation) {
       return res.status(403).json({
@@ -329,7 +331,6 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       });
     }
 
-    const dietFeatureEnabled = canUseDietRandomization(household);
     const isDietMutation = req.body?.randomizationUseDietFilter !== undefined || req.body?.randomizationDefaultDietPackIds !== undefined;
     if (!dietFeatureEnabled && isDietMutation) {
       return res.status(403).json({
@@ -354,7 +355,6 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     if (!parsedDinnersEnabled.ok) {
       return res.status(400).json({ ok: false, error: "dinnersEnabled debe ser booleano." });
     }
-    const dinnersFeatureEnabled = canUseDinnersFeature(household);
     const parsedDinnersIncludeInShopping = incomingDinnersIncludeInShopping === undefined
       ? { ok: true, value: Boolean(household.dinnersIncludeInShopping) }
       : parseBooleanInput(incomingDinnersIncludeInShopping);
@@ -453,7 +453,7 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    return res.json({ ok: true, household: buildHouseholdResponse(updated) });
+    return res.json({ ok: true, household: await buildHouseholdResponse(updated) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
