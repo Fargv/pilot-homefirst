@@ -701,18 +701,28 @@ router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
       householdId,
       bitesCost,
       `Desbloquear pack: ${pack.title}`,
-      { packId: String(pack._id), packTitle: pack.title }
+      {
+        idempotencyKey: `pack-unlock:${householdId}:${pack._id}`,
+        packId: String(pack._id),
+        packTitle: pack.title
+      }
     );
 
-    const ownership = await HouseholdCatalogPack.create({
-      householdId,
-      packId: pack._id,
-      acquiredVia: "purchase",
-      acquiredAt: new Date(),
-      status: "owned",
-      paymentStatus: "paid",
-      pricePaid: bitesCost
-    });
+    const ownership = await HouseholdCatalogPack.findOneAndUpdate(
+      { householdId, packId: pack._id },
+      {
+        $setOnInsert: {
+          householdId,
+          packId: pack._id,
+          acquiredVia: "purchase",
+          acquiredAt: new Date(),
+          status: "owned",
+          paymentStatus: "paid",
+          pricePaid: bitesCost
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     return res.json({
       ok: true,

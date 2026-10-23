@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { BitesConfig } from "./models/BitesConfig.js";
@@ -9,6 +10,52 @@ const DEFAULT_MAX_CARRY_OVER = { basic: 500, pro: 1000, premium: 5000 };
 
 // baseBitePrice represents the price for 100 Bites (1.99 EUR = 100 Bites)
 const DEFAULT_BASE_BITE_PRICE = 1.99;
+
+function transactionIdFor(idempotencyKey) {
+  return crypto.createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 24);
+}
+
+function findOperationClaim(household, key) {
+  return (household?.bitesOperationClaims || []).find((claim) => claim.key === key);
+}
+
+async function ensureOperationTransaction({ household, claim, type, reason, metadata = {}, createdBy = null }) {
+  const idempotencyKey = claim.key;
+  const transactionMetadata = {
+    ...metadata,
+    idempotencyKey,
+    requestedAmount: claim.requestedAmount,
+    actualAmount: claim.actualAmount,
+    freeAmount: claim.freeAmount,
+    purchasedAmount: claim.purchasedAmount
+  };
+  try {
+    return await BitesTransaction.findOneAndUpdate(
+      { _id: transactionIdFor(idempotencyKey), "metadata.idempotencyKey": idempotencyKey },
+      {
+        $setOnInsert: {
+          _id: transactionIdFor(idempotencyKey),
+          householdId: household._id,
+          type,
+          amount: claim.operation === "spend" ? -claim.actualAmount : claim.actualAmount,
+          balanceAfterFree: claim.balanceAfterFree,
+          balanceAfterPurchased: claim.balanceAfterPurchased,
+          reason,
+          createdBy: createdBy || null,
+          metadata: transactionMetadata
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+  } catch (error) {
+    if (Number(error?.code) !== 11000) throw error;
+    return BitesTransaction.findOne({ "metadata.idempotencyKey": idempotencyKey });
+  }
+}
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
 
 const DEFAULT_BUNDLES = [
   { name: "Starter", bitesAmount: 500, price: 8.95, discountPercent: 10, badge: "", highlighted: false, active: true, sortOrder: 1 },
@@ -69,79 +116,211 @@ export async function grantMonthlyBites(householdId, adminUserId = null) {
   const maxCarryOver = getMaxCarryOver(config, plan);
 
   const now = new Date();
-  const lastGrant = household.lastMonthlyBitesGrantAt;
-  if (lastGrant) {
-    const d = new Date(lastGrant);
-    const sameMonth = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    if (sameMonth) {
-      return { skipped: true, reason: "already_granted_this_month", wallet: getWalletFromHousehold(household) };
-    }
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const idempotencyKey = `monthly:${householdId}:${monthKey(now)}`;
+  const existingClaim = findOperationClaim(household, idempotencyKey);
+  if (existingClaim) {
+    const transaction = await ensureOperationTransaction({
+      household,
+      claim: existingClaim,
+      type: "monthly_grant",
+      reason: `Recarga mensual del plan ${plan}`,
+      metadata: { plan, grantAmount, maxCarryOver, recovered: true },
+      createdBy: adminUserId
+    });
+    const latest = await Household.findById(household._id).lean();
+    return {
+      skipped: true,
+      reason: "already_granted_this_month",
+      transaction: { id: transaction?._id },
+      wallet: getWalletFromHousehold(latest || household)
+    };
   }
 
-  const currentFree = household.freeBitesBalance ?? 0;
-  const newFree = Math.min(currentFree + grantAmount, maxCarryOver);
-  const actualGranted = newFree - currentFree;
-
-  await Household.updateOne(
-    { _id: household._id },
-    { $set: { freeBitesBalance: newFree, lastMonthlyBitesGrantAt: now } }
+  const updated = await Household.findOneAndUpdate(
+    {
+      _id: household._id,
+      "bitesOperationClaims.key": { $ne: idempotencyKey },
+      $or: [
+        { lastMonthlyBitesGrantAt: null },
+        { lastMonthlyBitesGrantAt: { $exists: false } },
+        { lastMonthlyBitesGrantAt: { $lt: monthStart } }
+      ]
+    },
+    [
+      {
+        $set: {
+          __currentFree: { $ifNull: ["$freeBitesBalance", 0] },
+          __currentPurchased: { $ifNull: ["$purchasedBitesBalance", 0] }
+        }
+      },
+      {
+        $set: {
+          __actualGranted: {
+            $min: [grantAmount, { $max: [0, { $subtract: [maxCarryOver, "$__currentFree"] }] }]
+          }
+        }
+      },
+      {
+        $set: {
+          freeBitesBalance: { $add: ["$__currentFree", "$__actualGranted"] },
+          lastMonthlyBitesGrantAt: now,
+          bitesOperationClaims: {
+            $concatArrays: [
+              { $ifNull: ["$bitesOperationClaims", []] },
+              [{
+                key: idempotencyKey,
+                operation: "monthly_grant",
+                requestedAmount: grantAmount,
+                actualAmount: "$__actualGranted",
+                freeAmount: "$__actualGranted",
+                purchasedAmount: 0,
+                balanceAfterFree: { $add: ["$__currentFree", "$__actualGranted"] },
+                balanceAfterPurchased: "$__currentPurchased"
+              }]
+            ]
+          }
+        }
+      },
+      { $unset: ["__currentFree", "__currentPurchased", "__actualGranted"] }
+    ],
+    { new: true, lean: true }
   );
 
-  await BitesTransaction.create({
-    householdId: household._id,
+  if (!updated) {
+    const current = await Household.findById(household._id).lean();
+    const claim = findOperationClaim(current, idempotencyKey);
+    if (claim) {
+      const transaction = await ensureOperationTransaction({
+        household: current || household,
+        claim,
+        type: "monthly_grant",
+        reason: `Recarga mensual del plan ${plan}`,
+        metadata: { plan, grantAmount, maxCarryOver, recovered: true },
+        createdBy: adminUserId
+      });
+      return {
+        skipped: true,
+        reason: "already_granted_this_month",
+        transaction: { id: transaction?._id },
+        wallet: getWalletFromHousehold(current || household)
+      };
+    }
+    return { skipped: true, reason: "already_granted_this_month", wallet: getWalletFromHousehold(current || household) };
+  }
+
+  const claim = findOperationClaim(updated, idempotencyKey);
+  const transaction = await ensureOperationTransaction({
+    household: updated,
+    claim,
     type: "monthly_grant",
-    amount: grantAmount,
-    balanceAfterFree: newFree,
-    balanceAfterPurchased: household.purchasedBitesBalance ?? 0,
     reason: `Recarga mensual del plan ${plan}`,
-    createdBy: adminUserId || null,
-    metadata: { plan, grantAmount, actualGranted, capped: actualGranted < grantAmount, maxCarryOver }
+    metadata: { plan, grantAmount, maxCarryOver },
+    createdBy: adminUserId
   });
 
   return {
     skipped: false,
     granted: grantAmount,
-    actualGranted,
-    capped: actualGranted < grantAmount,
-    wallet: getWalletFromHousehold({ ...household, freeBitesBalance: newFree, lastMonthlyBitesGrantAt: now })
+    actualGranted: claim.actualAmount,
+    capped: claim.actualAmount < grantAmount,
+    transaction: { id: transaction?._id },
+    wallet: getWalletFromHousehold(updated)
   };
 }
 
 export async function spendBites(householdId, amount, reason, metadata = {}) {
-  const household = await Household.findById(householdId).lean();
-  if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
-
-  const freeBal = household.freeBitesBalance ?? 0;
-  const purchasedBal = household.purchasedBitesBalance ?? 0;
-  const totalBal = freeBal + purchasedBal;
-
-  if (totalBal < amount) {
-    throw Object.assign(new Error("No tienes Bites suficientes."), { statusCode: 402, code: "INSUFFICIENT_BITES" });
+  const spendAmount = Number(amount);
+  if (!Number.isFinite(spendAmount) || spendAmount < 1) {
+    throw Object.assign(new Error("amount debe ser un entero positivo."), { statusCode: 400 });
   }
 
-  const freeToSpend = Math.min(freeBal, amount);
-  const purchasedToSpend = amount - freeToSpend;
-  const newFree = freeBal - freeToSpend;
-  const newPurchased = purchasedBal - purchasedToSpend;
-  const newSpent = (household.totalBitesSpent ?? 0) + amount;
+  const idempotencyKey = metadata?.idempotencyKey
+    || `spend:${householdId}:${crypto.randomUUID()}`;
 
-  await Household.updateOne(
-    { _id: household._id },
-    { $set: { freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent } }
+  const updated = await Household.findOneAndUpdate(
+    {
+      _id: householdId,
+      "bitesOperationClaims.key": { $ne: idempotencyKey },
+      $expr: {
+        $gte: [
+          { $add: [{ $ifNull: ["$freeBitesBalance", 0] }, { $ifNull: ["$purchasedBitesBalance", 0] }] },
+          spendAmount
+        ]
+      }
+    },
+    [
+      {
+        $set: {
+          __freeBefore: { $ifNull: ["$freeBitesBalance", 0] },
+          __purchasedBefore: { $ifNull: ["$purchasedBitesBalance", 0] },
+          __freeToSpend: { $min: [{ $ifNull: ["$freeBitesBalance", 0] }, spendAmount] }
+        }
+      },
+      {
+        $set: {
+          __purchasedToSpend: { $subtract: [spendAmount, "$__freeToSpend"] }
+        }
+      },
+      {
+        $set: {
+          freeBitesBalance: { $subtract: [{ $ifNull: ["$freeBitesBalance", 0] }, "$__freeToSpend"] },
+          purchasedBitesBalance: { $subtract: [{ $ifNull: ["$purchasedBitesBalance", 0] }, "$__purchasedToSpend"] },
+          totalBitesSpent: { $add: [{ $ifNull: ["$totalBitesSpent", 0] }, spendAmount] },
+          bitesOperationClaims: {
+            $concatArrays: [
+              { $ifNull: ["$bitesOperationClaims", []] },
+              [{
+                key: idempotencyKey,
+                operation: "spend",
+                requestedAmount: spendAmount,
+                actualAmount: spendAmount,
+                freeAmount: "$__freeToSpend",
+                purchasedAmount: "$__purchasedToSpend",
+                balanceAfterFree: { $subtract: ["$__freeBefore", "$__freeToSpend"] },
+                balanceAfterPurchased: { $subtract: ["$__purchasedBefore", "$__purchasedToSpend"] }
+              }]
+            ]
+          }
+        }
+      },
+      { $unset: ["__freeBefore", "__purchasedBefore", "__freeToSpend", "__purchasedToSpend"] }
+    ],
+    { new: true, lean: true }
   );
 
-  const transaction = await BitesTransaction.create({
-    householdId: household._id,
+  if (!updated) {
+    const current = await Household.findById(householdId).lean();
+    if (!current) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
+    const claim = findOperationClaim(current, idempotencyKey);
+    if (!claim) {
+      throw Object.assign(new Error("No tienes Bites suficientes."), { statusCode: 402, code: "INSUFFICIENT_BITES" });
+    }
+    const transaction = await ensureOperationTransaction({
+      household: current,
+      claim,
+      type: "pack_unlock",
+      reason,
+      metadata
+    });
+    return {
+      skipped: true,
+      wallet: getWalletFromHousehold(current),
+      transaction: { id: transaction?._id }
+    };
+  }
+
+  const claim = findOperationClaim(updated, idempotencyKey);
+  const transaction = await ensureOperationTransaction({
+    household: updated,
+    claim,
     type: "pack_unlock",
-    amount: -amount,
-    balanceAfterFree: newFree,
-    balanceAfterPurchased: newPurchased,
     reason,
-    metadata
+    metadata: { ...metadata, idempotencyKey }
   });
 
   return {
-    wallet: getWalletFromHousehold({ ...household, freeBitesBalance: newFree, purchasedBitesBalance: newPurchased, totalBitesSpent: newSpent }),
+    wallet: getWalletFromHousehold(updated),
     transaction: { id: transaction._id }
   };
 }
@@ -151,32 +330,91 @@ export async function grantPurchasedBites(householdId, amount, reason, metadata 
     throw Object.assign(new Error("amount debe ser un entero positivo."), { statusCode: 400 });
   }
 
+  const numericAmount = Number(amount);
   const household = await Household.findById(householdId).lean();
   if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
 
-  const newPurchased = (household.purchasedBitesBalance ?? 0) + Number(amount);
+  const purchaseAttemptId = metadata?.purchaseAttemptId ? String(metadata.purchaseAttemptId) : null;
+  const idempotencyKey = metadata?.idempotencyKey
+    || (purchaseAttemptId ? `purchase:${purchaseAttemptId}` : `purchase:${householdId}:${crypto.randomUUID()}`);
+  const existingPurchase = purchaseAttemptId
+    ? await BitesTransaction.findOne({ "metadata.purchaseAttemptId": purchaseAttemptId })
+    : null;
+  if (existingPurchase) {
+    return { skipped: true, wallet: getWalletFromHousehold(household), transaction: { id: existingPurchase._id } };
+  }
+  const existingClaim = findOperationClaim(household, idempotencyKey);
+  if (existingClaim) {
+    const transaction = await ensureOperationTransaction({
+      household,
+      claim: existingClaim,
+      type: "purchase",
+      reason,
+      metadata: { ...metadata, idempotencyKey }
+    });
+    const latest = await Household.findById(household._id).lean();
+    return { skipped: true, wallet: getWalletFromHousehold(latest || household), transaction: { id: transaction?._id } };
+  }
 
-  // Transaction record is created first: the idempotency check in
-  // applyBitesBundleEntitlementFromAttempt queries this collection, so creating
-  // it before updating the balance ensures webhook replays are blocked even if
-  // the balance update below fails.
-  const transaction = await BitesTransaction.create({
-    householdId: household._id,
+  const updated = await Household.findOneAndUpdate(
+    { _id: household._id, "bitesOperationClaims.key": { $ne: idempotencyKey } },
+    [
+      {
+        $set: {
+          __freeBefore: { $ifNull: ["$freeBitesBalance", 0] },
+          __purchasedBefore: { $ifNull: ["$purchasedBitesBalance", 0] }
+        }
+      },
+      {
+        $set: {
+          purchasedBitesBalance: { $add: ["$__purchasedBefore", numericAmount] },
+          bitesOperationClaims: {
+            $concatArrays: [
+              { $ifNull: ["$bitesOperationClaims", []] },
+              [{
+                key: idempotencyKey,
+                operation: "purchase",
+                requestedAmount: numericAmount,
+                actualAmount: numericAmount,
+                freeAmount: 0,
+                purchasedAmount: numericAmount,
+                balanceAfterFree: "$__freeBefore",
+                balanceAfterPurchased: { $add: ["$__purchasedBefore", numericAmount] }
+              }]
+            ]
+          }
+        }
+      },
+      { $unset: ["__freeBefore", "__purchasedBefore"] }
+    ],
+    { new: true, lean: true }
+  );
+  if (!updated) {
+    const current = await Household.findById(householdId).lean();
+    if (!current) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
+    const claim = findOperationClaim(current, idempotencyKey);
+    if (!claim) throw new Error("No se pudo reclamar la compra de Bites de forma idempotente.");
+    const transaction = await ensureOperationTransaction({
+      household: current,
+      claim,
+      type: "purchase",
+      reason,
+      metadata: { ...metadata, idempotencyKey }
+    });
+    return { skipped: true, wallet: getWalletFromHousehold(current), transaction: { id: transaction?._id } };
+  }
+
+  const claim = findOperationClaim(updated, idempotencyKey);
+  const transaction = await ensureOperationTransaction({
+    household: updated,
+    claim,
     type: "purchase",
-    amount: Number(amount),
-    balanceAfterFree: household.freeBitesBalance ?? 0,
-    balanceAfterPurchased: newPurchased,
     reason,
-    metadata
+    metadata: { ...metadata, idempotencyKey }
   });
 
-  await Household.updateOne(
-    { _id: household._id },
-    { $set: { purchasedBitesBalance: newPurchased } }
-  );
-
   return {
-    wallet: getWalletFromHousehold({ ...household, purchasedBitesBalance: newPurchased }),
+    wallet: getWalletFromHousehold(updated),
     transaction: { id: transaction._id }
   };
 }
