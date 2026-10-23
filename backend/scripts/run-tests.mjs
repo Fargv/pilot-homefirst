@@ -5,6 +5,8 @@ const result = spawnSync(
   [
     "--test",
     "src/kitchen/guidedTourService.test.js",
+    "src/kitchen/visualOnboardingCore.test.js",
+    "src/kitchen/routes/visualOnboarding.test.js",
     "src/kitchen/capabilityResolver.test.js",
     "src/kitchen/householdResponseCore.test.js",
     "src/kitchen/monetizationConfigAdmin.test.js",
