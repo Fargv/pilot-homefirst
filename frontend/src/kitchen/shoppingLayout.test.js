@@ -6,7 +6,8 @@ const css = fs.readFileSync(new URL("./kitchen.css", import.meta.url), "utf8");
 
 test("shopping rows reserve a readable name column on desktop", () => {
   assert.match(css, /\.shopping-item-main\s*\{[\s\S]*?display:\s*grid;[\s\S]*?grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto;/);
-  assert.match(css, /@media \(min-width: 480px\)[\s\S]*?grid-template-columns:\s*auto\s+minmax\(10rem,\s*1fr\)\s+auto;/);
+  assert.match(css, /@media \(min-width: 480px\)[\s\S]*?grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)\s+auto;/);
+  assert.doesNotMatch(css, /\.shopping-item-flat \.shopping-item-main[\s\S]*?minmax\(10rem,/);
 });
 
 test("shopping controls move to a second row on narrow screens", () => {
