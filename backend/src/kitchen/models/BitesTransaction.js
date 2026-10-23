@@ -30,5 +30,12 @@ BitesTransactionSchema.index(
     partialFilterExpression: { "metadata.idempotencyKey": { $type: "string" } }
   }
 );
+BitesTransactionSchema.index(
+  { "metadata.purchaseAttemptId": 1 },
+  {
+    unique: true,
+    partialFilterExpression: { "metadata.purchaseAttemptId": { $type: "string" } }
+  }
+);
 
 export const BitesTransaction = mongoose.model("BitesTransaction", BitesTransactionSchema);

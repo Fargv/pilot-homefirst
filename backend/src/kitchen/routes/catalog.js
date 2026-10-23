@@ -38,6 +38,7 @@ import {
   daysUntilNextGrant,
   spendBites
 } from "../bitesService.js";
+import { unlockPackWithBites } from "../bitesPackUnlockCore.js";
 import { syncPackToStripe, isStripeSyncAvailable } from "../stripeSync.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -697,21 +698,25 @@ router.post("/packs/:packId/unlock", requireAuth, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Este pack no requiere Bites para desbloquearse." });
     }
 
-    const { wallet } = await spendBites(
+    const { ownership, wallet } = await unlockPackWithBites({
       householdId,
-      bitesCost,
-      `Desbloquear pack: ${pack.title}`,
-      { packId: String(pack._id), packTitle: pack.title }
-    );
-
-    const ownership = await HouseholdCatalogPack.create({
-      householdId,
-      packId: pack._id,
-      acquiredVia: "purchase",
-      acquiredAt: new Date(),
-      status: "owned",
-      paymentStatus: "paid",
-      pricePaid: bitesCost
+      pack: { _id: pack._id, title: pack.title, bitesCost },
+      spendBites,
+      upsertOwnership: () => HouseholdCatalogPack.findOneAndUpdate(
+        { householdId, packId: pack._id },
+        {
+          $setOnInsert: {
+            householdId,
+            packId: pack._id,
+            acquiredVia: "purchase",
+            acquiredAt: new Date(),
+            status: "owned",
+            paymentStatus: "paid",
+            pricePaid: bitesCost
+          }
+        },
+        { upsert: true, new: true }
+      )
     });
 
     return res.json({

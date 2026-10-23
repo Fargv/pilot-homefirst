@@ -11,6 +11,20 @@ const GrantedBitesRewardClaimSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const BitesOperationClaimSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    operation: { type: String, required: true },
+    requestedAmount: { type: Number, required: true },
+    actualAmount: { type: Number, required: true },
+    freeAmount: { type: Number, default: 0 },
+    purchasedAmount: { type: Number, default: 0 },
+    balanceAfterFree: { type: Number, required: true },
+    balanceAfterPurchased: { type: Number, required: true }
+  },
+  { _id: false }
+);
+
 const HouseholdSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -56,6 +70,10 @@ const HouseholdSchema = new mongoose.Schema(
     // the historical source needed to rebuild a ledger after a write failure,
     // especially when the 500-bite cap or another concurrent reward intervenes.
     grantedBitesRewardClaims: { type: [GrantedBitesRewardClaimSchema], default: [] },
+    // Claims for non-reward wallet operations. The snapshot lets a retry
+    // rebuild its ledger entry after a partial write without repeating the
+    // balance mutation.
+    bitesOperationClaims: { type: [BitesOperationClaimSchema], default: [] },
 
     // Plan source: distinguishes how the current plan was granted.
     // "manual" = default / admin-assigned without a specific source

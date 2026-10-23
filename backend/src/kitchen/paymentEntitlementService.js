@@ -7,6 +7,7 @@ import { HouseholdCatalogPack } from "./models/HouseholdCatalogPack.js";
 import { BitesConfig } from "./models/BitesConfig.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { grantPurchasedBites } from "./bitesService.js";
+import { buildPurchaseIdempotencyKey } from "./purchaseIdentityCore.js";
 
 /**
  * Applies a pack entitlement after a completed checkout (test or live).
@@ -181,6 +182,7 @@ export async function applyBitesBundleEntitlementFromAttempt(attempt, session = 
     `Compra de bundle ${bundle.name}`,
     {
       purchaseAttemptId: attempt._id.toString(),
+      idempotencyKey: buildPurchaseIdempotencyKey({ purchaseAttemptId: attempt._id.toString() }),
       bundleId: attempt.targetId,
       bundleName: bundle.name,
       stripeCheckoutSessionId: attempt.stripeCheckoutSessionId || "",
