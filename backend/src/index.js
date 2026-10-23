@@ -3,7 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
-import { config } from "./config.js";
+import { config, isAllowedDevNetlifyOrigin, isDevEnvironment } from "./config.js";
 import { connectDb } from "./db.js";
 import kitchenRouter from "./kitchen/index.js";
 import weekRoutes from "./kitchen/routes/weeks.js";
@@ -41,7 +41,14 @@ app.use(cors({
       return;
     }
 
-    callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
+    if (isDevEnvironment() && isAllowedDevNetlifyOrigin(normalizedOrigin)) {
+      callback(null, true);
+      return;
+    }
+
+    // Reject without throwing: cors omits CORS headers and Express continues,
+    // so a browser-enforced CORS denial does not become an unexpected HTTP 500.
+    callback(null, false);
   }
 }));
 
