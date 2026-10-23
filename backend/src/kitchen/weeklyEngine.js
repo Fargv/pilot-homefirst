@@ -819,9 +819,33 @@ export async function grantWeeklyReward(householdId, challengeKey, rewardBites, 
     .find((item) => item.challengeKey === challengeKey);
   if (!entry || entry.rewardGranted === true || !entry.rewardIdempotencyKey) return false;
 
+  const numericRewardBites = Number(rewardBites ?? entry.rewardBites ?? 0);
+  if (!Number.isFinite(numericRewardBites) || numericRewardBites < 0) {
+    throw new Error(`Recompensa semanal inválida para ${challengeKey}.`);
+  }
+
+  // A zero-value challenge is still a real completed challenge, but it has no
+  // monetary side effect and therefore must not require a BitesTransaction.
+  if (numericRewardBites === 0) {
+    const zeroRewardUpdate = await HouseholdWeeklyProgress.updateOne(
+      {
+        _id: progress._id,
+        completedChallenges: {
+          $elemMatch: { challengeKey, rewardGranted: { $ne: true } }
+        }
+      },
+      { $set: { "completedChallenges.$.rewardGranted": true } }
+    );
+    if (zeroRewardUpdate.modifiedCount === 1) {
+      console.log(`[weekly] Zero-value reward marked: ${challengeKey} household=${householdId}`);
+      return true;
+    }
+    return false;
+  }
+
   const reward = await _grantBites(
     String(householdId),
-    rewardBites,
+    numericRewardBites,
     `Reto semanal completado: ${challengeKey}`,
     {
       source: "weekly_challenge",
@@ -843,7 +867,7 @@ export async function grantWeeklyReward(householdId, challengeKey, rewardBites, 
     { $set: { "completedChallenges.$.rewardGranted": true } }
   );
 
-  console.log(`[weekly] Reward granted: ${challengeKey} (+${rewardBites} bites) household=${householdId}`);
+  console.log(`[weekly] Reward granted: ${challengeKey} (+${numericRewardBites} bites) household=${householdId}`);
   return true;
 }
 
@@ -1459,7 +1483,7 @@ export async function triggerWeeklyChallenge(householdId, eventType, contextData
       const freshProgress = await HouseholdWeeklyProgress.findById(progress._id).lean();
       for (const key of newlyCompletedKeys) {
         const def = challenges.find((c) => c.key === key);
-        if (def && def.rewardBites > 0) {
+        if (def && Number.isFinite(Number(def.rewardBites)) && def.rewardBites >= 0) {
           await grantWeeklyReward(householdId, key, def.rewardBites, freshProgress);
         }
       }

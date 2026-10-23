@@ -3,7 +3,7 @@ import test from "node:test";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { HouseholdWeeklyProgress } from "./models/HouseholdWeeklyProgress.js";
-import { checkAndGrantBonus } from "./weeklyEngine.js";
+import { checkAndGrantBonus, grantWeeklyReward } from "./weeklyEngine.js";
 
 function installFakeModels() {
   const state = {
@@ -130,6 +130,98 @@ test("the real weekly bonus route creates a key and recovers a failed ledger", a
     const transaction = [...fake.state.transactions.values()][0];
     assert.equal(transaction.metadata.idempotencyKey, "weekly-progress:progress-1:weekly_bonus");
     assert.equal(transaction.metadata.actualGranted, 30);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("a normal zero-Bites challenge is marked without creating a ledger", async () => {
+  const fake = installFakeModels();
+  try {
+    fake.state.progress.completedChallenges = [{
+      challengeKey: "weekly_zero",
+      rewardBites: 0,
+      rewardGranted: false,
+      rewardIdempotencyKey: "weekly-progress:progress-1:weekly_zero"
+    }];
+    const progress = fake.state.progress;
+    const granted = await grantWeeklyReward("household-1", "weekly_zero", 0, progress);
+    assert.equal(granted, true);
+    assert.equal(fake.state.transactions.size, 0);
+    assert.equal(fake.state.progress.completedChallenges[0].rewardGranted, true);
+
+    const replay = await grantWeeklyReward("household-1", "weekly_zero", 0, fake.state.progress);
+    assert.equal(replay, false);
+    assert.equal(fake.state.transactions.size, 0);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("a zero-Bites bonus and its pending recovery are idempotent", async () => {
+  const fake = installFakeModels();
+  try {
+    const challenges = [
+      { _id: "main-id", key: "weekly_main", triggerType: "meal_planned", rewardBites: 10 },
+      { _id: "bonus-id", key: "weekly_zero_bonus", triggerType: "bonus", rewardBites: 0 }
+    ];
+    fake.state.progress.completedChallenges = [
+      { challengeKey: "weekly_main", rewardGranted: true },
+      {
+        challengeKey: "weekly_zero_bonus",
+        rewardBites: 0,
+        rewardGranted: false,
+        rewardIdempotencyKey: "weekly-progress:progress-1:weekly_zero_bonus"
+      }
+    ];
+    fake.state.progress.bonusGranted = true;
+
+    await checkAndGrantBonus("household-1", fake.state.progress, challenges, 0);
+    assert.equal(fake.state.progress.completedChallenges[1].rewardGranted, true);
+    assert.equal(fake.state.transactions.size, 0);
+
+    await checkAndGrantBonus("household-1", fake.state.progress, challenges, 0);
+    assert.equal(fake.state.transactions.size, 0);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("concurrent zero-Bites claims mark once and never create money", async () => {
+  const fake = installFakeModels();
+  try {
+    fake.state.progress.completedChallenges = [{
+      challengeKey: "weekly_zero_concurrent",
+      rewardBites: 0,
+      rewardGranted: false,
+      rewardIdempotencyKey: "weekly-progress:progress-1:weekly_zero_concurrent"
+    }];
+    const progress = fake.state.progress;
+    const results = await Promise.all([
+      grantWeeklyReward("household-1", "weekly_zero_concurrent", 0, progress),
+      grantWeeklyReward("household-1", "weekly_zero_concurrent", 0, progress)
+    ]);
+    assert.deepEqual(results.sort(), [false, true]);
+    assert.equal(fake.state.transactions.size, 0);
+  } finally {
+    fake.restore();
+  }
+});
+
+test("a positive 25-Bites challenge still requires and records a ledger", async () => {
+  const fake = installFakeModels();
+  try {
+    fake.state.progress.completedChallenges = [{
+      challengeKey: "weekly_positive",
+      rewardBites: 25,
+      rewardGranted: false,
+      rewardIdempotencyKey: "weekly-progress:progress-1:weekly_positive"
+    }];
+    const progress = fake.state.progress;
+    await grantWeeklyReward("household-1", "weekly_positive", 25, progress);
+    assert.equal(fake.state.balance, 25);
+    assert.equal(fake.state.transactions.size, 1);
+    assert.equal(fake.state.progress.completedChallenges[0].rewardGranted, true);
   } finally {
     fake.restore();
   }
