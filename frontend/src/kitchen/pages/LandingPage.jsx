@@ -490,9 +490,9 @@ function LandingVideo() {
 // ── News ──────────────────────────────────────────────────────────────────────
 
 function LandingNews({ subscriptionsEnabled }) {
-  const visibleNews = subscriptionsEnabled === false
-    ? NEWS.filter((item) => !item.desc.includes("Pro Beta"))
-    : NEWS;
+  const visibleNews = subscriptionsEnabled === true
+    ? NEWS
+    : NEWS.filter((item) => !item.desc.includes("Pro Beta"));
   return (
     <section className="lp-section lp-section-alt">
       <div className="lp-section-inner">

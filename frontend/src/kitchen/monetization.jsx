@@ -1,26 +1,23 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { apiRequest } from "./api.js";
 import { useAuth } from "./auth.jsx";
+import { applySubscriptionsEnabled, isSubscriptionsFlagResolved } from "./monetizationState.js";
 
 const MonetizationContext = createContext(null);
 
 export function MonetizationProvider({ children }) {
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(null);
 
   useEffect(() => {
-    if (typeof user?.subscriptionsEnabled === "boolean") {
-      setSubscriptionsEnabled(user.subscriptionsEnabled);
-      return undefined;
-    }
     if (authLoading) return undefined;
 
     let active = true;
     setSubscriptionsEnabled(null);
     apiRequest("/api/users/bootstrap-needed", { authMode: "none" })
       .then((data) => {
-        if (active && typeof data?.subscriptionsEnabled === "boolean") {
-          setSubscriptionsEnabled(data.subscriptionsEnabled);
+        if (active) {
+          setSubscriptionsEnabled((current) => applySubscriptionsEnabled(current, data?.subscriptionsEnabled));
         }
       })
       .catch(() => {
@@ -31,13 +28,13 @@ export function MonetizationProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [authLoading, user?.id, user?.subscriptionsEnabled]);
+  }, [authLoading]);
 
   const value = useMemo(
     () => ({
       subscriptionsEnabled,
       setSubscriptionsEnabled,
-      subscriptionsFlagLoaded: typeof subscriptionsEnabled === "boolean"
+      subscriptionsFlagLoaded: isSubscriptionsFlagResolved(subscriptionsEnabled)
     }),
     [subscriptionsEnabled]
   );

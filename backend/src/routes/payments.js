@@ -24,14 +24,14 @@ import {
   SUBSCRIPTION_PLANS
 } from "../kitchen/subscriptionService.js";
 import { getSubscriptionsEnabled } from "../kitchen/monetizationConfigService.js";
-import {
-  buildSubscriptionsDisabledPayload,
-  isSubscriptionCheckoutBlocked
-} from "../kitchen/subscriptionCommerceCore.js";
+import { createCheckoutPreflight } from "./checkoutPreflight.js";
 
 const router = express.Router();
 
-const VALID_TYPES = ["pack", "subscription", "bites"];
+const checkoutPreflight = createCheckoutPreflight({
+  isPaymentsEnabled: () => config.stripe.paymentsEnabled,
+  getSubscriptionsEnabled
+});
 
 // S-1: Rate-limit checkout creation — 10 attempts per 15 minutes per IP.
 const checkoutRateLimit = rateLimit({
@@ -76,22 +76,9 @@ function stripeClientGuard(res) {
 
 // ─── POST /api/payments/checkout-session ─────────────────────────────────────
 
-router.post("/checkout-session", checkoutRateLimit, requireAuth, async (req, res) => {
+router.post("/checkout-session", checkoutRateLimit, requireAuth, checkoutPreflight, async (req, res) => {
   try {
-    if (!paymentsEnabledGuard(res)) return;
-
     const { type, targetId, targetName, stripePriceId: clientPriceId, planKey } = req.body || {};
-
-    if (!type || !VALID_TYPES.includes(type)) {
-      return res.status(400).json({
-        ok: false,
-        error: `Tipo de pago inválido. Valores permitidos: ${VALID_TYPES.join(", ")}.`
-      });
-    }
-
-    if (isSubscriptionCheckoutBlocked(type, await getSubscriptionsEnabled())) {
-      return res.status(403).json(buildSubscriptionsDisabledPayload());
-    }
 
     const stripe = stripeClientGuard(res);
     if (!stripe) return;

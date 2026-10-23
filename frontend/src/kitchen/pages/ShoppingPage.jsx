@@ -14,6 +14,7 @@ import { useAuth } from "../auth";
 import ShareWhatsAppButton from "../components/ShareWhatsAppButton.jsx";
 import { buildShoppingShareUrl, normalizeWeekParam } from "../deepLinks.js";
 import { canUseBasicsFeature, isBudgetFeatureUnavailableError } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import { useActiveWeek } from "../weekContext.jsx";
 import ModalSheet from "../components/ui/ModalSheet.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
@@ -273,6 +274,7 @@ function resolvePathnameFromTo(to, currentPathname = "") {
 
 export default function ShoppingPage() {
   const { user } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -531,7 +533,7 @@ export default function ShoppingPage() {
       const data = await fetchCached(shoppingQuery(weekStart));
       applyPayload(data);
       if (checkBasicsPopup) {
-        if (canUseBasicsFeature(user)) {
+        if (canUseBasicsFeature({ ...user, subscriptionsEnabled: subscriptionsEnabled === true })) {
           const householdId = user?.activeHouseholdId || user?.householdId || "";
           const popupKey = `lunchfy_basics_popup_${householdId}_${weekStart}`;
           try {
