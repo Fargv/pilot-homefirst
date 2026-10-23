@@ -29979,10 +29979,67 @@ body,
 .shopping-day-option:focus-visible, .shopping-day-clear:focus-visible { outline: 3px solid #4188ff; outline-offset: 2px; }
 .shopping-day-coverage-note, .shopping-day-quantity-note { margin: 8px 0 0; color: var(--muted, #667085); font-size: .78rem; }
 .shopping-day-item-note { color: var(--muted, #667085); font-size: .72rem; }
-@media (max-width: 560px) {
-  .shopping-day-filter { padding: 9px; }
-  .shopping-day-options { grid-template-columns: repeat(4, minmax(56px, 1fr)); gap: 4px; }
-  .shopping-day-option { min-height: 46px; border-radius: 8px; }
-  .shopping-day-option span { font-size: .68rem; }
-  .shopping-day-option small { font-size: .62rem; }
+
+/* UX-002: keep the week selector to one compact, touch-friendly row. */
+.shopping-day-filter {
+  margin-top: 6px;
+  padding: 0;
+  background: transparent;
 }
+.shopping-day-options {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 5px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.shopping-day-option {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 600;
+}
+.shopping-day-all { min-width: 60px; }
+.shopping-day-option.is-selected { background: var(--accent-soft, #e9f5ef); }
+.shopping-item-flat {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 7px;
+  padding: 5px 0;
+}
+.shopping-item-flat .shopping-item-name-col { min-width: 0; }
+.shopping-item-flat .shopping-item-text {
+  display: block;
+  font-size: .95rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.shopping-item-flat .shopping-source-toggle {
+  min-height: 44px;
+  min-width: 44px;
+  gap: 2px;
+  margin-top: 1px;
+  padding: 0;
+  color: var(--muted, #667085);
+  font-size: .72rem;
+  text-decoration: none;
+  text-align: left;
+}
+.shopping-item-flat .shopping-source-toggle svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 150ms ease;
+}
+.shopping-item-flat .shopping-source-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.shopping-source-details {
+  margin: 0 0 2px;
+  font-size: .75rem;
+}
+.shopping-source-details ul { margin: 0; padding-left: 16px; }
+.shopping-item-flat .shopping-item-controls { gap: 0; }
+.shopping-item-flat .shopping-qty-button,
+.shopping-item-flat .shopping-check { min-width: 44px; min-height: 44px; }

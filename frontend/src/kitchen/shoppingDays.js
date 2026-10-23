@@ -15,6 +15,38 @@ export function getWeekDayDates(weekStart) {
     return date.toISOString().slice(0, 10);
   });
 }
+
+export function toggleShoppingDay(currentDay, nextDay) {
+  return currentDay === nextDay ? "" : nextDay;
+}
+
+export function getShoppingDaysWithDishes(items, weekStart) {
+  const weekDates = getWeekDayDates(weekStart);
+  const datesInWeek = new Set(weekDates);
+  const dates = new Set();
+  for (const item of items || []) {
+    if (isManualShoppingItem(item)) continue;
+    for (const source of item.sources || []) {
+      if (!source?.dishName && !source?.dishId) continue;
+      const date = getSourceDay(source);
+      if (datesInWeek.has(date)) dates.add(date);
+    }
+  }
+  return SHOPPING_DAYS.filter((_, index) => dates.has(weekDates[index]));
+}
+
+export function getShoppingRecipeReferences(item) {
+  if (isManualShoppingItem(item)) return [];
+  const references = new Map();
+  for (const source of item?.sources || []) {
+    const date = getSourceDay(source);
+    const dishName = String(source?.dishName || "").trim();
+    if (!date || !dishName) continue;
+    const key = `${String(source.dishId || dishName).toLocaleLowerCase("es")}|${date}`;
+    if (!references.has(key)) references.set(key, { dishName, date });
+  }
+  return [...references.values()];
+}
 export function hasReliableShoppingDays(item) {
   return Array.isArray(item?.sources) && item.sources.some((source) => getSourceDay(source) !== "");
 }

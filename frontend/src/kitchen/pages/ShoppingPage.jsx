@@ -29,7 +29,7 @@ import {
   getShoppingItemKey,
   reconcileShoppingPayloadWithPendingMutations
 } from "../shoppingOptimisticState.js";
-import { SHOPPING_DAYS, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, hasReliableShoppingDays, isManualShoppingItem } from "../shoppingDays.js";
+import { filterShoppingItems, getShoppingDaysWithDishes, getShoppingRecipeReferences, getVisiblePendingGroups, hasReliableShoppingDays, isManualShoppingItem, toggleShoppingDay } from "../shoppingDays.js";
 
 function RefreshIcon(props) {
   return (
@@ -187,13 +187,6 @@ function formatTripDate(value) {
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return "Sin fecha";
   return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
-
-function formatMealType(value) {
-  const mealType = String(value || "").trim().toLowerCase();
-  if (mealType === "lunch") return "Comida";
-  if (mealType === "dinner") return "Cena";
-  return mealType ? `Otra comida (${mealType})` : "Otra comida";
 }
 
 function slugColor(slug = "") {
@@ -1210,6 +1203,7 @@ export default function ShoppingPage() {
     ...(pendingByCategory || []).flatMap((group) => group.items || []),
     ...(purchasedByStoreDay || []).flatMap((group) => group.items || [])
   ], [pendingByCategory, purchasedByStoreDay]);
+  const shoppingDaysWithDishes = useMemo(() => getShoppingDaysWithDishes(allShoppingItems, weekStart), [allShoppingItems, weekStart]);
   const visiblePendingGroups = useMemo(() => {
     return getVisiblePendingGroups(pendingByCategory, selectedDays, weekStart);
   }, [pendingByCategory, selectedDays, weekStart]);
@@ -1393,21 +1387,17 @@ export default function ShoppingPage() {
           </div>
         ) : null}
         <section className="shopping-day-filter" aria-label="Filtrar por días">
-          <div className="shopping-day-filter-head">
-            <strong>{selectedDays.size ? "Días seleccionados" : "Toda la semana"}</strong>
-            <button type="button" className="shopping-day-clear" aria-pressed={!selectedDays.size} onClick={() => setSelectedDays(new Set())}>Toda la semana</button>
-          </div>
           <div className="shopping-day-options" role="group" aria-label="Días de la semana">
-            {SHOPPING_DAYS.map((day) => {
-              const coverage = getDayCoverage(allShoppingItems, day.key, weekStart);
+            <button type="button" className={`shopping-day-option shopping-day-all${!selectedDays.size ? " is-selected" : ""}`} aria-pressed={!selectedDays.size} onClick={() => setSelectedDays(new Set())}>Todos</button>
+            {shoppingDaysWithDishes.map((day) => {
               const checked = selectedDays.has(day.key);
-              return <button key={day.key} type="button" className={`shopping-day-option${checked ? " is-selected" : ""}`} aria-pressed={checked} aria-label={`${day.label}${coverage.total ? `: cobertura de ingredientes ${coverage.purchased} de ${coverage.total}` : ": sin ingredientes requeridos"}`} onClick={() => setSelectedDays((previous) => { const next = new Set(previous); if (next.has(day.key)) next.delete(day.key); else next.add(day.key); return next; })}>
-                <span>{day.label}</span>
-                {coverage.total ? <small>{coverage.purchased}/{coverage.total}</small> : <small>—</small>}
-              </button>;
+              return <button key={day.key} type="button" aria-label={day.label} className={`shopping-day-option${checked ? " is-selected" : ""}`} aria-pressed={checked} onClick={() => setSelectedDays((previous) => {
+                const current = previous.values().next().value || "";
+                const next = toggleShoppingDay(current, day.key);
+                return next ? new Set([next]) : new Set();
+              })}>{day.label.slice(0, 2)}</button>;
             })}
           </div>
-          <p className="shopping-day-coverage-note">Cobertura de ingredientes comprados por día. El estado comprado es compartido.</p>
         </section>
       </PageHeader>
       <div className="shopping-page-shell" data-tour-id="shopping-list">
@@ -1490,6 +1480,7 @@ export default function ShoppingPage() {
                           <div className="shopping-items-flat-list">
                             {group.items.map((item) => {
                               const key = itemKey(item);
+                              const recipeReferences = getShoppingRecipeReferences(item);
                               return (
                                 <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
                                   <button
@@ -1503,27 +1494,15 @@ export default function ShoppingPage() {
                                   </button>
                                   <div className="shopping-item-name-col">
                                     <span className="shopping-item-text">{item.displayName}</span>
-                                    <button
+                                    {recipeReferences.length ? <button
                                       type="button"
                                       className="shopping-source-toggle"
                                       aria-expanded={ingredientDetailOpenId === key}
                                       aria-controls={`shopping-source-${key}`}
                                       onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
-                                    >¿Para qué?</button>
+                                    >{recipeReferences.length === 1 ? <><span>{recipeReferences[0].dishName} · {new Date(`${recipeReferences[0].date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</span><ChevronRight size={14} aria-hidden="true" /></> : <><span>{recipeReferences.length} recetas</span><ChevronRight size={14} aria-hidden="true" /></>}</button> : null}
                                     <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
-                                        {isManualShoppingItem(item) ? (
-                                          <span>Añadido manualmente</span>
-                                        ) : (item.sources || []).length ? item.sources.map((source, index) => {
-                                          const sourceDate = source.date ? new Date(source.date) : null;
-                                          const dayLabel = sourceDate && !Number.isNaN(sourceDate.getTime())
-                                            ? sourceDate.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" })
-                                            : "Día sin fecha";
-                                          const amount = source.quantity?.amount;
-                                          const amountLabel = amount != null && Number.isFinite(Number(amount)) && source.quantity?.unit
-                                            ? ` · ${amount} ${source.quantity.unit}` : "";
-                                          const roleLabel = source.role === "acompanamiento" ? "Acompañamiento" : source.role === "principal" ? "Principal" : "Extra";
-                                        return <span key={`${source.dishId || source.dishName}-${index}`}>{dayLabel} · {formatMealType(source.mealType)} · {roleLabel}: {source.dishName || "Plato"}{amountLabel}</span>;
-                                        }) : <span>Plato asociado (detalle no disponible)</span>}
+                                      {recipeReferences.length ? <ul>{recipeReferences.map((reference) => <li key={`${reference.dishName}-${reference.date}`}>{reference.dishName} — {new Date(`${reference.date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</li>)}</ul> : null}
                                     </div>
                                   </div>
                                   {!selectedDays.size ? <div className="shopping-item-controls">
