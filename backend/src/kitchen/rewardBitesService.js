@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 
@@ -5,6 +6,10 @@ const FREE_BITE_CARRY_OVER_CAP = 500;
 
 function isDuplicateKeyError(error) {
   return Number(error?.code) === 11000;
+}
+
+function transactionIdFor(idempotencyKey) {
+  return crypto.createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 24);
 }
 
 function buildTransactionMetadata(metadata, idempotencyKey, actualGranted) {
@@ -25,6 +30,7 @@ async function ensureRewardTransaction({
   metadata,
   recovered
 }) {
+  const transactionId = transactionIdFor(idempotencyKey);
   const balanceAfterFree = Number(household.freeBitesBalance ?? 0);
   const balanceAfterPurchased = Number(household.purchasedBitesBalance ?? 0);
   const actualGranted = Number(metadata?.actualGranted ?? amount);
@@ -35,9 +41,10 @@ async function ensureRewardTransaction({
 
   try {
     return await BitesTransaction.findOneAndUpdate(
-      { "metadata.idempotencyKey": idempotencyKey },
+      { _id: transactionId, "metadata.idempotencyKey": idempotencyKey },
       {
         $setOnInsert: {
+          _id: transactionId,
           householdId: household._id,
           type,
           amount,
