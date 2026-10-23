@@ -15,7 +15,7 @@ router.post("/request", requireAuth, async (req, res) => {
   try {
     // Subscription requests are a monetization write, so do not rely on the
     // short per-instance capability cache after the admin switch changes.
-    if (!(await getSubscriptionsEnabled({ forceRefresh: true }))) {
+    if (!(await getSubscriptionsEnabled({ forceRefresh: true, failClosed: true }))) {
       return res.status(403).json(buildSubscriptionsDisabledPayload());
     }
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);

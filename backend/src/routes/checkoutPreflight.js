@@ -27,12 +27,14 @@ export function createCheckoutPreflight({
         });
       }
 
-      // A stale per-instance cache must never reopen subscription checkout
-      // after an admin has switched subscriptions OFF. Functional capability
-      // reads may tolerate the short TTL; creating a new paid subscription may
-      // not. Implementations that support it should bypass their cache here.
-      if (isSubscriptionCheckoutBlocked(type, await getSubscriptionsEnabled({ forceRefresh: true }))) {
-        return res.status(403).json(buildSubscriptionsDisabledPayload());
+      if (type === "subscription") {
+        // A new subscription is authorized only when the persisted switch was
+        // read successfully. Other paid products remain independent of this
+        // switch and must not be blocked by a monetization-config outage.
+        const subscriptionsEnabled = await getSubscriptionsEnabled({ forceRefresh: true, failClosed: true });
+        if (isSubscriptionCheckoutBlocked(type, subscriptionsEnabled)) {
+          return res.status(403).json(buildSubscriptionsDisabledPayload());
+        }
       }
 
       return next();

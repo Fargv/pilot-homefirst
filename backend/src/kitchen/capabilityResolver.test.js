@@ -18,6 +18,12 @@ test("failed configuration reads default to ON", async () => {
   assert.equal(await reader.getSubscriptionsEnabled(), true);
 });
 
+test("critical subscription authorization fails closed when configuration cannot be read", async () => {
+  const reader = createSubscriptionsConfigReader({ read: async () => { throw new Error("offline"); }, logger: { error() {} } });
+  assert.equal(await reader.getSubscriptionsEnabled({ forceRefresh: true, failClosed: true }), false);
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
+});
+
 test("coalesces concurrent reads, caches, and supports invalidation", async () => {
   let reads = 0;
   const reader = createSubscriptionsConfigReader({
