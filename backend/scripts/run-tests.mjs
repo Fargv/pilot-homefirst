@@ -12,6 +12,9 @@ const result = spawnSync(
     "src/kitchen/rewardBitesService.test.js",
     "src/kitchen/weeklyRewardRecovery.test.js",
     "src/kitchen/subscriptionCommerceCore.test.js",
+    "src/kitchen/personalizationContract.test.js",
+    "src/kitchen/catalogMetadata.test.js",
+    "src/kitchen/catalogSync.test.js",
     "src/routes/checkoutPreflight.test.js",
     "src/stab001.test.js"
   ],

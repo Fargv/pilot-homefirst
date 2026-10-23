@@ -40,6 +40,9 @@ import {
 } from "../bitesService.js";
 import { unlockPackWithBites } from "../bitesPackUnlockCore.js";
 import { syncPackToStripe, isStripeSyncAvailable } from "../stripeSync.js";
+import { assertValidPersonalization } from "../personalizationContract.js";
+import { catalogMetadataHash, copyPersonalizationFromTemplate } from "../catalogMetadata.js";
+import { propagatePublishedCatalogTemplates } from "../catalogSync.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -129,10 +132,7 @@ function normalizeDishTemplateForHash(template = {}) {
 }
 
 function catalogContentHash(template) {
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(normalizeDishTemplateForHash(template)))
-    .digest("hex");
+  return catalogMetadataHash(template, normalizeDishTemplateForHash);
 }
 
 function dishFieldsFromTemplate(template, robotType = null) {
@@ -141,7 +141,7 @@ function dishFieldsFromTemplate(template, robotType = null) {
   if (robotType && template.recipe?.robotSteps?.[robotType]) {
     steps = template.recipe.robotSteps[robotType];
   }
-  return {
+  return copyPersonalizationFromTemplate(template, {
     name: template.name,
     isDinner: Boolean(template.isDinner),
     special: Boolean(template.special),
@@ -158,7 +158,13 @@ function dishFieldsFromTemplate(template, robotType = null) {
       servings: template.recipe?.servings || null,
       baseServings: template.recipe?.baseServings || null
     }
-  };
+  });
+}
+
+function validatePackPersonalization(dishes = []) {
+  dishes.forEach((dish, index) => {
+    if (dish?.personalization !== undefined) assertValidPersonalization(dish.personalization, `dishes[${index}].personalization`);
+  });
 }
 
 function assertPublishedPackComposition(currentDishes = [], incomingDishes = []) {
@@ -179,76 +185,19 @@ function assertPublishedPackComposition(currentDishes = [], incomingDishes = [])
 }
 
 async function propagatePublishedPackUpdates(pack, previousDishes = []) {
-  const summary = { synced: 0, skippedCustomized: 0, skippedAmbiguous: 0, skippedMissingIdentity: 0 };
-  const now = new Date();
-  const previousById = new Map((previousDishes || []).map((dish) => [normalizeTemplateId(dish.dishTemplateId), dish]));
-
-  for (const template of pack.dishes || []) {
-    const templateId = normalizeTemplateId(template.dishTemplateId);
-    if (!templateId) {
-      summary.skippedMissingIdentity += 1;
-      continue;
+  return propagatePublishedCatalogTemplates({
+    pack,
+    previousDishes,
+    hashTemplate: catalogContentHash,
+    mapTemplateFields: (template) => dishFieldsFromTemplate(template),
+    normalizeName: normalizeIngredientName,
+    repository: {
+      countCustomized: (filter) => KitchenDish.countDocuments(filter),
+      findUnmodifiedByTemplate: (filter) => KitchenDish.find(filter),
+      findLegacyUnmodified: (filter) => KitchenDish.find(filter),
+      save: (dish) => dish.save()
     }
-    const nextHash = catalogContentHash(template);
-    const previousHash = catalogContentHash(previousById.get(templateId) || {});
-    if (nextHash === previousHash) continue;
-
-    const baseFilter = {
-      source: "catalog",
-      sourcePackId: pack._id,
-      isArchived: { $ne: true },
-      deletedAt: null,
-      active: { $ne: false }
-    };
-    const customizedCount = await KitchenDish.countDocuments({
-      ...baseFilter,
-      sourceDishTemplateId: templateId,
-      userModified: true
-    });
-    summary.skippedCustomized += customizedCount;
-
-    const existingWithTemplate = await KitchenDish.find({
-      ...baseFilter,
-      sourceDishTemplateId: templateId,
-      userModified: { $ne: true }
-    });
-
-    const legacyMatched = [];
-    if (!existingWithTemplate.length) {
-      const previousName = previousById.get(templateId)?.name || template.name;
-      const previousNameKey = normalizeIngredientName(previousName);
-      const legacyCandidates = (await KitchenDish.find({
-        ...baseFilter,
-        sourceDishTemplateId: { $in: [null, ""] },
-        userModified: { $ne: true }
-      })).filter((dish) => normalizeIngredientName(dish.name || "") === previousNameKey);
-      const byHousehold = new Map();
-      legacyCandidates.forEach((dish) => {
-        const key = String(dish.householdId || "");
-        byHousehold.set(key, [...(byHousehold.get(key) || []), dish]);
-      });
-      for (const list of byHousehold.values()) {
-        if (list.length === 1) legacyMatched.push(list[0]);
-        else summary.skippedAmbiguous += list.length;
-      }
-    }
-
-    const targets = [...existingWithTemplate, ...legacyMatched];
-    for (const dish of targets) {
-      Object.assign(dish, dishFieldsFromTemplate(template), {
-        sourcePackSlug: pack.slug,
-        sourcePackTitle: pack.title,
-        sourcePackColor: pack.color || null,
-        sourceDishTemplateId: templateId,
-        catalogSyncedAt: now,
-        catalogContentHash: nextHash
-      });
-      await dish.save();
-      summary.synced += 1;
-    }
-  }
-
-  return summary;
+  });
 }
 
 function serializeAdminPack(p, ownedByCount = 0, installedCount = 0, lastAcquiredAt = null) {
@@ -1116,6 +1065,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
     if (!slug || !title) {
       return res.status(400).json({ ok: false, error: "slug y title son obligatorios." });
     }
+    validatePackPersonalization(dishes || []);
 
     const pack = new CatalogPack({
       slug, title, subtitle, description, coverImage, tags, cuisineType,
@@ -1141,7 +1091,7 @@ router.post("/packs", requireAuth, requireDiod, async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ ok: false, error: "Ya existe un pack con ese slug." });
     }
-    return res.status(500).json({ ok: false, error: error.message || "Error al crear el pack." });
+    return res.status(error.statusCode || 500).json({ ok: false, error: error.message || "Error al crear el pack." });
   }
 });
 
@@ -1170,6 +1120,7 @@ router.put("/packs/:packId", requireAuth, requireDiod, async (req, res) => {
       if (!Array.isArray(req.body.dishes)) {
         return res.status(400).json({ ok: false, error: "dishes debe ser un array." });
       }
+      validatePackPersonalization(req.body.dishes);
       if (isPublished) {
         const incomingDishes = req.body.dishes.map((dish, index) => ({
           ...dish,
