@@ -128,3 +128,14 @@ test("selector anuncia estados y mantiene objetivos táctiles accesibles en móv
   assert.match(styles, /\.shopping-day-clear\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*44px/s);
   assert.match(styles, /grid-template-columns:\s*repeat\(4,\s*minmax\(56px,\s*1fr\)\)/);
 });
+
+test("referencias de compra usan abreviaturas españolas sin romper la fila principal", () => {
+  const component = readFileSync(new URL("./pages/ShoppingPage.jsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("./kitchen.css", import.meta.url), "utf8");
+  assert.match(component, /SHOPPING_DAY_INITIALS\s*=\s*\[\"L\",\s*\"M\",\s*\"X\",\s*\"J\",\s*\"V\",\s*\"S\",\s*\"D\"\]/);
+  assert.match(component, /formatShoppingSourceDay\(source\)/);
+  assert.match(component, /\{recipeNames\.length\} recetas/);
+  assert.match(component, /shopping-source-details.*hidden=\{ingredientDetailOpenId !== key\}/s);
+  assert.match(styles, /\.shopping-item-main\s*\{/);
+  assert.match(styles, /\.shopping-source-details\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/s);
+});
