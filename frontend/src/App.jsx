@@ -45,6 +45,7 @@ import { OnboardingProvider } from "./kitchen/contexts/OnboardingContext.jsx";
 import { WeeklyChallengeProvider } from "./kitchen/contexts/WeeklyChallengeContext.jsx";
 import { GuidedTourProvider } from "./kitchen/components/tour/GuidedTourProvider.jsx";
 import ConsentGate from "./kitchen/components/ConsentGate.jsx";
+import { MonetizationProvider } from "./kitchen/monetization.jsx";
 
 const isDevelopmentEnvironment = import.meta.env.VITE_APP_ENV === "development";
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -282,14 +283,18 @@ function AuthBoundary() {
   if (clerkPublishableKey) {
     return (
       <ClerkEnabledAuthProvider>
-        <AppRoutes />
+        <MonetizationProvider>
+          <AppRoutes />
+        </MonetizationProvider>
       </ClerkEnabledAuthProvider>
     );
   }
 
   return (
     <AuthProvider>
-      <AppRoutes />
+      <MonetizationProvider>
+        <AppRoutes />
+      </MonetizationProvider>
     </AuthProvider>
   );
 }

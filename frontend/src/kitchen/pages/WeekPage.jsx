@@ -458,9 +458,10 @@ export default function WeekPage() {
       subscriptionPlan,
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
-      betaPro: user?.betaPro
+      betaPro: user?.betaPro,
+      subscriptionsEnabled: user?.subscriptionsEnabled
     }),
-    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro]
+    [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, user?.subscriptionsEnabled]
   );
   const canUseDinners = canUseDinnersFeature(subscriptionAccess);
   const selectedMealType = (dinnersEnabled && canUseDinners) ? normalizeMealType(mealTab) : "lunch";

@@ -23,6 +23,11 @@ import {
   normalizeSubscriptionPlan,
   SUBSCRIPTION_PLANS
 } from "../kitchen/subscriptionService.js";
+import { getSubscriptionsEnabled } from "../kitchen/monetizationConfigService.js";
+import {
+  buildSubscriptionsDisabledPayload,
+  isSubscriptionCheckoutBlocked
+} from "../kitchen/subscriptionCommerceCore.js";
 
 const router = express.Router();
 
@@ -74,8 +79,6 @@ function stripeClientGuard(res) {
 router.post("/checkout-session", checkoutRateLimit, requireAuth, async (req, res) => {
   try {
     if (!paymentsEnabledGuard(res)) return;
-    const stripe = stripeClientGuard(res);
-    if (!stripe) return;
 
     const { type, targetId, targetName, stripePriceId: clientPriceId, planKey } = req.body || {};
 
@@ -85,6 +88,13 @@ router.post("/checkout-session", checkoutRateLimit, requireAuth, async (req, res
         error: `Tipo de pago inválido. Valores permitidos: ${VALID_TYPES.join(", ")}.`
       });
     }
+
+    if (isSubscriptionCheckoutBlocked(type, await getSubscriptionsEnabled())) {
+      return res.status(403).json(buildSubscriptionsDisabledPayload());
+    }
+
+    const stripe = stripeClientGuard(res);
+    if (!stripe) return;
 
     const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
     const userId = req.user.id;
