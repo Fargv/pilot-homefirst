@@ -471,6 +471,29 @@ router.post("/session-activate", requireAuth, async (req, res) => {
         return res.status(404).json({ ok: false, error: "Household no encontrado." });
       }
 
+      // A webhook can mark the attempt completed before entitlement delivery
+      // finishes. Confirmation must be a safe recovery path for pack/Bites
+      // purchases, not an early return that leaves a paid purchase undelivered.
+      if (attempt.type === "pack") {
+        const recovery = await applyPackEntitlementFromAttempt(attempt);
+        return res.json({
+          ok: true,
+          applied: Boolean(recovery.applied),
+          reason: recovery.reason || null,
+          household: { id: household._id.toString(), ...buildHouseholdSubscriptionResponse(household) }
+        });
+      }
+      if (attempt.type === "bites") {
+        const recovery = await applyBitesBundleEntitlementFromAttempt(attempt);
+        return res.json({
+          ok: true,
+          applied: Boolean(recovery.applied),
+          reason: recovery.reason || null,
+          wallet: recovery.wallet || null,
+          household: { id: household._id.toString(), ...buildHouseholdSubscriptionResponse(household) }
+        });
+      }
+
       if (attempt.type === "subscription") {
         const expectedPlan = normalizeSubscriptionPlan(attempt.planKey);
         const currentPlan = normalizeSubscriptionPlan(household.subscriptionPlan);

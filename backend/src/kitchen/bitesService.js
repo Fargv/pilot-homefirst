@@ -3,6 +3,7 @@ import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
 import { BitesConfig } from "./models/BitesConfig.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
+import { buildPurchaseIdempotencyKey } from "./purchaseIdentityCore.js";
 
 // Economy: 100 Bites = 1.99 EUR (see bitesConstants.js)
 const DEFAULT_MONTHLY_GRANT = { basic: 100, pro: 300, premium: 1000 };
@@ -231,7 +232,7 @@ export async function grantMonthlyBites(householdId, adminUserId = null) {
 
 export async function spendBites(householdId, amount, reason, metadata = {}) {
   const spendAmount = Number(amount);
-  if (!Number.isFinite(spendAmount) || spendAmount < 1) {
+  if (!Number.isInteger(spendAmount) || spendAmount < 1) {
     throw Object.assign(new Error("amount debe ser un entero positivo."), { statusCode: 400 });
   }
 
@@ -326,7 +327,7 @@ export async function spendBites(householdId, amount, reason, metadata = {}) {
 }
 
 export async function grantPurchasedBites(householdId, amount, reason, metadata = {}) {
-  if (!Number.isFinite(Number(amount)) || Number(amount) < 1) {
+  if (!Number.isInteger(Number(amount)) || Number(amount) < 1) {
     throw Object.assign(new Error("amount debe ser un entero positivo."), { statusCode: 400 });
   }
 
@@ -334,12 +335,9 @@ export async function grantPurchasedBites(householdId, amount, reason, metadata 
   const household = await Household.findById(householdId).lean();
   if (!household) throw Object.assign(new Error("Hogar no encontrado."), { statusCode: 404 });
 
-  const purchaseAttemptId = metadata?.purchaseAttemptId ? String(metadata.purchaseAttemptId) : null;
-  const idempotencyKey = metadata?.idempotencyKey
-    || (purchaseAttemptId ? `purchase:${purchaseAttemptId}` : `purchase:${householdId}:${crypto.randomUUID()}`);
-  const existingPurchase = purchaseAttemptId
-    ? await BitesTransaction.findOne({ "metadata.purchaseAttemptId": purchaseAttemptId })
-    : null;
+  const purchaseAttemptId = String(metadata.purchaseAttemptId).trim();
+  const idempotencyKey = buildPurchaseIdempotencyKey(metadata);
+  const existingPurchase = await BitesTransaction.findOne({ "metadata.purchaseAttemptId": purchaseAttemptId });
   if (existingPurchase) {
     return { skipped: true, wallet: getWalletFromHousehold(household), transaction: { id: existingPurchase._id } };
   }
