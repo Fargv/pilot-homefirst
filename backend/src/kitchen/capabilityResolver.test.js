@@ -1,39 +1,49 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveHouseholdCapabilities } from "./capabilityResolver.js";
-import { getSubscriptionsEnabled, resetMonetizationConfigCache } from "./monetizationConfigService.js";
+import { resolveFunctionalCapabilities } from "./capabilityResolverCore.js";
+import { createSubscriptionsConfigReader } from "./monetizationConfigCore.js";
 
 const basic = { subscriptionPlan: "basic", subscriptionStatus: "inactive" };
-const pro = { subscriptionPlan: "pro", subscriptionStatus: "active" };
-const betaPro = { subscriptionPlan: "pro", planSource: "beta_pro", betaPro: { active: true } };
 
-test("subscriptions ON preserves real plan capabilities and no catalog entitlement", async () => {
-  const result = await resolveHouseholdCapabilities(pro, { subscriptionsEnabled: true });
-  assert.equal(result.subscriptionsEnabled, true);
-  assert.equal(result.functional.budget, true);
-  assert.equal(result.catalogIncludedPacks, null);
+test("missing configuration defaults to ON without a write", async () => {
+  let reads = 0;
+  const reader = createSubscriptionsConfigReader({ read: async () => { reads += 1; return null; } });
+  assert.equal(await reader.getSubscriptionsEnabled(), true);
+  assert.equal(reads, 1);
 });
 
-test("subscriptions OFF enables functional capabilities without changing household data", async () => {
-  const result = await resolveHouseholdCapabilities(basic, { subscriptionsEnabled: false });
-  assert.deepEqual(result.functional, {
-    budget: true, fullWeekRandomization: true, singleDayRandomization: true,
-    dietRandomization: true, dinners: true, basics: true
+test("failed configuration reads default to ON", async () => {
+  const reader = createSubscriptionsConfigReader({ read: async () => { throw new Error("offline"); }, logger: { error() {} } });
+  assert.equal(await reader.getSubscriptionsEnabled(), true);
+});
+
+test("coalesces concurrent reads, caches, and supports invalidation", async () => {
+  let reads = 0;
+  const reader = createSubscriptionsConfigReader({
+    read: async () => { reads += 1; await new Promise((resolve) => setTimeout(resolve, 1)); return { subscriptionsEnabled: false }; }
   });
+  assert.deepEqual(await Promise.all([reader.getSubscriptionsEnabled(), reader.getSubscriptionsEnabled()]), [false, false]);
+  assert.equal(reads, 1);
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
+  assert.equal(reads, 1);
+  reader.reset();
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
+  assert.equal(reads, 2);
+});
+
+test("ON preserves Basic and OFF grants only the explicit functional allowlist", async () => {
+  const current = { budget: false, fullWeekRandomization: false, singleDayRandomization: true, dietRandomization: false, dinners: false, basics: false, futureField: false };
+  const on = resolveFunctionalCapabilities(current, true);
+  assert.equal(on.budget, false);
+  const off = resolveFunctionalCapabilities(current, false);
+  assert.deepEqual(Object.keys(off).sort(), ["basics", "budget", "dietRandomization", "dinners", "fullWeekRandomization", "singleDayRandomization"].sort());
+  assert.ok(Object.values(off).every(Boolean));
   assert.equal(basic.subscriptionPlan, "basic");
   assert.equal(basic.subscriptionStatus, "inactive");
-  assert.equal(result.catalogIncludedPacks, null);
 });
 
-test("Beta Pro remains functional and catalog-independent", async () => {
-  const result = await resolveHouseholdCapabilities(betaPro, { subscriptionsEnabled: false });
-  assert.equal(result.functional.dinners, true);
-  assert.equal(result.catalogIncludedPacks, null);
-});
-
-test("config reader coalesces concurrent reads and fails conservatively", async () => {
-  resetMonetizationConfigCache();
-  const first = getSubscriptionsEnabled();
-  const second = getSubscriptionsEnabled();
-  assert.deepEqual(await Promise.all([first, second]), [true, true]);
+test("ON preserves Pro capabilities and does not create catalog entitlements", async () => {
+  const result = resolveFunctionalCapabilities({ budget: true }, true);
+  assert.equal(result.budget, true);
+  assert.equal(result.catalogIncludedPacks, undefined);
 });
