@@ -1,4 +1,6 @@
 import dotenv from "dotenv";
+export { isDevEnvironment, isAllowedDevNetlifyOrigin } from "./corsPolicy.js";
+import { isDevEnvironment } from "./corsPolicy.js";
 
 dotenv.config();
 
