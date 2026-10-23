@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { applyOptimisticShoppingStatusChange } from "./shoppingOptimisticState.js";
-import { filterShoppingGroups, filterShoppingItems, getDayCoverage, getVisiblePendingGroups, getWeekDayDates, hasReliableShoppingDays, isManualShoppingItem, SHOPPING_DAYS } from "./shoppingDays.js";
+import { filterShoppingGroups, filterShoppingItems, getDayCoverage, getShoppingDaysWithDishes, getShoppingRecipeReferences, getVisiblePendingGroups, getWeekDayDates, hasReliableShoppingDays, isManualShoppingItem, SHOPPING_DAYS, toggleShoppingDay } from "./shoppingDays.js";
 
 const week = "2026-10-19";
 const shared = { displayName: "Tomate", source: "plan", status: "purchased", sources: [{ day: "2026-10-19", quantity: 2, unit: "ud" }, { day: "2026-10-21", quantity: 3, unit: "ud" }] };
@@ -16,6 +16,61 @@ test("fechas de fuente UX-001A y clave day seleccionan el día local de forma es
   assert.equal(hasReliableShoppingDays(item), true);
   assert.equal(filterShoppingGroups([{ items: [item] }], new Set(["monday"]), week)[0].items[0], item);
   assert.equal(SHOPPING_DAYS.length, 7);
+});
+
+test("el filtro permite un solo día y pulsar el mismo día vuelve a toda la semana", () => {
+  let selectedDay = "";
+  selectedDay = toggleShoppingDay(selectedDay, "monday");
+  assert.equal(selectedDay, "monday");
+  selectedDay = toggleShoppingDay(selectedDay, "wednesday");
+  assert.equal(selectedDay, "wednesday");
+  selectedDay = toggleShoppingDay(selectedDay, "wednesday");
+  assert.equal(selectedDay, "");
+});
+
+test("solo muestra días de la semana con platos; manuales y legacy no crean días", () => {
+  const items = [
+    { source: "plan", sources: [{ day: "2026-10-21", dishName: "Sopa" }] },
+    { source: "plan", sources: [{ day: "2026-10-21", dishName: "Sopa" }] },
+    { source: "plan", sources: [{ day: "2026-10-20" }] },
+    { source: "manual", sources: [{ day: "2026-10-20", dishName: "No es receta" }] },
+    { source: "plan", fromDishes: ["legacy"], sources: [] }
+  ];
+  assert.deepEqual(getShoppingDaysWithDishes(items, week), [SHOPPING_DAYS[2]]);
+  assert.deepEqual(getShoppingDaysWithDishes([], week), []);
+});
+
+test("las referencias de receta se deduplican por plato y día y omiten manuales y legacy", () => {
+  const item = { source: "plan", sources: [
+    { dishId: "soup", dishName: "Sopa", day: "2026-10-21", quantity: { amount: 2, unit: "ud" }, role: "principal", mealType: "dinner" },
+    { dishId: "soup", dishName: "Sopa", day: "2026-10-21", quantity: { amount: 3, unit: "ud" }, role: "extra", mealType: "lunch" },
+    { dishId: "soup", dishName: "Sopa", day: "2026-10-22" },
+    { dishId: "pie", dishName: "Tarta", day: "2026-10-21" }
+  ] };
+  const original = structuredClone(item);
+  assert.deepEqual(getShoppingRecipeReferences(item), [
+    { key: "dish:soup|2026-10-21", dishName: "Sopa", date: "2026-10-21" },
+    { key: "dish:soup|2026-10-22", dishName: "Sopa", date: "2026-10-22" },
+    { key: "dish:pie|2026-10-21", dishName: "Tarta", date: "2026-10-21" }
+  ]);
+  assert.deepEqual(item, original, "abrir el resumen no modifica fuentes ni datos de compra");
+  assert.deepEqual(getShoppingRecipeReferences({ source: "manual", sources: [{ day: "2026-10-21", dishName: "No inventar" }] }), []);
+  assert.deepEqual(getShoppingRecipeReferences({ source: "plan", fromDishes: ["old"], sources: [] }), []);
+});
+
+test("keys de recetas distinguen IDs distintos con el mismo nombre y día", () => {
+  const references = getShoppingRecipeReferences({ source: "plan", sources: [
+    { dishId: "dish-101", dishName: "Sopa de verduras", day: "2026-10-21" },
+    { dishId: "dish-202", dishName: "Sopa de verduras", day: "2026-10-21" },
+    { dishName: "Sopa de verduras", day: "2026-10-21" }
+  ] });
+  assert.equal(references.length, 3);
+  assert.deepEqual(references.map(({ key }) => key), [
+    "dish:dish-101|2026-10-21",
+    "dish:dish-202|2026-10-21",
+    "name:sopa de verduras|2026-10-21"
+  ]);
+  assert.equal(new Set(references.map(({ key }) => key)).size, references.length);
 });
 
 test("un ingrediente compartido aparece en cualquiera de sus días sin duplicarse", () => {
@@ -116,17 +171,19 @@ test("selección vacía representa toda la lista sin clonar ítems compartidos",
   assert.deepEqual(filterShoppingGroups(groups, new Set(), week), groups);
 });
 
-test("selector anuncia estados y mantiene objetivos táctiles accesibles en móvil", () => {
+test("selector anuncia estados exclusivos y mantiene objetivos táctiles accesibles en móvil", () => {
   const component = readFileSync(new URL("./pages/ShoppingPage.jsx", import.meta.url), "utf8");
   const styles = readFileSync(new URL("./kitchen.css", import.meta.url), "utf8");
   assert.match(component, /aria-pressed=\{checked\}/);
+  assert.match(component, /toggleShoppingDay\(current, day\.key\)/);
+  assert.match(component, /shoppingDaysWithDishes\.map/);
   assert.match(component, /aria-pressed=\{!selectedDays\.size\}/);
   assert.match(component, /Sin día asignado/);
   assert.match(component, /Añadidos manualmente/);
-  assert.match(component, /Las cantidades de ocurrencias se muestran en «Toda la semana»/);
-  assert.match(styles, /\.shopping-day-option\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*48px/s);
-  assert.match(styles, /\.shopping-day-clear\s*\{[^}]*min-width:\s*44px;[^}]*min-height:\s*44px/s);
-  assert.match(styles, /grid-template-columns:\s*repeat\(4,\s*minmax\(56px,\s*1fr\)\)/);
+  assert.match(component, /shopping-source-toggle/);
+  assert.doesNotMatch(component, /¿Para qué\?|formatMealType\(|roleLabel|amountLabel/);
+  assert.match(styles, /\.shopping-item-flat \.shopping-check \{ min-width: 44px; min-height: 44px;/);
+  assert.match(styles, /\.shopping-day-options \{\s*display: flex;[\s\S]*overflow-x: auto;/);
 });
 
 test("referencias de compra usan abreviaturas españolas sin romper la fila principal", () => {
