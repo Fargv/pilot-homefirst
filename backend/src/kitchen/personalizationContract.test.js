@@ -2,14 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { isEligibleForHardRestrictions, validatePersonalization } from "./personalizationContract.js";
 
-const evidence = { source: "recipe-review", sourceVersion: "v1", contentHash: `sha256:${"a".repeat(64)}`, assessedAt: "2026-10-24T12:00:00.000Z" };
+const currentContentHash = `sha256:${"c".repeat(64)}`;
+const evidence = { assessmentId: "assessment-1", source: "recipe-review", sourceVersion: "v1", contentHash: currentContentHash, assessedAt: "2026-10-24T12:00:00.000Z" };
 const valid = {
   schemaVersion: 1,
   mealSlots: ["lunch"],
-  ingredientsComplete: "unknown",
-  baseServings: null,
-  provenance: { source: "catalog", sourceVersion: "v1", contentHash: `sha256:${"b".repeat(64)}` },
-  assessments: { allergens: { peanuts: { status: "compatible", evidence } }, diets: { vegan: { status: "unknown" } } }
+  ingredientsComplete: "complete",
+  baseServings: 2,
+  provenance: { source: "catalog", sourceVersion: "v1", contentHash: currentContentHash },
+  assessments: {
+    allergens: { peanuts: { status: "compatible", evidence, crossContact: { status: "compatible", evidence: { ...evidence, assessmentId: "cross-contact-1" } } } },
+    diets: { vegan: { status: "unknown" } }
+  }
 };
 
 test("accepts valid extensible metadata and explicitly incomplete ingredients", () => {
@@ -27,11 +31,19 @@ test("rejects malformed contracts, missing known-status evidence, and unknown ve
   assert.equal(validatePersonalization({ ...valid, provenance: { ...valid.provenance, contentHash: "not-a-hash" } }).valid, false);
 });
 
-test("hard restrictions exclude unknown and incompatible, admit only verified compatible", () => {
+test("hard restrictions admit only complete, current assessments accepted by a trusted verifier", () => {
   assert.deepEqual(isEligibleForHardRestrictions(undefined, {}), { eligible: true, reason: "no-hard-restrictions" });
   assert.equal(isEligibleForHardRestrictions(undefined, { allergens: ["peanuts"] }).reason, "unknown");
   assert.equal(isEligibleForHardRestrictions({ ...valid, assessments: { allergens: { peanuts: { status: "unknown" } } } }, { allergens: ["peanuts"] }).reason, "unknown");
   assert.equal(isEligibleForHardRestrictions({ ...valid, assessments: { allergens: { peanuts: { status: "incompatible", evidence } } } }, { allergens: ["peanuts"] }).reason, "incompatible");
-  assert.equal(isEligibleForHardRestrictions(valid, { allergens: ["peanuts"] }).reason, "verified-compatible");
+  const options = { currentContentHash, verifyEvidence: () => true };
+  assert.equal(isEligibleForHardRestrictions({ ...valid, ingredientsComplete: "unknown" }, { allergens: ["peanuts"] }, options).reason, "unknown");
+  assert.equal(isEligibleForHardRestrictions({ ...valid, ingredientsComplete: "incomplete" }, { allergens: ["peanuts"] }, options).reason, "unknown");
+  assert.equal(isEligibleForHardRestrictions(valid, { allergens: ["peanuts"] }, {}).reason, "unknown");
+  assert.equal(isEligibleForHardRestrictions(valid, { allergens: ["peanuts"] }, { ...options, verifyEvidence: () => false }).reason, "unknown");
+  assert.equal(isEligibleForHardRestrictions(valid, { allergens: ["peanuts"] }, { ...options, currentContentHash: `sha256:${"d".repeat(64)}` }).reason, "unknown");
+  const unknownCrossContact = { ...valid, assessments: { allergens: { peanuts: { status: "compatible", evidence, crossContact: { status: "unknown" } } } } };
+  assert.equal(isEligibleForHardRestrictions(unknownCrossContact, { allergens: ["peanuts"] }, options).reason, "unknown");
+  assert.equal(isEligibleForHardRestrictions(valid, { allergens: ["peanuts"] }, options).reason, "verified-compatible");
   assert.equal(isEligibleForHardRestrictions({ ...valid, schemaVersion: 2 }, { allergens: ["peanuts"] }).eligible, false);
 });

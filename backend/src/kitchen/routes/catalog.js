@@ -42,6 +42,7 @@ import { unlockPackWithBites } from "../bitesPackUnlockCore.js";
 import { syncPackToStripe, isStripeSyncAvailable } from "../stripeSync.js";
 import { assertValidPersonalization } from "../personalizationContract.js";
 import { catalogMetadataHash, copyPersonalizationFromTemplate } from "../catalogMetadata.js";
+import { propagatePublishedCatalogTemplates } from "../catalogSync.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -184,76 +185,19 @@ function assertPublishedPackComposition(currentDishes = [], incomingDishes = [])
 }
 
 async function propagatePublishedPackUpdates(pack, previousDishes = []) {
-  const summary = { synced: 0, skippedCustomized: 0, skippedAmbiguous: 0, skippedMissingIdentity: 0 };
-  const now = new Date();
-  const previousById = new Map((previousDishes || []).map((dish) => [normalizeTemplateId(dish.dishTemplateId), dish]));
-
-  for (const template of pack.dishes || []) {
-    const templateId = normalizeTemplateId(template.dishTemplateId);
-    if (!templateId) {
-      summary.skippedMissingIdentity += 1;
-      continue;
+  return propagatePublishedCatalogTemplates({
+    pack,
+    previousDishes,
+    hashTemplate: catalogContentHash,
+    mapTemplateFields: (template) => dishFieldsFromTemplate(template),
+    normalizeName: normalizeIngredientName,
+    repository: {
+      countCustomized: (filter) => KitchenDish.countDocuments(filter),
+      findUnmodifiedByTemplate: (filter) => KitchenDish.find(filter),
+      findLegacyUnmodified: (filter) => KitchenDish.find(filter),
+      save: (dish) => dish.save()
     }
-    const nextHash = catalogContentHash(template);
-    const previousHash = catalogContentHash(previousById.get(templateId) || {});
-    if (nextHash === previousHash) continue;
-
-    const baseFilter = {
-      source: "catalog",
-      sourcePackId: pack._id,
-      isArchived: { $ne: true },
-      deletedAt: null,
-      active: { $ne: false }
-    };
-    const customizedCount = await KitchenDish.countDocuments({
-      ...baseFilter,
-      sourceDishTemplateId: templateId,
-      userModified: true
-    });
-    summary.skippedCustomized += customizedCount;
-
-    const existingWithTemplate = await KitchenDish.find({
-      ...baseFilter,
-      sourceDishTemplateId: templateId,
-      userModified: { $ne: true }
-    });
-
-    const legacyMatched = [];
-    if (!existingWithTemplate.length) {
-      const previousName = previousById.get(templateId)?.name || template.name;
-      const previousNameKey = normalizeIngredientName(previousName);
-      const legacyCandidates = (await KitchenDish.find({
-        ...baseFilter,
-        sourceDishTemplateId: { $in: [null, ""] },
-        userModified: { $ne: true }
-      })).filter((dish) => normalizeIngredientName(dish.name || "") === previousNameKey);
-      const byHousehold = new Map();
-      legacyCandidates.forEach((dish) => {
-        const key = String(dish.householdId || "");
-        byHousehold.set(key, [...(byHousehold.get(key) || []), dish]);
-      });
-      for (const list of byHousehold.values()) {
-        if (list.length === 1) legacyMatched.push(list[0]);
-        else summary.skippedAmbiguous += list.length;
-      }
-    }
-
-    const targets = [...existingWithTemplate, ...legacyMatched];
-    for (const dish of targets) {
-      Object.assign(dish, dishFieldsFromTemplate(template), {
-        sourcePackSlug: pack.slug,
-        sourcePackTitle: pack.title,
-        sourcePackColor: pack.color || null,
-        sourceDishTemplateId: templateId,
-        catalogSyncedAt: now,
-        catalogContentHash: nextHash
-      });
-      await dish.save();
-      summary.synced += 1;
-    }
-  }
-
-  return summary;
+  });
 }
 
 function serializeAdminPack(p, ownedByCount = 0, installedCount = 0, lastAcquiredAt = null) {

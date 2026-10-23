@@ -19,12 +19,24 @@ function validateAssessmentGroup(group, path, errors) {
       continue;
     }
     if (assessment.status === "unknown") continue;
-    const evidence = assessment.evidence;
-    if (!isObject(evidence) || !nonEmpty(evidence.source) || !nonEmpty(evidence.sourceVersion)
-      || !isSha256(evidence.contentHash) || !isIsoDate(evidence.assessedAt)) {
-      errors.push(`${itemPath}.evidence is required for a known assessment and must include source, sourceVersion, contentHash, and assessedAt`);
-    }
+    validateEvidence(assessment.evidence, `${itemPath}.evidence`, errors);
+    if (assessment.crossContact !== undefined) validateStatusAssessment(assessment.crossContact, `${itemPath}.crossContact`, errors);
   }
+}
+
+function validateEvidence(evidence, path, errors) {
+  if (!isObject(evidence) || !nonEmpty(evidence.assessmentId) || !nonEmpty(evidence.source) || !nonEmpty(evidence.sourceVersion)
+    || !isSha256(evidence.contentHash) || !isIsoDate(evidence.assessedAt)) {
+    errors.push(`${path} must identify an assessment and include source, sourceVersion, a sha256 contentHash, and assessedAt`);
+  }
+}
+
+function validateStatusAssessment(value, path, errors) {
+  if (!isObject(value) || !STATUSES.has(value.status)) {
+    errors.push(`${path} must have status unknown, compatible, or incompatible`);
+    return;
+  }
+  if (value.status !== "unknown") validateEvidence(value.evidence, `${path}.evidence`, errors);
 }
 
 export function validatePersonalization(value) {
@@ -67,18 +79,32 @@ export function assertValidPersonalization(value, path = "personalization") {
   return value;
 }
 
-export function isEligibleForHardRestrictions(personalization, restrictions = {}) {
+export function isEligibleForHardRestrictions(personalization, restrictions = {}, {
+  currentContentHash,
+  verifyEvidence
+} = {}) {
   const requested = [
     ...[...(restrictions.allergens || [])].map((key) => ["allergens", key]),
     ...[...(restrictions.diets || [])].map((key) => ["diets", key])
   ];
   if (!requested.length) return { eligible: true, reason: "no-hard-restrictions" };
-  if (validatePersonalization(personalization).valid === false) return { eligible: false, reason: "unknown" };
+  if (!validatePersonalization(personalization).valid || personalization.ingredientsComplete !== "complete") return { eligible: false, reason: "unknown" };
   for (const [group, key] of requested) {
     const assessment = personalization.assessments?.[group]?.[key];
     if (!assessment || assessment.status === "unknown") return { eligible: false, reason: "unknown", restriction: key };
     if (assessment.status === "incompatible") return { eligible: false, reason: "incompatible", restriction: key };
-    if (assessment.status !== "compatible" || !validatePersonalization(personalization).valid) return { eligible: false, reason: "unknown", restriction: key };
+    if (assessment.status !== "compatible" || typeof verifyEvidence !== "function" || !isSha256(currentContentHash)
+      || assessment.evidence?.contentHash !== currentContentHash || personalization.provenance.contentHash !== currentContentHash
+      || verifyEvidence(assessment.evidence, { group, key, currentContentHash }) !== true) {
+      return { eligible: false, reason: "unknown", restriction: key };
+    }
+    if (group === "allergens") {
+      const crossContact = assessment.crossContact;
+      if (!crossContact || crossContact.status !== "compatible" || crossContact.evidence?.contentHash !== currentContentHash
+        || verifyEvidence(crossContact.evidence, { group, key, aspect: "crossContact", currentContentHash }) !== true) {
+        return { eligible: false, reason: "unknown", restriction: key };
+      }
+    }
   }
   return { eligible: true, reason: "verified-compatible" };
 }
