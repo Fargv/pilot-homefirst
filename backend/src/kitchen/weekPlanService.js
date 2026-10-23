@@ -2,7 +2,8 @@ import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenUser } from "./models/KitchenUser.js";
 import { Household } from "./models/Household.js";
 import { buildScopedFilter } from "./householdScope.js";
-import { getScheduledWeekDates } from "./weeklySchedule.js";
+import { formatDateISO, getWeekStart } from "./utils/dates.js";
+import { getScheduledWeekDates, isRemovedPlanSlot } from "./weeklySchedule.js";
 
 function isActiveMember(member) {
   return member?.active !== false;
@@ -105,4 +106,67 @@ export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
   const plan = await KitchenWeekPlan.findOne(filter);
   if (!plan) return null;
   return plan;
+}
+
+export async function addPendingDinnerSlotsToUpcomingPlans(effectiveHouseholdId, fromDate = new Date()) {
+  const fromWeekStart = getWeekStart(fromDate);
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("dinnersEnabled dinnersIncludeInShopping weeklySchedule")
+    .lean();
+  if (!household?.dinnersEnabled) return { updatedPlans: 0, createdSlots: 0 };
+
+  const members = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
+    .select("_id active dinnerActive")
+    .lean();
+  const dinnerAttendeeIds = members
+    .filter((member) => isActiveMember(member) && getMemberDinnerActive(member))
+    .map((member) => String(member._id))
+    .filter(Boolean);
+  const plans = await KitchenWeekPlan.find(buildScopedFilter(effectiveHouseholdId, {
+    weekStart: { $gte: fromWeekStart }
+  }))
+    .sort({ weekStart: 1 })
+    .select("_id weekStart days removedSlots")
+    .lean();
+
+  let updatedPlans = 0;
+  let createdSlots = 0;
+  for (const plan of plans) {
+    let planChanged = false;
+    const dinnerDates = getScheduledWeekDates(plan.weekStart, household.weeklySchedule?.dinnerDays);
+    for (const date of dinnerDates) {
+      const dateKey = formatDateISO(date);
+      const alreadyExists = (plan.days || []).some((day) =>
+        day?.mealType === "dinner" && day?.date && formatDateISO(new Date(day.date)) === dateKey
+      );
+      if (alreadyExists || isRemovedPlanSlot(plan, date, "dinner")) continue;
+
+      const slot = {
+        date,
+        mealType: "dinner",
+        attendeeIds: [...dinnerAttendeeIds],
+        extraGuests: 0,
+        attendeeCount: dinnerAttendeeIds.length,
+        cookTiming: "same_day",
+        servings: dinnerAttendeeIds.length,
+        includeMainIngredients: Boolean(household.dinnersIncludeInShopping),
+        includeSideIngredients: Boolean(household.dinnersIncludeInShopping),
+        ingredientOverrides: []
+      };
+      const result = await KitchenWeekPlan.updateOne(
+        buildScopedFilter(effectiveHouseholdId, {
+          _id: plan._id,
+          days: { $not: { $elemMatch: { date, mealType: "dinner" } } },
+          removedSlots: { $not: { $elemMatch: { date, mealType: "dinner" } } }
+        }),
+        { $push: { days: slot } }
+      );
+      if (!result.modifiedCount) continue;
+      createdSlots += 1;
+      planChanged = true;
+    }
+    if (planChanged) updatedPlans += 1;
+  }
+
+  return { updatedPlans, createdSlots };
 }

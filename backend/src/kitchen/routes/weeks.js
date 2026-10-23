@@ -17,6 +17,7 @@ import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, buildRandomizableMainDishFilter, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
 import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
+import { clearRemovedPlanSlot, recordRemovedPlanSlot } from "../weeklySchedule.js";
 
 const router = express.Router();
 
@@ -432,6 +433,8 @@ router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
         continue;
       }
 
+      clearRemovedPlanSlot(plan, targetDate, mealType);
+
       plan.days.push({
         date: targetDate,
         mealType,
@@ -492,6 +495,8 @@ router.post("/:weekStart/reset", requireAuth, async (req, res) => {
     for (const day of plan.days || []) {
       if (dayMealType(day) !== mealType) {
         nextDays.push(day);
+      } else if (!weekdayDates.some((weekdayDate) => isSameDay(weekdayDate, day.date))) {
+        recordRemovedPlanSlot(plan, day.date, mealType);
       }
     }
 
@@ -653,6 +658,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     }
 
     if (shouldRemoveOptionalDay) {
+      recordRemovedPlanSlot(plan, date, mealType);
       plan.days = (plan.days || []).filter(
         (entry) => !(isSameDay(entry.date, date) && dayMealType(entry) === mealType)
       );

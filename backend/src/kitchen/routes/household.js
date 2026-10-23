@@ -38,8 +38,9 @@ import {
   sendHouseholdLicenseError
 } from "../householdLicenseService.js";
 import { triggerWeeklyChallenge } from "../weeklyEngine.js";
+import { addPendingDinnerSlotsToUpcomingPlans } from "../weekPlanService.js";
 import {
-  applyWeeklySchedulePatch,
+  buildWeeklyScheduleAtomicUpdate,
   isActualHouseholdOwner,
   validateWeeklyScheduleDays
 } from "../weeklySchedule.js";
@@ -210,11 +211,19 @@ export async function patchWeeklySchedule(req, res) {
       if (validationError) return res.status(400).json({ ok: false, error: `${field}: ${validationError}` });
     }
 
-    const currentSchedule = household.weeklySchedule?.toObject?.() || household.weeklySchedule;
-    household.weeklySchedule = applyWeeklySchedulePatch(currentSchedule, patch);
-    await household.save();
+    const effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+    const updated = await Household.findOneAndUpdate(
+      { _id: effectiveHouseholdId, ownerUserId: req.kitchenUser._id },
+      buildWeeklyScheduleAtomicUpdate(patch),
+      { new: true, runValidators: true }
+    )
+      .select("_id ownerUserId weeklySchedule")
+      .lean();
+    if (!updated) {
+      return res.status(404).json({ ok: false, error: "No encontramos el hogar del propietario." });
+    }
 
-    return res.json({ ok: true, weeklySchedule: serializeWeeklySchedule(household.weeklySchedule) });
+    return res.json({ ok: true, weeklySchedule: serializeWeeklySchedule(updated.weeklySchedule) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
@@ -543,7 +552,23 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
       return res.status(404).json({ ok: false, error: "No encontramos el hogar." });
     }
 
-    return res.json({ ok: true, household: await buildHouseholdResponse(updated) });
+    let dinnerBackfill = null;
+    if (!Boolean(household.dinnersEnabled) && parsedDinnersEnabled.value) {
+      try {
+        dinnerBackfill = await addPendingDinnerSlotsToUpcomingPlans(effectiveHouseholdId);
+      } catch (error) {
+        console.error("[kitchen/household] dinner slot backfill failed", {
+          householdId: String(effectiveHouseholdId),
+          error: error?.message || String(error)
+        });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      household: await buildHouseholdResponse(updated),
+      ...(dinnerBackfill ? { dinnerBackfill } : {})
+    });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;

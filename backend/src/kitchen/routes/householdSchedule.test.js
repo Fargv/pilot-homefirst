@@ -18,6 +18,24 @@ function mockHouseholdLookup(t, household) {
     calls.push(String(id));
     return { select: async () => household };
   });
+  t.mock.method(Household, "findOneAndUpdate", (filter, update) => {
+    assert.equal(String(filter._id), String(household._id));
+    assert.equal(String(filter.ownerUserId), String(household.ownerUserId));
+    for (const [path, value] of Object.entries(update.$set || {})) {
+      const [, field] = path.split(".");
+      if (!household.weeklySchedule) household.weeklySchedule = {};
+      household.weeklySchedule[field] = Array.isArray(value) ? [...value] : value;
+    }
+    for (const path of Object.keys(update.$unset || {})) {
+      const [, field] = path.split(".");
+      if (household.weeklySchedule) delete household.weeklySchedule[field];
+    }
+    return {
+      select() {
+        return { lean: async () => household.weeklySchedule ? structuredClone(household) : structuredClone(household) };
+      }
+    };
+  });
   return calls;
 }
 
@@ -56,7 +74,6 @@ test("partial update retains the other meal and changes only the requested meal"
     _id: "house-a",
     ownerUserId: "owner-a",
     weeklySchedule: { version: 1, dinnerDays: ["sat"] },
-    async save() { this.saved = true; }
   };
   const calls = mockHouseholdLookup(t, household);
   const res = responseStub();
@@ -67,7 +84,6 @@ test("partial update retains the other meal and changes only the requested meal"
   }, res);
 
   assert.deepEqual(calls, ["house-a"]);
-  assert.equal(household.saved, true);
   assert.deepEqual(res.body.weeklySchedule, {
     version: 1, lunchDays: ["mon", "wed"], dinnerDays: ["sat"]
   });
@@ -76,7 +92,6 @@ test("partial update retains the other meal and changes only the requested meal"
 test("request cannot select a different household in the schedule payload", async (t) => {
   const household = {
     _id: "house-a", ownerUserId: "owner-a", weeklySchedule: undefined,
-    async save() { this.saved = true; }
   };
   const calls = mockHouseholdLookup(t, household);
   const res = responseStub();
@@ -88,15 +103,14 @@ test("request cannot select a different household in the schedule payload", asyn
 
   assert.deepEqual(calls, ["house-a"]);
   assert.equal(res.statusCode, 400);
-  assert.equal(household.saved, undefined);
+  assert.equal(household.weeklySchedule, undefined);
 });
 
 test("explicit empty days persist as none and null clears one meal back to inheritance", async (t) => {
   const household = {
     _id: "house-a",
     ownerUserId: "owner-a",
-    weeklySchedule: { version: 1, dinnerDays: ["sat"] },
-    async save() { this.saved = true; }
+    weeklySchedule: { version: 1, dinnerDays: ["sat"] }
   };
   mockHouseholdLookup(t, household);
   const emptyResponse = responseStub();
@@ -113,7 +127,7 @@ test("explicit empty days persist as none and null clears one meal back to inher
     kitchenUser: { _id: "owner-a", role: "owner" },
     body: { dinnerDays: null }
   }, clearResponse);
-  assert.deepEqual(clearResponse.body.weeklySchedule, { version: 1, lunchDays: [] });
+  assert.deepEqual(clearResponse.body.weeklySchedule, { version: 1, lunchDays: [], dinnerDays: null });
 });
 
 test("member or owner from another household cannot read or change the schedule", async (t) => {
@@ -140,7 +154,6 @@ test("member or owner from another household cannot read or change the schedule"
 test("invalid days and duplicate values return 400 without saving", async (t) => {
   const household = {
     _id: "house-a", ownerUserId: "owner-a", weeklySchedule: undefined,
-    async save() { this.saved = true; }
   };
   mockHouseholdLookup(t, household);
   const res = responseStub();
@@ -150,5 +163,36 @@ test("invalid days and duplicate values return 400 without saving", async (t) =>
     body: { dinnerDays: ["mon", "mon"] }
   }, res);
   assert.equal(res.statusCode, 400);
-  assert.equal(household.saved, undefined);
+  assert.equal(household.weeklySchedule, undefined);
+});
+
+test("concurrent partial patches retain both meals and other household preferences", async (t) => {
+  const household = {
+    _id: "house-a",
+    ownerUserId: "owner-a",
+    weeklySchedule: undefined,
+    dinnersEnabled: true,
+    monthlyBudget: 240
+  };
+  mockHouseholdLookup(t, household);
+  const makeRequest = (body) => ({
+    user: { householdId: "house-a" },
+    kitchenUser: { _id: "owner-a", role: "owner" },
+    body
+  });
+  const lunchResponse = responseStub();
+  const dinnerResponse = responseStub();
+
+  await Promise.all([
+    patchWeeklySchedule(makeRequest({ lunchDays: ["mon", "wed"] }), lunchResponse),
+    patchWeeklySchedule(makeRequest({ dinnerDays: ["sat"] }), dinnerResponse)
+  ]);
+
+  assert.deepEqual(household.weeklySchedule, {
+    version: 1,
+    lunchDays: ["mon", "wed"],
+    dinnerDays: ["sat"]
+  });
+  assert.equal(household.dinnersEnabled, true);
+  assert.equal(household.monthlyBudget, 240);
 });

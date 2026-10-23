@@ -2,9 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getWeekStart } from "./utils/dates.js";
 import {
-  applyWeeklySchedulePatch,
+  buildWeeklyScheduleAtomicUpdate,
+  clearRemovedPlanSlot,
   getScheduledWeekDates,
   isActualHouseholdOwner,
+  isRemovedPlanSlot,
+  recordRemovedPlanSlot,
   validateWeeklyScheduleDays
 } from "./weeklySchedule.js";
 
@@ -32,14 +35,29 @@ test("schedule validation accepts empty arrays and rejects unknown or duplicate 
   assert.match(validateWeeklyScheduleDays("mon"), /lista/);
 });
 
-test("partial updates preserve the other meal, empty means none, null returns to inheritance", () => {
-  assert.deepEqual(applyWeeklySchedulePatch({ version: 1, dinnerDays: ["sat"] }, { lunchDays: ["mon"] }), {
-    version: 1, lunchDays: ["mon"], dinnerDays: ["sat"]
+test("partial updates write only the requested field, preserving sibling fields atomically", () => {
+  assert.deepEqual(buildWeeklyScheduleAtomicUpdate({ lunchDays: ["mon"] }), {
+    $set: { "weeklySchedule.version": 1, "weeklySchedule.lunchDays": ["mon"] }
   });
-  assert.deepEqual(applyWeeklySchedulePatch({ version: 1, lunchDays: ["mon"] }, { lunchDays: [] }), {
-    version: 1, lunchDays: []
+  assert.deepEqual(buildWeeklyScheduleAtomicUpdate({ dinnerDays: [] }), {
+    $set: { "weeklySchedule.version": 1, "weeklySchedule.dinnerDays": [] }
   });
-  assert.equal(applyWeeklySchedulePatch({ version: 1, lunchDays: ["mon"] }, { lunchDays: null }), null);
+  assert.deepEqual(buildWeeklyScheduleAtomicUpdate({ lunchDays: null }), {
+    $set: { "weeklySchedule.version": 1 },
+    $unset: { "weeklySchedule.lunchDays": "" }
+  });
+});
+
+test("removed slots stay suppressed until explicitly re-added", () => {
+  const plan = { removedSlots: [] };
+  const saturday = new Date("2026-10-31T00:00:00.000Z");
+  recordRemovedPlanSlot(plan, saturday, "dinner");
+  recordRemovedPlanSlot(plan, saturday, "dinner");
+  assert.equal(plan.removedSlots.length, 1);
+  assert.equal(isRemovedPlanSlot(plan, saturday, "dinner"), true);
+  assert.equal(isRemovedPlanSlot(plan, saturday, "lunch"), false);
+  clearRemovedPlanSlot(plan, saturday, "dinner");
+  assert.equal(isRemovedPlanSlot(plan, saturday, "dinner"), false);
 });
 
 test("only the actual owner of the effective household passes the write guard", () => {
