@@ -819,7 +819,7 @@ export async function grantWeeklyReward(householdId, challengeKey, rewardBites, 
     .find((item) => item.challengeKey === challengeKey);
   if (!entry || entry.rewardGranted === true || !entry.rewardIdempotencyKey) return false;
 
-  await _grantBites(
+  const reward = await _grantBites(
     String(householdId),
     rewardBites,
     `Reto semanal completado: ${challengeKey}`,
@@ -830,6 +830,9 @@ export async function grantWeeklyReward(householdId, challengeKey, rewardBites, 
       idempotencyKey: entry.rewardIdempotencyKey
     }
   );
+  if (!reward?.transactionId) {
+    throw new Error(`No se pudo registrar la recompensa semanal ${challengeKey}.`);
+  }
   await HouseholdWeeklyProgress.updateOne(
     {
       _id: progress._id,
@@ -859,10 +862,20 @@ async function recoverPendingWeeklyRewards(householdId, progress) {
  * Checks if all non-bonus challenges for the week are complete, then grants bonus if so.
  */
 export async function checkAndGrantBonus(householdId, progress, challenges, bonusBites) {
-  if (progress.bonusGranted) return;
-
   const bonusChallenge = challenges.find((c) => c.triggerType === "bonus");
   if (!bonusChallenge) return;
+
+  // The claim may already exist while its ledger write is pending. Re-enter
+  // through the same idempotent grant path so a failed bonus is recoverable.
+  if (progress.bonusGranted) {
+    await grantWeeklyReward(
+      householdId,
+      bonusChallenge.key,
+      bonusBites ?? bonusChallenge.rewardBites,
+      progress
+    );
+    return;
+  }
 
   const mainChallenges = challenges.filter((c) => c.triggerType !== "bonus");
   const completedKeys = new Set((progress.completedChallenges || []).map((c) => c.challengeKey));
@@ -876,7 +889,8 @@ export async function checkAndGrantBonus(householdId, progress, challenges, bonu
       challengeKey: bonusChallenge.key,
       completedAt: new Date(),
       rewardBites: bonusChallenge.rewardBites,
-      rewardGranted: false
+      rewardGranted: false,
+      rewardIdempotencyKey: `weekly-progress:${progress._id}:${bonusChallenge.key}`
     };
     const bonusClaim = await HouseholdWeeklyProgress.updateOne(
       {

@@ -228,12 +228,15 @@ async function ensureWelcomeBites(householdId, onboarding) {
     );
     return { ...onboarding, welcomeBitesGranted: true };
   }
-  await _grantBites(
+  const reward = await _grantBites(
     String(householdId),
     WELCOME_BITES,
     "Bienvenida a Lunchfy",
     { source: "welcome_bonus", idempotencyKey: `onboarding:${householdId}:welcome` }
   );
+  if (!reward?.transactionId) {
+    throw new Error(`No se pudo registrar la recompensa de bienvenida de ${householdId}.`);
+  }
   await HouseholdOnboarding.updateOne(
     { _id: onboarding._id, welcomeBitesGranted: { $ne: true } },
     { $set: { welcomeBitesGranted: true } }
@@ -247,7 +250,7 @@ async function recoverPendingOnboardingRewards(householdId, onboarding) {
 
   for (const entry of pendingRewards) {
     if (Number(entry.rewardBites || 0) > 0) {
-      await _grantBites(
+      const reward = await _grantBites(
         String(householdId),
         entry.rewardBites,
         `Reto completado: ${entry.challengeKey}`,
@@ -257,6 +260,9 @@ async function recoverPendingOnboardingRewards(householdId, onboarding) {
           idempotencyKey: entry.rewardIdempotencyKey
         }
       );
+      if (!reward?.transactionId) {
+        throw new Error(`No se pudo registrar la recompensa de onboarding ${entry.challengeKey}.`);
+      }
     }
     await HouseholdOnboarding.updateOne(
       {
@@ -504,7 +510,7 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
     if (completionResult.modifiedCount !== 1) return null;
 
     if (nextChallenge.rewardBites > 0) {
-      await _grantBites(
+      const reward = await _grantBites(
         String(householdId),
         nextChallenge.rewardBites,
         `Reto completado: ${nextChallenge.title}`,
@@ -514,6 +520,9 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
           idempotencyKey: completedEntry.rewardIdempotencyKey
         }
       );
+      if (!reward?.transactionId) {
+        throw new Error(`No se pudo registrar la recompensa de onboarding ${nextChallenge.key}.`);
+      }
     }
     await HouseholdOnboarding.updateOne(
       {

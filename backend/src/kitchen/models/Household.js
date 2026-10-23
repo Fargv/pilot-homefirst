@@ -1,5 +1,16 @@
 import mongoose from "mongoose";
 
+const GrantedBitesRewardClaimSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    requestedAmount: { type: Number, required: true },
+    actualGranted: { type: Number, required: true },
+    balanceAfterFree: { type: Number, required: true },
+    balanceAfterPurchased: { type: Number, required: true }
+  },
+  { _id: false }
+);
+
 const HouseholdSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -41,6 +52,10 @@ const HouseholdSchema = new mongoose.Schema(
     // Reward idempotency markers. They are separate from subscription state and
     // let a retry repair a ledger entry without incrementing the balance again.
     grantedBitesRewardKeys: { type: [String], default: [] },
+    // The balance claim is stored atomically with the balance update. This is
+    // the historical source needed to rebuild a ledger after a write failure,
+    // especially when the 500-bite cap or another concurrent reward intervenes.
+    grantedBitesRewardClaims: { type: [GrantedBitesRewardClaimSchema], default: [] },
 
     // Plan source: distinguishes how the current plan was granted.
     // "manual" = default / admin-assigned without a specific source
