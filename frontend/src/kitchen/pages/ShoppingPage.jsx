@@ -189,6 +189,29 @@ function formatTripDate(value) {
   return date.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+const SHOPPING_DAY_INITIALS = ["L", "M", "X", "J", "V", "S", "D"];
+
+function formatShoppingSourceDay(source) {
+  const raw = source?.day || source?.date;
+  const date = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(date.getTime())) return "—";
+  return SHOPPING_DAY_INITIALS[(date.getUTCDay() + 6) % 7];
+}
+
+function getCompactShoppingRecipeReferences(references) {
+  const recipes = new Map();
+  for (const reference of references || []) {
+    const key = reference?.key?.split("|")[0] || reference?.dishName || "recipe";
+    const recipe = recipes.get(key) || { name: reference?.dishName || "Plato", days: new Set() };
+    recipe.days.add(formatShoppingSourceDay({ day: reference?.date }));
+    recipes.set(key, recipe);
+  }
+  return [...recipes.values()].map((recipe) => ({
+    ...recipe,
+    label: `${recipe.name} · ${[...recipe.days].join("/")}`
+  }));
+}
+
 function slugColor(slug = "") {
   const normalized = String(slug || "otros");
   const seed = normalized.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -1480,32 +1503,37 @@ export default function ShoppingPage() {
                           <div className="shopping-items-flat-list">
                             {group.items.map((item) => {
                               const key = itemKey(item);
-                              const recipeReferences = getShoppingRecipeReferences(item);
+                              const recipeReferences = getCompactShoppingRecipeReferences(getShoppingRecipeReferences(item));
+                              const hasMultipleRecipes = recipeReferences.length > 1;
                               return (
                                 <div className={`shopping-item-flat ${transitioningItemKey === key ? "is-leaving" : ""}`} key={key}>
-                                  <button
-                                    className="shopping-check"
-                                    type="button"
-                                    data-tour-id="shopping-item"
-                                    onClick={(e) => setItemStatus({ ...item, categoryInfo: group.categoryInfo }, "purchased", e.currentTarget)}
-                                    aria-label={`Marcar ${item.displayName} como comprado`}
-                                  >
-                                    <span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span>
-                                  </button>
-                                  <div className="shopping-item-name-col">
-                                    <span className="shopping-item-text">{item.displayName}</span>
-                                    {recipeReferences.length ? <button
+                                  <div className="shopping-item-main">
+                                    <button
+                                      className="shopping-check"
                                       type="button"
-                                      className="shopping-source-toggle"
-                                      aria-expanded={ingredientDetailOpenId === key}
-                                      aria-controls={`shopping-source-${key}`}
-                                      onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
-                                    >{recipeReferences.length === 1 ? <><span>{recipeReferences[0].dishName} · {new Date(`${recipeReferences[0].date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</span><ChevronRight size={14} aria-hidden="true" /></> : <><span>{recipeReferences.length} recetas</span><ChevronRight size={14} aria-hidden="true" /></>}</button> : null}
-                                    <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
-                                      {recipeReferences.length ? <ul>{recipeReferences.map((reference) => <li key={reference.key}>{reference.dishName} — {new Date(`${reference.date}T00:00:00Z`).toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" })}</li>)}</ul> : null}
+                                      data-tour-id="shopping-item"
+                                      onClick={(e) => setItemStatus({ ...item, categoryInfo: group.categoryInfo }, "purchased", e.currentTarget)}
+                                      aria-label={`Marcar ${item.displayName} como comprado`}
+                                    >
+                                      <span className="shopping-check-dot"><Check size={12} aria-hidden="true" /></span>
+                                    </button>
+                                    <div className="shopping-item-name-col">
+                                      <span className="shopping-item-text">{item.displayName}</span>
+                                      {isManualShoppingItem(item) ? (
+                                        <span className="shopping-source-summary">Añadido manualmente</span>
+                                      ) : hasMultipleRecipes ? (
+                                        <button
+                                          type="button"
+                                          className="shopping-source-toggle"
+                                          aria-expanded={ingredientDetailOpenId === key}
+                                          aria-controls={`shopping-source-${key}`}
+                                          onClick={() => setIngredientDetailOpenId((current) => current === key ? null : key)}
+                                        >{recipeReferences.length} recetas <ChevronSmallIcon className="shopping-source-chevron" /></button>
+                                      ) : (
+                                        <span className="shopping-source-summary">{recipeReferences[0]?.label || "Plato · —"}</span>
+                                      )}
                                     </div>
-                                  </div>
-                                  {!selectedDays.size ? <div className="shopping-item-controls">
+                                    {!selectedDays.size ? <div className="shopping-item-controls">
                                     <button
                                       className="shopping-qty-button"
                                       type="button"
@@ -1523,6 +1551,10 @@ export default function ShoppingPage() {
                                     >
                                       <PlusIcon />
                                     </button>
+                                    </div> : null}
+                                  </div>
+                                  {hasMultipleRecipes ? <div className="shopping-source-details" id={`shopping-source-${key}`} hidden={ingredientDetailOpenId !== key}>
+                                    {recipeReferences.map((recipe) => <span key={recipe.name}>{recipe.label}</span>)}
                                   </div> : null}
                                 </div>
                               );
