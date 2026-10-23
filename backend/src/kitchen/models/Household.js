@@ -1,5 +1,28 @@
 import mongoose from "mongoose";
 
+const WEEKDAY_IDS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function hasUniqueWeekdayIds(value) {
+  return !Array.isArray(value) || new Set(value).size === value.length;
+}
+
+const HouseholdWeeklyScheduleSchema = new mongoose.Schema(
+  {
+    version: { type: Number, enum: [1], required: true, default: 1 },
+    lunchDays: {
+      type: [{ type: String, enum: WEEKDAY_IDS }],
+      default: undefined,
+      validate: { validator: hasUniqueWeekdayIds, message: "lunchDays no puede contener días duplicados." }
+    },
+    dinnerDays: {
+      type: [{ type: String, enum: WEEKDAY_IDS }],
+      default: undefined,
+      validate: { validator: hasUniqueWeekdayIds, message: "dinnerDays no puede contener días duplicados." }
+    }
+  },
+  { _id: false }
+);
+
 const GrantedBitesRewardClaimSchema = new mongoose.Schema(
   {
     key: { type: String, required: true },
@@ -32,6 +55,7 @@ const HouseholdSchema = new mongoose.Schema(
     inviteCode: { type: String, trim: true, minlength: 6, maxlength: 6, default: null },
     dinnersEnabled: { type: Boolean, default: false },
     dinnersIncludeInShopping: { type: Boolean, default: false },
+    weeklySchedule: { type: HouseholdWeeklyScheduleSchema, default: undefined },
     avoidRepeatsEnabled: { type: Boolean, default: false },
     avoidRepeatsWeeks: { type: Number, min: 1, max: 12, default: 1 },
     monthlyBudget: { type: Number, min: 0, default: null },

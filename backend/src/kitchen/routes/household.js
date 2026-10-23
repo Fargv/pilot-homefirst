@@ -38,6 +38,11 @@ import {
   sendHouseholdLicenseError
 } from "../householdLicenseService.js";
 import { triggerWeeklyChallenge } from "../weeklyEngine.js";
+import {
+  applyWeeklySchedulePatch,
+  isActualHouseholdOwner,
+  validateWeeklyScheduleDays
+} from "../weeklySchedule.js";
 
 const router = express.Router();
 
@@ -138,6 +143,90 @@ async function buildHouseholdResponse(household, { license = null, usage = null 
     license: resolvedLicense
   };
 }
+
+function serializeWeeklySchedule(schedule) {
+  if (!schedule) return null;
+  return {
+    version: schedule.version || 1,
+    lunchDays: Array.isArray(schedule.lunchDays) ? schedule.lunchDays : null,
+    dinnerDays: Array.isArray(schedule.dinnerDays) ? schedule.dinnerDays : null
+  };
+}
+
+async function loadOwnedScheduleHousehold(req, res) {
+  let effectiveHouseholdId;
+  try {
+    effectiveHouseholdId = getEffectiveHouseholdId(req.user);
+  } catch (error) {
+    handleHouseholdError(res, error);
+    return null;
+  }
+
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("_id ownerUserId weeklySchedule");
+  if (!household) {
+    res.status(404).json({ ok: false, error: "No encontramos el hogar." });
+    return null;
+  }
+  if (!isActualHouseholdOwner(req.kitchenUser, household)) {
+    res.status(403).json({ ok: false, error: "Solo el propietario puede consultar o modificar la agenda." });
+    return null;
+  }
+  return household;
+}
+
+export async function getWeeklySchedule(req, res) {
+  try {
+    const household = await loadOwnedScheduleHousehold(req, res);
+    if (!household) return;
+    return res.json({ ok: true, weeklySchedule: serializeWeeklySchedule(household.weeklySchedule) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    return res.status(500).json({ ok: false, error: "No se pudo cargar la agenda del hogar." });
+  }
+}
+
+export async function patchWeeklySchedule(req, res) {
+  try {
+    const household = await loadOwnedScheduleHousehold(req, res);
+    if (!household) return;
+
+    const patch = req.body || {};
+    const allowedFields = new Set(["version", "lunchDays", "dinnerDays"]);
+    const unknownFields = Object.keys(patch).filter((field) => !allowedFields.has(field));
+    if (unknownFields.length) {
+      return res.status(400).json({ ok: false, error: `Campos no admitidos: ${unknownFields.join(", ")}.` });
+    }
+    if (!Object.keys(patch).some((field) => field === "lunchDays" || field === "dinnerDays")) {
+      return res.status(400).json({ ok: false, error: "Debes actualizar lunchDays o dinnerDays." });
+    }
+    if (patch.version !== undefined && patch.version !== 1) {
+      return res.status(400).json({ ok: false, error: "La versión de agenda admitida es 1." });
+    }
+    for (const field of ["lunchDays", "dinnerDays"]) {
+      if (patch[field] === undefined || patch[field] === null) continue;
+      const validationError = validateWeeklyScheduleDays(patch[field]);
+      if (validationError) return res.status(400).json({ ok: false, error: `${field}: ${validationError}` });
+    }
+
+    const currentSchedule = household.weeklySchedule?.toObject?.() || household.weeklySchedule;
+    household.weeklySchedule = applyWeeklySchedulePatch(currentSchedule, patch);
+    await household.save();
+
+    return res.json({ ok: true, weeklySchedule: serializeWeeklySchedule(household.weeklySchedule) });
+  } catch (error) {
+    const handled = handleHouseholdError(res, error);
+    if (handled) return handled;
+    if (error?.name === "ValidationError" || error?.name === "CastError") {
+      return res.status(400).json({ ok: false, error: "La agenda del hogar no es válida." });
+    }
+    return res.status(500).json({ ok: false, error: "No se pudo actualizar la agenda del hogar." });
+  }
+}
+
+router.get("/preferences/schedule", requireAuth, requireRole("owner"), getWeeklySchedule);
+router.patch("/preferences/schedule", requireAuth, requireRole("owner"), patchWeeklySchedule);
 
 function parseBooleanWithDefault(value, fallback) {
   if (typeof value === "boolean") return value;
