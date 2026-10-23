@@ -18,6 +18,12 @@ test("failed configuration reads default to ON", async () => {
   assert.equal(await reader.getSubscriptionsEnabled(), true);
 });
 
+test("critical subscription authorization fails closed when configuration cannot be read", async () => {
+  const reader = createSubscriptionsConfigReader({ read: async () => { throw new Error("offline"); }, logger: { error() {} } });
+  assert.equal(await reader.getSubscriptionsEnabled({ forceRefresh: true, failClosed: true }), false);
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
+});
+
 test("coalesces concurrent reads, caches, and supports invalidation", async () => {
   let reads = 0;
   const reader = createSubscriptionsConfigReader({
@@ -55,6 +61,25 @@ test("an in-flight read resolved after invalidation cannot repopulate the cache"
   resolveOldRead({ subscriptionsEnabled: false });
   assert.equal(await oldRequest, false);
   assert.equal(await reader.getSubscriptionsEnabled(), true);
+  assert.equal(reads, 2);
+});
+
+test("force refresh does not join a stale in-flight read", async () => {
+  let reads = 0;
+  let resolveOldRead;
+  const reader = createSubscriptionsConfigReader({
+    read: () => {
+      reads += 1;
+      if (reads === 1) return new Promise((resolve) => { resolveOldRead = resolve; });
+      return Promise.resolve({ subscriptionsEnabled: false });
+    }
+  });
+
+  const oldRequest = reader.getSubscriptionsEnabled();
+  assert.equal(await reader.getSubscriptionsEnabled({ forceRefresh: true }), false);
+  resolveOldRead({ subscriptionsEnabled: true });
+  assert.equal(await oldRequest, true);
+  assert.equal(await reader.getSubscriptionsEnabled(), false);
   assert.equal(reads, 2);
 });
 
