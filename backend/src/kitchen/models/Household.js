@@ -38,6 +38,9 @@ const HouseholdSchema = new mongoose.Schema(
     purchasedBitesBalance: { type: Number, default: 0, min: 0 },
     totalBitesSpent: { type: Number, default: 0, min: 0 },
     lastMonthlyBitesGrantAt: { type: Date, default: null },
+    // Reward idempotency markers. They are separate from subscription state and
+    // let a retry repair a ledger entry without incrementing the balance again.
+    grantedBitesRewardKeys: { type: [String], default: [] },
 
     // Plan source: distinguishes how the current plan was granted.
     // "manual" = default / admin-assigned without a specific source

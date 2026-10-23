@@ -29,6 +29,7 @@ import {
 import { getColorPalette, getUserColorById, getUserColorPreference, setUserColorPreference } from "../utils/userColors.js";
 import { getUserInitialsPreference, setUserInitialsPreference } from "../utils/userInitials.js";
 import { ProBadge } from "../components/ui/ProBadge.jsx";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
 import { emitOnboardingEvent, ONBOARDING_EVENTS } from "../components/tour/guidedOnboardingEvents.js";
 import { useWeeklyChallenge } from "../contexts/WeeklyChallengeContext.jsx";
@@ -201,6 +202,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { activeWeek } = useActiveWeek();
   const { user, setUser, refreshUser, logout } = useAuth();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const { themeId, setTheme, syncThemeFromUser } = useTheme();
   const { notify: notifyOnboarding } = useOnboarding();
   const { notify: notifyWeekly } = useWeeklyChallenge();
@@ -226,7 +228,6 @@ export default function SettingsPage() {
   const [monthlyBudget, setMonthlyBudget] = useState("");
   const [cycleStartDay, setCycleStartDay] = useState(1);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
-  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [subscriptionStatus, setSubscriptionStatus] = useState("inactive");
   const [subscriptionRequestedPlan, setSubscriptionRequestedPlan] = useState("");
   const [subscriptionEndsAt, setSubscriptionEndsAt] = useState(null);
@@ -375,7 +376,7 @@ export default function SettingsPage() {
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro,
-      subscriptionsEnabled: subscriptionsEnabled === true
+      subscriptionsEnabled
     }),
     [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );
@@ -387,7 +388,7 @@ export default function SettingsPage() {
   const isPaidPlan = ["pro", "premium"].includes(String(subscriptionPlan || "").toLowerCase());
   const memberUsage = useMemo(() => countLicenseUsage(members), [members]);
   const licenseState = useMemo(
-    () => buildLicenseState(subscriptionPlan, memberUsage, subscriptionsEnabled === true),
+    () => buildLicenseState(subscriptionPlan, memberUsage, subscriptionsEnabled),
     [memberUsage, subscriptionPlan, subscriptionsEnabled]
   );
   const canAddMoreUsers = licenseState.capabilities.canAddUser;
@@ -632,7 +633,6 @@ export default function SettingsPage() {
       setMonthlyBudget(householdData?.household?.monthlyBudget === null || householdData?.household?.monthlyBudget === undefined ? "" : String(householdData.household.monthlyBudget));
       setCycleStartDay(Number(householdData?.household?.cycleStartDay) || 1);
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
-      setSubscriptionsEnabled(householdData?.household?.subscriptionsEnabled !== false);
       setSubscriptionStatus(String(householdData?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(householdData?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setSubscriptionEndsAt(householdData?.household?.subscriptionEndsAt || null);
@@ -1006,7 +1006,6 @@ export default function SettingsPage() {
       setMonthlyBudget(data?.household?.monthlyBudget === null || data?.household?.monthlyBudget === undefined ? "" : String(data.household.monthlyBudget));
       setCycleStartDay(Number(data?.household?.cycleStartDay) || 1);
       setSubscriptionPlan(String(data?.household?.subscriptionPlan || "basic").toLowerCase());
-      setSubscriptionsEnabled(data?.household?.subscriptionsEnabled !== false);
       setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
       setSubscriptionRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
       setHouseholdPlanSource(String(data?.household?.planSource || ""));

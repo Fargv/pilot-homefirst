@@ -23,5 +23,12 @@ const BitesTransactionSchema = new mongoose.Schema(
 );
 
 BitesTransactionSchema.index({ householdId: 1, createdAt: -1 });
+BitesTransactionSchema.index(
+  { "metadata.idempotencyKey": 1 },
+  {
+    unique: true,
+    partialFilterExpression: { "metadata.idempotencyKey": { $type: "string" } }
+  }
+);
 
 export const BitesTransaction = mongoose.model("BitesTransaction", BitesTransactionSchema);

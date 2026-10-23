@@ -3,6 +3,7 @@ import { OnboardingChallenge } from "./models/OnboardingChallenge.js";
 import { OnboardingSuggestion } from "./models/OnboardingSuggestion.js";
 import { Household } from "./models/Household.js";
 import { BitesTransaction } from "./models/BitesTransaction.js";
+import { grantRewardBites } from "./rewardBitesService.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { normalizeSubscriptionPlan } from "./subscriptionService.js";
 import { getSubscriptionsEnabled } from "./monetizationConfigService.js";
@@ -201,32 +202,86 @@ export async function grantOnboardingBites(householdId, amount, reason, metadata
 }
 
 async function _grantBites(householdId, amount, reason, metadata = { source: "onboarding" }) {
-  const household = await Household.findById(householdId).lean();
-  if (!household) return;
-
-  const newFree = Math.min(
-    (household.freeBitesBalance ?? 0) + amount,
-    500 // basic carry-over cap
-  );
-
-  await Household.updateOne({ _id: household._id }, { $set: { freeBitesBalance: newFree } });
-
-  await BitesTransaction.create({
-    householdId: household._id,
-    type: "admin_grant",
+  const rewardKey = metadata.idempotencyKey
+    || `onboarding:${householdId}:${metadata.challengeKey || metadata.stepId || reason}`;
+  return grantRewardBites({
+    householdId,
     amount,
-    balanceAfterFree: newFree,
-    balanceAfterPurchased: household.purchasedBitesBalance ?? 0,
+    type: "admin_grant",
     reason,
+    idempotencyKey: rewardKey,
     metadata
   });
+}
+
+async function ensureWelcomeBites(householdId, onboarding) {
+  if (onboarding?.welcomeBitesGranted === true) return onboarding;
+  const legacyWelcome = await BitesTransaction.findOne({
+    householdId,
+    type: "admin_grant",
+    "metadata.source": "welcome_bonus"
+  }).lean();
+  if (legacyWelcome) {
+    await HouseholdOnboarding.updateOne(
+      { _id: onboarding._id, welcomeBitesGranted: { $ne: true } },
+      { $set: { welcomeBitesGranted: true } }
+    );
+    return { ...onboarding, welcomeBitesGranted: true };
+  }
+  await _grantBites(
+    String(householdId),
+    WELCOME_BITES,
+    "Bienvenida a Lunchfy",
+    { source: "welcome_bonus", idempotencyKey: `onboarding:${householdId}:welcome` }
+  );
+  await HouseholdOnboarding.updateOne(
+    { _id: onboarding._id, welcomeBitesGranted: { $ne: true } },
+    { $set: { welcomeBitesGranted: true } }
+  );
+  return { ...onboarding, welcomeBitesGranted: true };
+}
+
+async function recoverPendingOnboardingRewards(householdId, onboarding) {
+  const pendingRewards = (onboarding?.completedChallenges || [])
+    .filter((entry) => entry.rewardGranted !== true && entry.rewardIdempotencyKey);
+
+  for (const entry of pendingRewards) {
+    if (Number(entry.rewardBites || 0) > 0) {
+      await _grantBites(
+        String(householdId),
+        entry.rewardBites,
+        `Reto completado: ${entry.challengeKey}`,
+        {
+          source: "onboarding_challenge",
+          challengeKey: entry.challengeKey,
+          idempotencyKey: entry.rewardIdempotencyKey
+        }
+      );
+    }
+    await HouseholdOnboarding.updateOne(
+      {
+        _id: onboarding._id,
+        completedChallenges: {
+          $elemMatch: { challengeKey: entry.challengeKey, rewardGranted: { $ne: true } }
+        }
+      },
+      { $set: { "completedChallenges.$.rewardGranted": true } }
+    );
+  }
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
 export async function initOnboarding(householdId) {
   const existing = await HouseholdOnboarding.findOne({ householdId });
-  if (existing) return existing;
+  if (existing) {
+    try {
+      await ensureWelcomeBites(householdId, existing);
+    } catch (err) {
+      console.error("[onboarding] Failed to recover welcome bites:", err.message);
+    }
+    return existing;
+  }
 
   // New households get the guided tour queued only while the global switch is on.
   let guidedTour = null;
@@ -247,8 +302,7 @@ export async function initOnboarding(householdId) {
   });
 
   try {
-    await _grantBites(String(householdId), WELCOME_BITES, "Bienvenida a Lunchfy", { source: "welcome_bonus" });
-    await HouseholdOnboarding.updateOne({ _id: onboarding._id }, { $set: { welcomeBitesGranted: true } });
+    await ensureWelcomeBites(householdId, onboarding);
     console.log(`[onboarding] Welcome bites granted (+${WELCOME_BITES}) household=${householdId}`);
   } catch (err) {
     console.error("[onboarding] Failed to grant welcome bites:", err.message);
@@ -272,6 +326,19 @@ export async function getOnboardingState(householdId) {
       onboarding = await HouseholdOnboarding.findOne({ householdId }).lean();
     }
     if (!onboarding) return null;
+  } else if (onboarding.welcomeBitesGranted !== true) {
+    try {
+      onboarding = await ensureWelcomeBites(householdId, onboarding);
+    } catch (err) {
+      console.error("[onboarding] Failed to recover welcome bites:", err.message);
+    }
+  }
+
+  try {
+    await recoverPendingOnboardingRewards(householdId, onboarding);
+    onboarding = await HouseholdOnboarding.findById(onboarding._id).lean();
+  } catch (err) {
+    console.error("[onboarding] Failed to recover challenge reward:", err.message);
   }
 
   const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
@@ -340,7 +407,14 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
       onboarding = await HouseholdOnboarding.findOne({ householdId });
     }
 
-    if (!onboarding || ["completed", "disabled"].includes(onboarding.status)) return null;
+    if (!onboarding || onboarding.status === "disabled") return null;
+
+    if (onboarding.welcomeBitesGranted !== true) {
+      onboarding = await ensureWelcomeBites(householdId, onboarding);
+    }
+    await recoverPendingOnboardingRewards(householdId, onboarding);
+    onboarding = await HouseholdOnboarding.findById(onboarding._id).lean();
+    if (onboarding.status === "completed") return null;
 
     const challenges = await OnboardingChallenge.find({ active: true }).sort({ order: 1 }).lean();
     const completedKeys = new Set((onboarding.completedChallenges || []).map((c) => c.challengeKey));
@@ -405,7 +479,9 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
       challengeId: nextChallenge._id,
       challengeKey: nextChallenge.key,
       completedAt: now,
-      rewardBites: nextChallenge.rewardBites
+      rewardBites: nextChallenge.rewardBites,
+      rewardGranted: false,
+      rewardIdempotencyKey: `onboarding:${householdId}:challenge:${nextChallenge.key}`
     };
 
     const newCompletedKeys = new Set([...completedKeys, nextChallenge.key]);
@@ -432,9 +508,22 @@ export async function triggerOnboarding(householdId, triggerType, _context = {})
         String(householdId),
         nextChallenge.rewardBites,
         `Reto completado: ${nextChallenge.title}`,
-        { source: "onboarding_challenge", challengeKey: nextChallenge.key }
+        {
+          source: "onboarding_challenge",
+          challengeKey: nextChallenge.key,
+          idempotencyKey: completedEntry.rewardIdempotencyKey
+        }
       );
     }
+    await HouseholdOnboarding.updateOne(
+      {
+        _id: onboarding._id,
+        completedChallenges: {
+          $elemMatch: { challengeKey: nextChallenge.key, rewardGranted: { $ne: true } }
+        }
+      },
+      { $set: { "completedChallenges.$.rewardGranted": true } }
+    );
 
     console.log(`[onboarding] ✓ ${nextChallenge.key} (+${nextChallenge.rewardBites} bites) household=${householdId}${allDone ? " — COMPLETE" : ""}`);
 

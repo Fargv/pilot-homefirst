@@ -42,7 +42,8 @@ const HouseholdWeeklyProgress = mongoose.model(
           challengeKey: { type: String },
           completedAt: { type: Date },
           rewardBites: { type: Number },
-          rewardGranted: { type: Boolean, default: false }
+          rewardGranted: { type: Boolean, default: false },
+          rewardIdempotencyKey: { type: String, default: "" }
         }
       ],
       bonusGranted: { type: Boolean, default: false }

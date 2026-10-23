@@ -10,6 +10,7 @@ import {
   undoCancelSubscription
 } from "../api.js";
 import { getPlanLimits, isUnlimitedLicenseLimit } from "../subscription.js";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import { AppLoadingScreen } from "../components/WeekPageSkeleton.jsx";
 
 const STRIPE_ENABLED = import.meta.env.VITE_STRIPE_ENABLED === "true";
@@ -112,7 +113,7 @@ function CrossIcon() {
 
 export default function UpgradeToProPage() {
   const navigate = useNavigate();
-  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const [searchParams] = useSearchParams();
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState("");
@@ -162,7 +163,6 @@ export default function UpgradeToProPage() {
         setSubscriptionStatus(String(data?.household?.subscriptionStatus || "inactive").toLowerCase());
         setSubscriptionEndsAt(data?.household?.subscriptionEndsAt || null);
         setPendingDowngradeAt(data?.household?.pendingDowngradeAt || null);
-        setSubscriptionsEnabled(data?.household?.subscriptionsEnabled !== false);
         setRequestedPlan(String(data?.household?.subscriptionRequestedPlan || "").toLowerCase());
         setHasActiveStripeSubscription(Boolean(data?.household?.hasActiveStripeSubscription));
         setPaymentMeta(data?.household?.paymentMeta || null);

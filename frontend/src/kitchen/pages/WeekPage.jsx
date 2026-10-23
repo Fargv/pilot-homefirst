@@ -24,6 +24,7 @@ import { getUserInitialsFromProfile } from "../utils/userInitials.js";
 import { useActiveWeek } from "../weekContext.jsx";
 import { canRandomizeFullWeek, canUseDinnersFeature, isWeekRandomizationUnavailableError } from "../subscription.js";
 import { ProGateButton } from "../components/ui/ProBadge.jsx";
+import { useSubscriptionsEnabled } from "../monetization.jsx";
 import DinnerUpgradeBanner from "../components/ui/DinnerUpgradeBanner.jsx";
 import PageHeader from "../components/PageHeader.jsx";
 import { useOnboarding } from "../contexts/OnboardingContext.jsx";
@@ -287,6 +288,7 @@ export default function WeekPage() {
   const { notify: notifyWeekly } = useWeeklyChallenge();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activeWeek: weekStart, setActiveWeek: setWeekStart } = useActiveWeek();
+  const subscriptionsEnabled = useSubscriptionsEnabled();
   const [plan, setPlan] = useState(null);
   const [dishes, setDishes] = useState([]);
   const [users, setUsers] = useState([]);
@@ -295,7 +297,6 @@ export default function WeekPage() {
   const [dinnersEnabled, setDinnersEnabled] = useState(false);
   const [dinnersIncludeInShopping, setDinnersIncludeInShopping] = useState(false);
   const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
-  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
   const [householdPlanSource, setHouseholdPlanSource] = useState("");
   const [householdBetaProActive, setHouseholdBetaProActive] = useState(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -460,7 +461,7 @@ export default function WeekPage() {
       planSource: householdPlanSource || user?.planSource,
       betaProActive: householdBetaProActive || user?.betaProActive,
       betaPro: user?.betaPro,
-      subscriptionsEnabled: subscriptionsEnabled === true
+      subscriptionsEnabled
     }),
     [subscriptionPlan, householdPlanSource, householdBetaProActive, user?.planSource, user?.betaProActive, user?.betaPro, subscriptionsEnabled]
   );
@@ -670,7 +671,6 @@ export default function WeekPage() {
       setIsNavLoading(false);
       setWeekNotice(null);
       setSubscriptionPlan("basic");
-      setSubscriptionsEnabled(true);
       setDinnersIncludeInShopping(false);
       setPlan(null);
       setDishes([]);
@@ -717,7 +717,6 @@ export default function WeekPage() {
       setDinnersEnabled(Boolean(householdData?.household?.dinnersEnabled));
       setDinnersIncludeInShopping(Boolean(householdData?.household?.dinnersIncludeInShopping));
       setSubscriptionPlan(String(householdData?.household?.subscriptionPlan || "basic").toLowerCase());
-      setSubscriptionsEnabled(householdData?.household?.subscriptionsEnabled !== false);
       setHouseholdPlanSource(String(householdData?.household?.planSource || ""));
       setHouseholdBetaProActive(Boolean(householdData?.household?.betaProActive));
       hasEverLoadedRef.current = true;
