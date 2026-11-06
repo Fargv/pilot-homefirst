@@ -169,15 +169,6 @@ function sourceIngredients(dish, day, includeIngredients) {
     sourceKeys.add(key);
     sources.push(ingredient);
   }
-  for (const recipeIngredient of recipe) {
-    if (!sources.some((item) => recipeMatchesIngredient(recipeIngredient, item))) {
-      sources.push({
-        ingredientId: recipeIngredient.ingredientId || null,
-        displayName: recipeIngredient.name,
-        canonicalName: normalizeIngredientName(recipeIngredient.name || "")
-      });
-    }
-  }
   return sources.map((ingredient) => ({ ingredient, recipe }));
 }
 
