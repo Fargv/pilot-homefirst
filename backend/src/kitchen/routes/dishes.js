@@ -683,7 +683,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
             return {
               name: String(item.name || "").trim(),
               quantity: normalizedQty,
-              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {}),
+              buy: item.buy === true
             };
           })
       : [];
@@ -698,6 +699,22 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       prepMinutes: normalizedPrepMinutes,
       cookMinutes: normalizedCookMinutes,
     };
+
+    const purchaseIngredients = normalizedIngredients.filter((item) => item.buy);
+    const purchaseKeys = new Set(purchaseIngredients.map((item) => item.ingredientId
+      ? `id:${item.ingredientId}`
+      : `name:${normalizeIngredientName(item.name)}`));
+    dish.ingredients = (dish.ingredients || []).filter((item) => purchaseKeys.has(item.ingredientId
+      ? `id:${item.ingredientId}`
+      : `name:${normalizeIngredientName(item.displayName)}`));
+    for (const item of purchaseIngredients) {
+      const key = item.ingredientId ? `id:${item.ingredientId}` : `name:${normalizeIngredientName(item.name)}`;
+      if (!dish.ingredients.some((current) => (current.ingredientId
+        ? `id:${current.ingredientId}`
+        : `name:${normalizeIngredientName(current.displayName)}`) === key)) {
+        dish.ingredients.push({ ingredientId: item.ingredientId, displayName: item.name, canonicalName: normalizeIngredientName(item.name) });
+      }
+    }
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
@@ -734,6 +751,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
           createdBy: req.kitchenUser._id
         });
       }
+      override.ingredients = dish.ingredients;
       override.recipe = recipeData;
       await override.save();
       await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: getDishHiddenMasterType(dish), masterId: dish._id });

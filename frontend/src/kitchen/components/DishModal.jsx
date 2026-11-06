@@ -30,6 +30,18 @@ function hasRecipeContent(recipe = {}) {
   return hasSteps || hasIngredients || recipe?.servings != null || recipe?.prepMinutes != null || recipe?.cookMinutes != null;
 }
 
+function recipeIngredientKey(item) {
+  return item?.ingredientId ? `id:${item.ingredientId}` : `name:${normalizeIngredientName(item?.name || item?.displayName || "")}`;
+}
+
+function recipeIngredientsWithPurchaseState(recipeIngredients = [], dishIngredients = []) {
+  const purchaseKeys = new Set((dishIngredients || []).flatMap((item) => [
+    item?.ingredientId ? `id:${item.ingredientId}` : null,
+    `name:${normalizeIngredientName(item?.displayName || item?.canonicalName || item?.name || "")}`
+  ].filter(Boolean)));
+  return recipeIngredients.map((item) => ({ ...item, buy: item.buy === true || (item.buy == null && purchaseKeys.has(recipeIngredientKey(item))) }));
+}
+
 export default function DishModal({
   isOpen,
   onClose,
@@ -143,9 +155,11 @@ export default function DishModal({
         setEditingId(initialDish._id);
         const initialRecipe = initialDish.recipe || {};
         const initialRecipeHasContent = hasRecipeContent(initialRecipe);
-        const existingRecipeIngredients = initialRecipe.ingredients || [];
+        const existingRecipeIngredients = initialRecipe.ingredients?.length
+          ? initialRecipe.ingredients
+          : ingredients.map((item) => ({ name: item.displayName, quantity: "", ingredientId: item.ingredientId || null, buy: true }));
         setRecipe({
-          ingredients: existingRecipeIngredients,
+          ingredients: recipeIngredientsWithPurchaseState(existingRecipeIngredients, ingredients),
           steps: initialRecipe.steps || null,
           baseServings: initialRecipe.baseServings || initialRecipe.servings || null,
           servings: initialRecipe.baseServings || initialRecipe.servings || null,
@@ -196,7 +210,15 @@ export default function DishModal({
   };
 
   const updateRecipe = useCallback((updater) => {
-    setRecipe((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    setRecipe((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const purchase = (next.ingredients || []).filter((item) => item.buy === true);
+      setForm((current) => ({ ...current, ingredients: purchase.map((item) => {
+        const existing = (current.ingredients || []).find((candidate) => recipeIngredientKey(candidate) === recipeIngredientKey(item));
+        return existing || { ingredientId: item.ingredientId, displayName: item.name, canonicalName: normalizeIngredientName(item.name), status: item.ingredientId ? "resolved" : "pending" };
+      }) }));
+      return next;
+    });
     setRecipeDirty(true);
   }, []);
 
@@ -395,6 +417,7 @@ export default function DishModal({
                       recipePrepMinutes={recipe.prepMinutes}
                       recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
+                      dishIngredients={form.ingredients}
                       onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                       onChange={updateRecipe}
                       readOnly={false}
@@ -423,6 +446,7 @@ export default function DishModal({
                       recipePrepMinutes={recipe.prepMinutes}
                       recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
+                      dishIngredients={form.ingredients}
                       readOnly
                     />
                     {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
@@ -460,6 +484,7 @@ export default function DishModal({
                   recipePrepMinutes={recipe.prepMinutes}
                   recipeCookMinutes={recipe.cookMinutes}
                   dishIngredientNames={dishIngredientNames}
+                  dishIngredients={form.ingredients}
                   onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                   onChange={updateRecipe}
                   readOnly={false}
@@ -525,7 +550,8 @@ export default function DishModal({
 
           {/* 3. Ingredients */}
           <div className="kitchen-field kitchen-dish-ingredients" data-tour-id="dish-add-ingredient">
-            <span className="kitchen-label">Ingredientes</span>
+            <span className="kitchen-label">Ingredientes para comprar</span>
+            <p className="kitchen-muted">Estos ingredientes se añadirán a tu lista de compra. Después podrás completar la receta</p>
             <IngredientPicker
               value={form.ingredients}
               onChange={(ingredients) => {

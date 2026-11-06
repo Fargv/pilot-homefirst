@@ -50,6 +50,7 @@ const KitchenDishSchema = new mongoose.Schema(
           // { amount, unit, scalable, note?, originalText? }
           quantity: { type: mongoose.Schema.Types.Mixed },
           ingredientId: { type: mongoose.Schema.Types.ObjectId, ref: "KitchenIngredient", default: null },
+          buy: { type: Boolean, default: false },
           _id: false
         }],
         default: []
