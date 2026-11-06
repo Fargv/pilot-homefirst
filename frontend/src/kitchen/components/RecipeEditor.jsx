@@ -817,17 +817,6 @@ export default function RecipeEditor({
     });
   };
 
-  const isLinkedToDish = (item) => {
-    if (!item.ingredientId) return false;
-    const name = (item.name || "").toLowerCase().trim();
-    return name.length > 0 && dishIngredientNames.includes(name);
-  };
-
-  const isNewIngredient = (name) => {
-    if (!name || !dishIngredientNames.length) return false;
-    return !dishIngredientNames.includes(String(name).toLowerCase().trim());
-  };
-
   // ── Read-only view ─────────────────────────────────────────────────────────
 
   const baseServings = getRecipeBaseServings({ baseServings: recipeBaseServings, servings: recipeServings });
@@ -988,66 +977,33 @@ export default function RecipeEditor({
       <div>
         <p className="recipe-section-title">Ingredientes</p>
         <div className="recipe-ingredient-list">
-          {(recipeIngredients || []).map((item, idx) => {
-            const linked = isLinkedToDish(item);
-
-            if (linked) {
-              return (
-                <div key={idx} className="recipe-ingredient-row recipe-ingredient-row--pill">
-                  <span className="recipe-ingredient-pill">
-                    <span className="recipe-ingredient-pill-dot" />
-                    <span className="recipe-ingredient-pill-name">{item.name}</span>
-                  </span>
-                  <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
-                    <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
-                    <span className="recipe-buy-check" aria-hidden="true" />
-                    <span>Comprar</span>
-                  </label>
-                  <QuantityEditor
-                    qty={getStructuredQty(item.quantity)}
-                    onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
-                  />
-                  <button
-                    type="button"
-                    className="recipe-remove-btn"
-                    onClick={() => removeIngredient(idx)}
-                    aria-label="Eliminar ingrediente"
-                    title="Eliminar"
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            }
-
-            return (
-              <div key={idx} className="recipe-ingredient-row">
-                <RecipeIngredientInput
-                  item={item}
-                  index={idx}
-                  onUpdateFields={updateIngredient}
-                />
-                <QuantityEditor
-                  qty={getStructuredQty(item.quantity)}
-                  onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
-                />
-                <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
-                  <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
-                  <span className="recipe-buy-check" aria-hidden="true" />
-                  <span>Comprar</span>
-                </label>
-                <button
-                  type="button"
-                  className="recipe-remove-btn"
-                  onClick={() => removeIngredient(idx)}
-                  aria-label="Eliminar ingrediente"
-                  title="Eliminar"
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
+          {(recipeIngredients || []).map((item, idx) => (
+            <div key={idx} className="recipe-ingredient-row">
+              <RecipeIngredientInput
+                item={item}
+                index={idx}
+                onUpdateFields={updateIngredient}
+              />
+              <QuantityEditor
+                qty={getStructuredQty(item.quantity)}
+                onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
+              />
+              <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
+                <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
+                <span className="recipe-buy-check" aria-hidden="true" />
+                <span>Comprar</span>
+              </label>
+              <button
+                type="button"
+                className="recipe-remove-btn"
+                onClick={() => removeIngredient(idx)}
+                aria-label="Eliminar ingrediente"
+                title="Eliminar"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
         <button type="button" className="recipe-add-ingredient-btn" onClick={addIngredient}>
           + Añadir ingrediente
