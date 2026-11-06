@@ -3,9 +3,15 @@ import assert from "node:assert/strict";
 import { auditDish, buildReport, comparisonName, loadSources, renderText } from "./audit-catalog-ingredients.mjs";
 
 test("normalizes only the comparison value", () => assert.equal(comparisonName("Pimientos"), "pimiento"));
-test("exact, variant and pantry are conservative", () => {
+test("exact canonical and pantry are conservative", () => {
   const r = auditDish({ name: "x", ingredients: [{ displayName: "Ajo" }, { displayName: "Pollo" }], recipe: { ingredients: [{ name: "Ajo en polvo" }, { name: "Pollo" }, { name: "Sal" }] } }, { type: "fixture" });
-  assert.equal(r.counts.exact_canonical, 1); assert.equal(r.counts.variant, 1); assert.equal(r.counts.pantry_candidate, 1);
+  assert.equal(r.counts.exact_canonical, 1); assert.equal(r.counts.manual_review, 1); assert.equal(r.counts.pantry_candidate, 1);
+});
+test("product-changing descriptors require manual review", () => {
+  for (const [purchase, recipe] of [["Ajo", "Ajo en polvo"], ["Tomate", "Tomate triturado"], ["Pollo", "Pollo picado"]]) {
+    const r = auditDish({ name: "x", ingredients: [purchase], recipe: { ingredients: [{ name: recipe }] } }, { type: "fixture" });
+    assert.equal(r.counts.variant, 0); assert.equal(r.counts.manual_review, 1); assert.equal(r.matches[0].recipe, null);
+  }
 });
 test("specific products are not pantry exclusions and alternatives are review", () => {
   const r = auditDish({ name: "x", ingredients: [{ displayName: "Aceite de sésamo" }], recipe: { ingredients: [{ name: "Aceite de oliva o aceite de sésamo" }, { name: "Salsa de soja" }] } }, { type: "fixture" });

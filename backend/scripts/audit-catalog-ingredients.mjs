@@ -8,8 +8,9 @@ import { STARTER_MASTER_DISHES } from "../src/kitchen/bootstrap/masterDishes.js"
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const PANTRY_CANDIDATES = new Set(["sal", "pimienta", "aceite", "especia", "especias"]);
 const ALTERNATIVE = /\b(o|u|alternativ[ao]|puede sustituir|sustituir)\b/i;
-const DESCRIPTORS = /\b(en polvo|fresco|fresca|seco|seca|picado|picada|troceado|troceada|sin piel|ahumado|ahumada|molido|molida)\b/gi;
 const CLASSIFICATIONS = ["exact_canonical", "variant", "pantry_candidate", "unmatched_purchase", "unmatched_recipe", "manual_review"];
+// Keep this allowlist empty until a product equivalence is explicitly verified.
+const SAFE_VARIANT_PAIRS = new Set();
 
 export function comparisonName(value) {
   return normalizeIngredientName(String(value ?? ""));
@@ -26,10 +27,7 @@ function isPantryCandidate(name) {
 }
 
 function safeVariant(a, b) {
-  if (!a || !b || ALTERNATIVE.test(a) || ALTERNATIVE.test(b)) return false;
-  const aa = a.replace(DESCRIPTORS, "").replace(/\s+/g, " ").trim();
-  const bb = b.replace(DESCRIPTORS, "").replace(/\s+/g, " ").trim();
-  return aa === bb && a !== b;
+  return SAFE_VARIANT_PAIRS.has(`${a}\\u0000${b}`) || SAFE_VARIANT_PAIRS.has(`${b}\\u0000${a}`);
 }
 
 function isAlternative(value) { return ALTERNATIVE.test(String(value || "")); }
@@ -58,11 +56,11 @@ export function auditDish(dish, source) {
     if (exact.length === 1 && !isAlternative(exact[0].displayName)) { usedRecipe.add(exact[0].index); matches.push({ purchase: pi, recipe: exact[0], classification: "exact_canonical" }); continue; }
     if (exact.length > 1) { classifyManualReview(pi, exact, "duplicate_recipe_name"); continue; }
     const variant = r.filter((ri) => !usedRecipe.has(ri.index) && safeVariant(pi.normalizedName, ri.normalizedName));
-    if (variant.length === 1) { usedRecipe.add(variant[0].index); matches.push({ purchase: pi, recipe: variant[0], classification: "variant" }); continue; }
+    if (variant.length === 1 && safeVariant(pi.normalizedName, variant[0].normalizedName)) { usedRecipe.add(variant[0].index); matches.push({ purchase: pi, recipe: variant[0], classification: "variant" }); continue; }
     const candidates = (partialCandidates.get(pi.index) || []).filter((ri) => !usedRecipe.has(ri.index));
     if (candidates.some((ri) => isAlternative(ri.displayName))) { classifyManualReview(pi, candidates, "alternative_in_recipe_ingredient"); continue; }
     const competingPurchases = candidates.filter((ri) => (partialOwners.get(ri.index) || 0) > 1);
-    if (candidates.length === 1 && competingPurchases.length === 0) { usedRecipe.add(candidates[0].index); matches.push({ purchase: pi, recipe: candidates[0], classification: "variant" }); continue; }
+    if (candidates.length === 1 && competingPurchases.length === 0) { classifyManualReview(pi, candidates, "unproven_textual_similarity"); continue; }
     if (candidates.length > 1 || competingPurchases.length > 0) { classifyManualReview(pi, candidates, "ambiguous_partial_match"); continue; }
     classifyUnmatchedPurchase(pi, "no_recipe_match");
   }
