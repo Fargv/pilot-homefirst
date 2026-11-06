@@ -11,12 +11,13 @@ import {
   getEffectiveHouseholdId,
   handleHouseholdError
 } from "../householdScope.js";
-import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan } from "../weekPlanService.js";
+import { createOrGetWeekPlan, ensureWeekPlan, findWeekPlan, resetScheduledMealSlots } from "../weekPlanService.js";
 import { rebuildShoppingList } from "../shoppingService.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, buildRandomizableMainDishFilter, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { notifyCookAssignments } from "../assignmentPushService.js";
 import { resolveHouseholdCapabilities } from "../capabilityResolver.js";
+import { clearRemovedPlanSlot, getScheduledWeekDates, recordRemovedPlanSlot } from "../weeklySchedule.js";
 
 const router = express.Router();
 
@@ -215,28 +216,6 @@ function createDefaultDaySlot(date, mealType, attendeeIds = []) {
   };
 }
 
-function resetDayPlanning(day, attendeeIds = []) {
-  const defaults = createDefaultDaySlot(day.date, dayMealType(day), attendeeIds);
-  day.cookUserId = null;
-  day.attendeeIds = [...defaults.attendeeIds];
-  day.extraGuests = defaults.extraGuests;
-  day.attendeeCount = defaults.attendeeCount;
-  day.cookTiming = defaults.cookTiming;
-  day.servings = defaults.servings;
-  day.mainDishId = null;
-  day.includeMainIngredients = defaults.includeMainIngredients;
-  day.sideDishId = null;
-  day.includeSideIngredients = defaults.includeSideIngredients;
-  day.isLeftovers = false;
-  day.leftoversSourceDate = null;
-  day.leftoversSourceMealType = null;
-  day.leftoversSourceDishId = null;
-  day.leftoversSourceDishName = null;
-  day.ingredientOverrides = [];
-  day.baseIngredientExclusions = [];
-  return day;
-}
-
 function snapshotAssignment(day) {
   return {
     cookUserId: day?.cookUserId || null,
@@ -432,6 +411,8 @@ router.post("/:weekStart/weekend", requireAuth, async (req, res) => {
         continue;
       }
 
+      clearRemovedPlanSlot(plan, targetDate, mealType);
+
       plan.days.push({
         date: targetDate,
         mealType,
@@ -486,26 +467,17 @@ router.post("/:weekStart/reset", requireAuth, async (req, res) => {
     const plan = await ensureWeekPlan(monday, effectiveHouseholdId);
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
-    const weekdayDates = [0, 1, 2, 3, 4].map((offset) => getWeekDate(monday, offset));
-    const nextDays = [];
+    const household = await Household.findById(effectiveHouseholdId)
+      .select("weeklySchedule dinnersIncludeInShopping")
+      .lean();
+    const scheduleField = mealType === "dinner" ? "dinnerDays" : "lunchDays";
+    const scheduledDates = getScheduledWeekDates(monday, household?.weeklySchedule?.[scheduleField]);
 
-    for (const day of plan.days || []) {
-      if (dayMealType(day) !== mealType) {
-        nextDays.push(day);
-      }
-    }
-
-    for (const targetDate of weekdayDates) {
-      const existingDay = findDayByDateAndMeal(plan, targetDate, mealType);
-      if (existingDay) {
-        resetDayPlanning(existingDay, defaultAttendeeIds);
-        nextDays.push(existingDay);
-      } else {
-        nextDays.push(createDefaultDaySlot(targetDate, mealType, defaultAttendeeIds));
-      }
-    }
-
-    plan.days = nextDays;
+    // Reset dishes/planning on scheduled slots and create any missing slots.
+    // Existing manual slots outside the agenda and the other meal are retained.
+    resetScheduledMealSlots(plan, mealType, scheduledDates, defaultAttendeeIds, {
+      dinnerIncludeInShopping: Boolean(household?.dinnersIncludeInShopping)
+    });
     sortPlanDays(plan);
     await plan.save();
     await hydrateLeftoversDishNames(plan, effectiveHouseholdId);
@@ -653,6 +625,7 @@ router.put("/:weekStart/day/:date", requireAuth, async (req, res) => {
     }
 
     if (shouldRemoveOptionalDay) {
+      recordRemovedPlanSlot(plan, date, mealType);
       plan.days = (plan.days || []).filter(
         (entry) => !(isSameDay(entry.date, date) && dayMealType(entry) === mealType)
       );

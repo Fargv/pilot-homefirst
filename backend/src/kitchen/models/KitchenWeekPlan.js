@@ -10,6 +10,14 @@ const IngredientOverrideSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const RemovedSlotSchema = new mongoose.Schema(
+  {
+    date: { type: Date, required: true },
+    mealType: { type: String, enum: ["lunch", "dinner"], required: true }
+  },
+  { _id: false }
+);
+
 const WeekDaySchema = new mongoose.Schema(
   {
     date: { type: Date, required: true },
@@ -39,7 +47,8 @@ const KitchenWeekPlanSchema = new mongoose.Schema(
   {
     weekStart: { type: Date, required: true },
     householdId: { type: mongoose.Schema.Types.ObjectId, ref: "Household", index: true },
-    days: { type: [WeekDaySchema], default: [] }
+    days: { type: [WeekDaySchema], default: [] },
+    removedSlots: { type: [RemovedSlotSchema], default: [] }
   },
   { timestamps: true }
 );

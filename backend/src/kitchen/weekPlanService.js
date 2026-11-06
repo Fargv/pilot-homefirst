@@ -2,7 +2,8 @@ import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { KitchenUser } from "./models/KitchenUser.js";
 import { Household } from "./models/Household.js";
 import { buildScopedFilter } from "./householdScope.js";
-import { getWeekDates } from "./utils/dates.js";
+import { formatDateISO, getWeekStart } from "./utils/dates.js";
+import { getScheduledWeekDates, isRemovedPlanSlot } from "./weeklySchedule.js";
 
 function isActiveMember(member) {
   return member?.active !== false;
@@ -19,9 +20,9 @@ function getMemberDinnerActive(member) {
   return member?.dinnerActive !== false;
 }
 
-function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch") {
+function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch", scheduledDays) {
   const isDinner = mealType === "dinner";
-  return getWeekDates(weekStartDate).map((date) => ({
+  return getScheduledWeekDates(weekStartDate, scheduledDays).map((date) => ({
     date,
     mealType,
     attendeeIds: [...attendeeIds],
@@ -35,75 +36,73 @@ function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch") {
   }));
 }
 
+function resetDayPlanning(day, attendeeIds = [], dinnerIncludeInShopping = false) {
+  const isDinner = day.mealType === "dinner";
+  day.cookUserId = null;
+  day.attendeeIds = [...attendeeIds];
+  day.extraGuests = 0;
+  day.attendeeCount = attendeeIds.length;
+  day.cookTiming = isDinner ? "same_day" : "previous_day";
+  day.servings = attendeeIds.length;
+  day.mainDishId = null;
+  day.includeMainIngredients = isDinner ? dinnerIncludeInShopping : true;
+  day.sideDishId = null;
+  day.includeSideIngredients = isDinner ? dinnerIncludeInShopping : true;
+  day.isLeftovers = false;
+  day.leftoversSourceDate = null;
+  day.leftoversSourceMealType = null;
+  day.leftoversSourceDishId = null;
+  day.leftoversSourceDishName = null;
+  day.ingredientOverrides = [];
+  day.baseIngredientExclusions = [];
+  return day;
+}
+
+export function resetScheduledMealSlots(
+  plan,
+  mealType,
+  scheduledDates,
+  attendeeIds = [],
+  { dinnerIncludeInShopping = false } = {}
+) {
+  const existingByDate = new Map(
+    (plan.days || [])
+      .filter((day) => day.mealType === mealType && day.date)
+      .map((day) => [formatDateISO(new Date(day.date)), day])
+  );
+
+  for (const date of scheduledDates) {
+    const dateKey = formatDateISO(date);
+    const existingDay = existingByDate.get(dateKey);
+    if (existingDay) {
+      resetDayPlanning(existingDay, attendeeIds, dinnerIncludeInShopping);
+      continue;
+    }
+    if (isRemovedPlanSlot(plan, date, mealType)) continue;
+    const [slot] = buildDefaultDays(getWeekStart(date), attendeeIds, mealType, [
+      ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][date.getUTCDay()]
+    ]);
+    if (mealType === "dinner") {
+      slot.includeMainIngredients = dinnerIncludeInShopping;
+      slot.includeSideIngredients = dinnerIncludeInShopping;
+    }
+    plan.days.push(slot);
+  }
+
+  // Reset applies to the scheduled slots. Manually added slots outside the
+  // household agenda keep their dishes, attendees, and assignments intact.
+  return plan;
+}
+
 function isDuplicateKeyError(error) {
   return error?.code === 11000;
-}
-
-function dayMatchesMeal(day, mealType) {
-  const normalized = day?.mealType === "dinner" ? "dinner" : "lunch";
-  return normalized === mealType;
-}
-
-function hasMealSlot(plan, date, mealType) {
-  return (plan.days || []).some(
-    (day) => day?.date && new Date(day.date).getTime() === new Date(date).getTime() && dayMatchesMeal(day, mealType)
-  );
-}
-
-async function ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId) {
-  const household = await Household.findById(effectiveHouseholdId)
-    .select("dinnersEnabled dinnersIncludeInShopping")
-    .lean();
-  if (!household?.dinnersEnabled) return plan;
-
-  const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
-  const members = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
-    .select("_id active dinnerActive")
-    .lean();
-  const dinnerAttendees = members
-    .filter((member) => isActiveMember(member) && getMemberDinnerActive(member))
-    .map((member) => String(member._id))
-    .filter(Boolean);
-
-  const weekDates = getWeekDates(plan.weekStart);
-  let changed = false;
-  for (const date of weekDates) {
-    if (hasMealSlot(plan, date, "dinner")) continue;
-    plan.days.push({
-      date,
-      mealType: "dinner",
-      attendeeIds: [...dinnerAttendees],
-      extraGuests: 0,
-      attendeeCount: dinnerAttendees.length,
-      cookTiming: "same_day",
-      servings: dinnerAttendees.length,
-      includeMainIngredients: dinnerIncludeInShopping,
-      includeSideIngredients: dinnerIncludeInShopping,
-      ingredientOverrides: []
-    });
-    changed = true;
-  }
-
-  if (changed) {
-    plan.days.sort((a, b) => {
-      const leftDate = new Date(a.date).getTime();
-      const rightDate = new Date(b.date).getTime();
-      if (leftDate !== rightDate) return leftDate - rightDate;
-      const leftMeal = dayMatchesMeal(a, "dinner") ? 1 : 0;
-      const rightMeal = dayMatchesMeal(b, "dinner") ? 1 : 0;
-      return leftMeal - rightMeal;
-    });
-    await plan.save();
-  }
-  return plan;
 }
 
 export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
   const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
   const existingPlan = await KitchenWeekPlan.findOne(filter);
   if (existingPlan) {
-    const hydrated = await ensureDinnerSlotsIfEnabled(existingPlan, effectiveHouseholdId);
-    return { plan: hydrated, created: false };
+    return { plan: existingPlan, created: false };
   }
 
   try {
@@ -116,13 +115,14 @@ export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
       .map((member) => String(member._id))
       .filter(Boolean);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("dinnersEnabled dinnersIncludeInShopping")
+      .select("dinnersEnabled dinnersIncludeInShopping weeklySchedule")
       .lean();
     const dinnersEnabled = Boolean(household?.dinnersEnabled);
     const dinnerIncludeInShopping = Boolean(household?.dinnersIncludeInShopping);
+    const weeklySchedule = household?.weeklySchedule;
     const days = [
-      ...buildDefaultDays(weekStartDate, lunchAttendeeIds, "lunch"),
-      ...(dinnersEnabled ? buildDefaultDays(weekStartDate, dinnerAttendeeIds, "dinner").map((day) => ({
+      ...buildDefaultDays(weekStartDate, lunchAttendeeIds, "lunch", weeklySchedule?.lunchDays),
+      ...(dinnersEnabled ? buildDefaultDays(weekStartDate, dinnerAttendeeIds, "dinner", weeklySchedule?.dinnerDays).map((day) => ({
         ...day,
         cookTiming: "same_day",
         includeMainIngredients: dinnerIncludeInShopping,
@@ -135,8 +135,7 @@ export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
       days
     });
 
-    const hydrated = await ensureDinnerSlotsIfEnabled(createdPlan, effectiveHouseholdId);
-    return { plan: hydrated, created: true };
+    return { plan: createdPlan, created: true };
   } catch (error) {
     if (isDuplicateKeyError(error)) {
       const concurrentPlan = await KitchenWeekPlan.findOne(filter);
@@ -157,12 +156,79 @@ export async function createOrGetWeekPlan(weekStartDate, effectiveHouseholdId) {
 
 export async function ensureWeekPlan(weekStartDate, effectiveHouseholdId) {
   const { plan } = await createOrGetWeekPlan(weekStartDate, effectiveHouseholdId);
-  return ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId);
+  return plan;
 }
 
 export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
   const filter = buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate });
   const plan = await KitchenWeekPlan.findOne(filter);
   if (!plan) return null;
-  return ensureDinnerSlotsIfEnabled(plan, effectiveHouseholdId);
+  return plan;
+}
+
+export async function addPendingDinnerSlotsToUpcomingPlans(
+  effectiveHouseholdId,
+  { explicitlyActivated = false, fromDate = new Date() } = {}
+) {
+  if (!explicitlyActivated) return { updatedPlans: 0, createdSlots: 0 };
+  const fromWeekStart = getWeekStart(fromDate);
+  const household = await Household.findById(effectiveHouseholdId)
+    .select("dinnersEnabled dinnersIncludeInShopping weeklySchedule")
+    .lean();
+  if (!household?.dinnersEnabled) return { updatedPlans: 0, createdSlots: 0 };
+
+  const members = await KitchenUser.find(buildScopedFilter(effectiveHouseholdId, {}))
+    .select("_id active dinnerActive")
+    .lean();
+  const dinnerAttendeeIds = members
+    .filter((member) => isActiveMember(member) && getMemberDinnerActive(member))
+    .map((member) => String(member._id))
+    .filter(Boolean);
+  const plans = await KitchenWeekPlan.find(buildScopedFilter(effectiveHouseholdId, {
+    weekStart: { $gte: fromWeekStart }
+  }))
+    .sort({ weekStart: 1 })
+    .select("_id weekStart days removedSlots")
+    .lean();
+
+  let updatedPlans = 0;
+  let createdSlots = 0;
+  for (const plan of plans) {
+    let planChanged = false;
+    const dinnerDates = getScheduledWeekDates(plan.weekStart, household.weeklySchedule?.dinnerDays);
+    for (const date of dinnerDates) {
+      const dateKey = formatDateISO(date);
+      const alreadyExists = (plan.days || []).some((day) =>
+        day?.mealType === "dinner" && day?.date && formatDateISO(new Date(day.date)) === dateKey
+      );
+      if (alreadyExists || isRemovedPlanSlot(plan, date, "dinner")) continue;
+
+      const slot = {
+        date,
+        mealType: "dinner",
+        attendeeIds: [...dinnerAttendeeIds],
+        extraGuests: 0,
+        attendeeCount: dinnerAttendeeIds.length,
+        cookTiming: "same_day",
+        servings: dinnerAttendeeIds.length,
+        includeMainIngredients: Boolean(household.dinnersIncludeInShopping),
+        includeSideIngredients: Boolean(household.dinnersIncludeInShopping),
+        ingredientOverrides: []
+      };
+      const result = await KitchenWeekPlan.updateOne(
+        buildScopedFilter(effectiveHouseholdId, {
+          _id: plan._id,
+          days: { $not: { $elemMatch: { date, mealType: "dinner" } } },
+          removedSlots: { $not: { $elemMatch: { date, mealType: "dinner" } } }
+        }),
+        { $push: { days: slot } }
+      );
+      if (!result.modifiedCount) continue;
+      createdSlots += 1;
+      planChanged = true;
+    }
+    if (planChanged) updatedPlans += 1;
+  }
+
+  return { updatedPlans, createdSlots };
 }

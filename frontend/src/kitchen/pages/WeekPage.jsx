@@ -4015,8 +4015,8 @@ export default function WeekPage() {
             <div className="kitchen-modal-header">
               <h3>Borrar semana</h3>
               <p className="kitchen-muted">
-                Se borrara toda la programacion visible de {selectedMealType === "dinner" ? "cenas" : "comidas"} para esta semana.
-                Los dias base de lunes a viernes seguiran visibles vacios y el FINDE opcional se eliminara si existe.
+                Se restablecerán los platos y la planificación de los días habituales de {selectedMealType === "dinner" ? "cenas" : "comidas"}.
+                Si falta un día habitual, se volverá a crear su turno. Los turnos añadidos manualmente fuera de la agenda y la otra franja se conservarán.
               </p>
             </div>
             <div className="kitchen-modal-actions">
