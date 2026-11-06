@@ -19,6 +19,7 @@ import {
 } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { rebuildShoppingList } from "../shoppingService.js";
+import { applyRecipePurchaseToggles } from "../utils/recipePurchaseSelection.js";
 
 const router = express.Router();
 
@@ -670,7 +671,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Plato no encontrado." });
     }
 
-    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes } = req.body || {};
+    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes, purchaseToggles } = req.body || {};
     const normalizedIngredients = Array.isArray(ingredients)
       ? ingredients
           .filter((item) => item && String(item.name || "").trim())
@@ -683,7 +684,8 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
             return {
               name: String(item.name || "").trim(),
               quantity: normalizedQty,
-              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {})
+              ...(item.ingredientId ? { ingredientId: item.ingredientId } : {}),
+              ...(Object.prototype.hasOwnProperty.call(item, "buy") ? { buy: item.buy === true } : {})
             };
           })
       : [];
@@ -699,11 +701,23 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       cookMinutes: normalizedCookMinutes,
     };
 
+    const normalizedPurchaseToggles = Array.isArray(purchaseToggles)
+      ? purchaseToggles
+        .filter((item) => item && (item.ingredientId || String(item.name || "").trim()))
+        .map((item) => ({
+          ingredientId: item.ingredientId || null,
+          name: String(item.name || "").trim(),
+          buy: item.buy === true
+        }))
+      : [];
+
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
+        dish.ingredients = applyRecipePurchaseToggles(dish.ingredients, normalizedIngredients, normalizedPurchaseToggles);
         dish.recipe = recipeData;
         await dish.save();
-        return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
+        const warning = await rebuildFutureShoppingListsSafe({ householdId: getOptionalHouseholdId(req.user), dishId: dish._id, context: "update-master-recipe" });
+        return res.json({ ok: true, dish: { id: String(dish._id), ingredients: dish.ingredients, recipe: dish.recipe }, ...(warning ? { warning } : {}) });
       }
 
       const requiredHouseholdId = getEffectiveHouseholdId(req.user);
@@ -734,11 +748,12 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
           createdBy: req.kitchenUser._id
         });
       }
+      override.ingredients = applyRecipePurchaseToggles(override.isNew ? dish.ingredients : override.ingredients, normalizedIngredients, normalizedPurchaseToggles);
       override.recipe = recipeData;
       await override.save();
       await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: getDishHiddenMasterType(dish), masterId: dish._id });
-
-      return res.json({ ok: true, overridden: true, dish: { id: String(override._id), recipe: override.recipe } });
+      const warning = await rebuildFutureShoppingListsSafe({ householdId: requiredHouseholdId, dishId: override._id, context: "update-master-override-recipe" });
+      return res.json({ ok: true, overridden: true, dish: { id: String(override._id), ingredients: override.ingredients, recipe: override.recipe }, ...(warning ? { warning } : {}) });
     }
 
     const requiredHouseholdId = getEffectiveHouseholdId(req.user);
@@ -753,13 +768,15 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       }
     }
 
+    dish.ingredients = applyRecipePurchaseToggles(dish.ingredients, normalizedIngredients, normalizedPurchaseToggles);
     dish.recipe = recipeData;
     if (dish.source === "catalog") {
       dish.userModified = true;
       dish.userModifiedAt = new Date();
     }
     await dish.save();
-    return res.json({ ok: true, dish: { id: String(dish._id), recipe: dish.recipe } });
+    const warning = await rebuildFutureShoppingListsSafe({ householdId: requiredHouseholdId, dishId: dish._id, context: "update-household-recipe" });
+    return res.json({ ok: true, dish: { id: String(dish._id), ingredients: dish.ingredients, recipe: dish.recipe }, ...(warning ? { warning } : {}) });
   } catch (error) {
     const handled = handleHouseholdError(res, error);
     if (handled) return handled;
