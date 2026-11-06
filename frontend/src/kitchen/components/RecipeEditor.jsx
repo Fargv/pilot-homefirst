@@ -932,7 +932,7 @@ export default function RecipeEditor({
   return (
     <div className="recipe-editor-section">
       {/* Servings + timing row */}
-      <div className="recipe-servings-row" style={{ gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="recipe-servings-row">
         <label className="recipe-section-title" htmlFor="recipe-servings">Para</label>
         <input
           id="recipe-servings"
@@ -949,7 +949,7 @@ export default function RecipeEditor({
           }}
         />
         <span className="recipe-section-title">personas</span>
-        <span className="recipe-section-title" style={{ marginLeft: 8 }}>Prep.</span>
+        <span className="recipe-section-title recipe-timing-label">Prep.</span>
         <input
           type="text"
           inputMode="numeric"
@@ -966,7 +966,7 @@ export default function RecipeEditor({
           title="Minutos de preparación"
         />
         <span className="recipe-section-title">min</span>
-        <span className="recipe-section-title" style={{ marginLeft: 4 }}>Cocción</span>
+        <span className="recipe-section-title recipe-timing-label">Cocción</span>
         <input
           type="text"
           inputMode="numeric"
@@ -998,7 +998,11 @@ export default function RecipeEditor({
                     <span className="recipe-ingredient-pill-dot" />
                     <span className="recipe-ingredient-pill-name">{item.name}</span>
                   </span>
-                  <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
+                  <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
+                    <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
+                    <span className="recipe-buy-check" aria-hidden="true" />
+                    <span>Comprar</span>
+                  </label>
                   <QuantityEditor
                     qty={getStructuredQty(item.quantity)}
                     onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
@@ -1027,7 +1031,11 @@ export default function RecipeEditor({
                   qty={getStructuredQty(item.quantity)}
                   onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
                 />
-                <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
+                <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
+                  <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
+                  <span className="recipe-buy-check" aria-hidden="true" />
+                  <span>Comprar</span>
+                </label>
                 <button
                   type="button"
                   className="recipe-remove-btn"
