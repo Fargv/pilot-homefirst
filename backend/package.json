@@ -11,6 +11,7 @@
     "test:connection": "node scripts/test-connection.js",
     "test": "node scripts/run-tests.mjs",
     "audit:personalization": "node scripts/audit-personalization-coverage.mjs",
+    "audit:catalog-ingredients": "node scripts/audit-catalog-ingredients.mjs",
     "migrate:db-structure": "node scripts/migrate-db-structure.js",
     "cleanup:onboarding-challenges": "node scripts/cleanup-old-challenges.js",
     "migrate:householdId": "node scripts/migrate-add-householdId.js",
