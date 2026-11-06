@@ -74,6 +74,7 @@ export default function DishModal({
   const [recipeEditing, setRecipeEditing] = useState(false);
   const [recipeDirty, setRecipeDirty] = useState(false);
   const [persistedRecipeHasContent, setPersistedRecipeHasContent] = useState(false);
+  const recipePrefilledRef = useRef(false);
   const ingredientCache = useRef(new Map());
 
   const isDiod = user?.globalRole === "diod";
@@ -138,6 +139,7 @@ export default function DishModal({
     setActiveTab(initialDish?._id ? "receta" : "datos");
     setRecipeEditing(false);
     setRecipeDirty(false);
+    recipePrefilledRef.current = false;
     const setup = async () => {
       if (initialDish?._id) {
         const ingredients = await resolveIngredients(initialDish.ingredients || []);
@@ -189,6 +191,23 @@ export default function DishModal({
     return () => { active = false; };
   }, [initialDish, initialName, initialIsDinner, isOpen, resolveIngredients]);
 
+  useEffect(() => {
+    if (!isOpen || editingId || activeTab !== "receta" || recipePrefilledRef.current || form.ingredients.length === 0) return;
+    setRecipe((prev) => {
+      if (prev.ingredients.length > 0) return prev;
+      recipePrefilledRef.current = true;
+      return {
+        ...prev,
+        ingredients: form.ingredients.map((item) => ({
+          name: item.displayName,
+          quantity: "",
+          ingredientId: item.ingredientId || null,
+          buy: true
+        }))
+      };
+    });
+  }, [activeTab, editingId, form.ingredients, isOpen]);
+
   const pendingCount = useMemo(
     () => (form.ingredients || []).filter((item) => item.status === "pending").length,
     [form.ingredients]
@@ -210,14 +229,20 @@ export default function DishModal({
   };
 
   const updateRecipe = useCallback((updater) => {
+    setRecipe((prev) => (typeof updater === "function" ? updater(prev) : updater));
+    setRecipeDirty(true);
+  }, []);
+
+  const handleRecipePurchaseToggle = useCallback((index, checked) => {
     setRecipe((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      const purchase = (next.ingredients || []).filter((item) => item.buy === true);
-      setForm((current) => ({ ...current, ingredients: purchase.map((item) => {
+      const nextIngredients = [...(prev.ingredients || [])];
+      nextIngredients[index] = { ...nextIngredients[index], buy: checked };
+      const selected = nextIngredients.filter((item) => item.buy === true);
+      setForm((current) => ({ ...current, ingredients: selected.map((item) => {
         const existing = (current.ingredients || []).find((candidate) => recipeIngredientKey(candidate) === recipeIngredientKey(item));
         return existing || { ingredientId: item.ingredientId, displayName: item.name, canonicalName: normalizeIngredientName(item.name), status: item.ingredientId ? "resolved" : "pending" };
       }) }));
-      return next;
+      return { ...prev, ingredients: nextIngredients };
     });
     setRecipeDirty(true);
   }, []);
@@ -418,6 +443,7 @@ export default function DishModal({
                       recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
                       dishIngredients={form.ingredients}
+                      onPurchaseToggle={handleRecipePurchaseToggle}
                       onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                       onChange={updateRecipe}
                       readOnly={false}
@@ -447,6 +473,7 @@ export default function DishModal({
                       recipeCookMinutes={recipe.cookMinutes}
                       dishIngredientNames={dishIngredientNames}
                       dishIngredients={form.ingredients}
+                      onPurchaseToggle={handleRecipePurchaseToggle}
                       readOnly
                     />
                     {recipeSaved ? <div className="kitchen-alert success" style={{ marginTop: 8 }}>Elaboración guardada.</div> : null}
@@ -485,6 +512,7 @@ export default function DishModal({
                   recipeCookMinutes={recipe.cookMinutes}
                   dishIngredientNames={dishIngredientNames}
                   dishIngredients={form.ingredients}
+                  onPurchaseToggle={handleRecipePurchaseToggle}
                   onAddIngredientToDish={editingId ? handleAddIngredientToDish : undefined}
                   onChange={updateRecipe}
                   readOnly={false}

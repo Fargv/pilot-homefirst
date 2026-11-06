@@ -21,6 +21,7 @@ const result = spawnSync(
     "src/kitchen/personalizationContract.test.js",
     "src/kitchen/catalogMetadata.test.js",
     "src/kitchen/catalogSync.test.js",
+    "src/kitchen/utils/recipePurchaseSelection.test.js",
     "src/routes/checkoutPreflight.test.js",
     "src/stab001.test.js"
   ],

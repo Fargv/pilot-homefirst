@@ -758,6 +758,7 @@ export default function RecipeEditor({
   actionAfterIngredients = null,
   dishIngredientNames = [],
   dishIngredients = [],
+  onPurchaseToggle,
   onAddIngredientToDish,
   onChange,
   readOnly = false
@@ -997,7 +998,7 @@ export default function RecipeEditor({
                     <span className="recipe-ingredient-pill-dot" />
                     <span className="recipe-ingredient-pill-name">{item.name}</span>
                   </span>
-                  <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => updateIngredient(idx, "buy", e.target.checked)} /> Comprar</label>
+                  <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
                   <QuantityEditor
                     qty={getStructuredQty(item.quantity)}
                     onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
@@ -1026,7 +1027,7 @@ export default function RecipeEditor({
                   qty={getStructuredQty(item.quantity)}
                   onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
                 />
-                <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => updateIngredient(idx, "buy", e.target.checked)} /> Comprar</label>
+                <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
                 <button
                   type="button"
                   className="recipe-remove-btn"
