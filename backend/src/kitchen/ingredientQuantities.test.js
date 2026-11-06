@@ -36,6 +36,24 @@ test("suma 0,25 + 0,50 unidades sin redondear", () => {
   assert.equal(items[0].unit, "unidad");
 });
 
+test("mantiene independientes compra y receta: la receta no añade ingredientes al carrito", () => {
+  const dishIngredientId = new mongoose.Types.ObjectId();
+  const recipeOnlyId = new mongoose.Types.ObjectId();
+  const items = consolidateDayIngredients({
+    mainDish: {
+      ingredients: [{ ingredientId: dishIngredientId, displayName: "Tomate", canonicalName: "tomate" }],
+      recipe: { ingredients: [
+        { ingredientId: dishIngredientId, name: "Tomate", quantity: { amount: 2, unit: "unidad" } },
+        { ingredientId: recipeOnlyId, name: "Perejil", quantity: { amount: 1, unit: "ramita" } }
+      ] }
+    },
+    day: { servings: 1 }
+  });
+
+  assert.deepEqual(items.map((item) => item.canonicalName), ["tomate"]);
+  assert.equal(items[0].quantity.amount, 2);
+});
+
 test("suma 1 + 1 unidades y mantiene occurrences como metadato", () => {
   const id = new mongoose.Types.ObjectId();
   const items = aggregate(

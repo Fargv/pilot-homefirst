@@ -22,42 +22,6 @@ const EMPTY_FORM = {
   isArchived: false
 };
 
-function getDishIngredientName(item) {
-  return String(item?.displayName || item?.name || item?.canonicalName || "").trim();
-}
-
-function getIngredientKeys(item) {
-  const keys = [];
-  if (item?.ingredientId) keys.push(`id:${String(item.ingredientId)}`);
-  const normalizedName = normalizeIngredientName(getDishIngredientName(item));
-  if (normalizedName) keys.push(`name:${normalizedName}`);
-  return keys;
-}
-
-function dishIngredientsToRecipeIngredients(ingredients = []) {
-  return (ingredients || [])
-    .map((item) => ({
-      name: getDishIngredientName(item),
-      quantity: "",
-      ingredientId: item?.ingredientId || null
-    }))
-    .filter((item) => item.name);
-}
-
-function mergeDishIngredientsIntoRecipe(recipeIngredients = [], dishIngredients = []) {
-  const existing = new Set();
-  (recipeIngredients || []).forEach((item) => {
-    getIngredientKeys(item).forEach((key) => existing.add(key));
-  });
-  const additions = dishIngredientsToRecipeIngredients(dishIngredients).filter((item) => {
-    const keys = getIngredientKeys(item);
-    if (!keys.length || keys.some((key) => existing.has(key))) return false;
-    keys.forEach((key) => existing.add(key));
-    return true;
-  });
-  return additions.length ? [...recipeIngredients, ...additions] : recipeIngredients;
-}
-
 function hasRecipeContent(recipe = {}) {
   const hasSteps = Boolean(recipe?.steps);
   const hasIngredients = (recipe?.ingredients || []).some((item) => (
@@ -180,15 +144,8 @@ export default function DishModal({
         const initialRecipe = initialDish.recipe || {};
         const initialRecipeHasContent = hasRecipeContent(initialRecipe);
         const existingRecipeIngredients = initialRecipe.ingredients || [];
-        const recipeIngredients = existingRecipeIngredients.length > 0
-          ? existingRecipeIngredients
-          : (initialDish.ingredients || []).map((ing) => ({
-              name: ing.displayName || ing.canonicalName || "",
-              quantity: "",
-              ingredientId: ing.ingredientId || null
-            })).filter((ing) => ing.name);
         setRecipe({
-          ingredients: recipeIngredients,
+          ingredients: existingRecipeIngredients,
           steps: initialRecipe.steps || null,
           baseServings: initialRecipe.baseServings || initialRecipe.servings || null,
           servings: initialRecipe.baseServings || initialRecipe.servings || null,
@@ -242,16 +199,6 @@ export default function DishModal({
     setRecipe((prev) => (typeof updater === "function" ? updater(prev) : updater));
     setRecipeDirty(true);
   }, []);
-
-  useEffect(() => {
-    const dishIngredients = form.ingredients || [];
-    if (!dishIngredients.length) return;
-    setRecipe((prev) => {
-      const nextIngredients = mergeDishIngredientsIntoRecipe(prev.ingredients || [], dishIngredients);
-      if (nextIngredients === (prev.ingredients || [])) return prev;
-      return { ...prev, ingredients: nextIngredients };
-    });
-  }, [form.ingredients]);
 
   const buildDishPayload = () => ({
     name: form.name,
