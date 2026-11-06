@@ -12368,18 +12368,17 @@ td.recipe-qty-scaled {
 
 .kitchen-modal-backdrop {
   padding: clamp(8px, 3vw, 20px);
-  overflow-x: hidden;
 }
 
 .kitchen-modal {
   width: min(720px, 100%);
   padding: clamp(14px, 3vw, 24px);
   gap: 14px;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .recipe-tab-content {
-  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .recipe-servings-row {
@@ -12406,7 +12405,7 @@ td.recipe-qty-scaled {
 }
 
 .recipe-ingredient-row--pill {
-  grid-template-columns: minmax(0, 1fr) minmax(0, auto) 32px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, auto) 32px;
 }
 
 .recipe-ingredient-input,
@@ -12466,9 +12465,27 @@ td.recipe-qty-scaled {
   box-shadow: inset 0 0 0 3px var(--hf-surface-soft, #eef2ff);
 }
 
+.recipe-buy-control.is-checked .recipe-buy-check::after {
+  content: "✓";
+  display: block;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 11px;
+  text-align: center;
+}
+
 .recipe-buy-control:focus-within {
   outline: 3px solid color-mix(in srgb, var(--hf-brand) 30%, transparent);
   outline-offset: 2px;
+}
+
+.recipe-remove-btn {
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .recipe-toolbar,
