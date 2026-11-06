@@ -39,7 +39,7 @@ function recipeIngredientsWithPurchaseState(recipeIngredients = [], dishIngredie
     item?.ingredientId ? `id:${item.ingredientId}` : null,
     `name:${normalizeIngredientName(item?.displayName || item?.canonicalName || item?.name || "")}`
   ].filter(Boolean)));
-  return recipeIngredients.map((item) => ({ ...item, buy: item.buy === true || (item.buy == null && purchaseKeys.has(recipeIngredientKey(item))) }));
+  return recipeIngredients.map((item) => ({ ...item, buy: purchaseKeys.has(recipeIngredientKey(item)) }));
 }
 
 export default function DishModal({
@@ -75,6 +75,7 @@ export default function DishModal({
   const [recipeDirty, setRecipeDirty] = useState(false);
   const [persistedRecipeHasContent, setPersistedRecipeHasContent] = useState(false);
   const recipePrefilledRef = useRef(false);
+  const recipePurchaseTogglesRef = useRef(new Map());
   const ingredientCache = useRef(new Map());
 
   const isDiod = user?.globalRole === "diod";
@@ -140,6 +141,7 @@ export default function DishModal({
     setRecipeEditing(false);
     setRecipeDirty(false);
     recipePrefilledRef.current = false;
+    recipePurchaseTogglesRef.current = new Map();
     const setup = async () => {
       if (initialDish?._id) {
         const ingredients = await resolveIngredients(initialDish.ingredients || []);
@@ -237,11 +239,19 @@ export default function DishModal({
     setRecipe((prev) => {
       const nextIngredients = [...(prev.ingredients || [])];
       nextIngredients[index] = { ...nextIngredients[index], buy: checked };
-      const selected = nextIngredients.filter((item) => item.buy === true);
-      setForm((current) => ({ ...current, ingredients: selected.map((item) => {
-        const existing = (current.ingredients || []).find((candidate) => recipeIngredientKey(candidate) === recipeIngredientKey(item));
-        return existing || { ingredientId: item.ingredientId, displayName: item.name, canonicalName: normalizeIngredientName(item.name), status: item.ingredientId ? "resolved" : "pending" };
-      }) }));
+      const item = nextIngredients[index];
+      const key = recipeIngredientKey(item);
+      recipePurchaseTogglesRef.current.set(key, { ingredientId: item.ingredientId || null, name: item.name, buy: checked });
+      setForm((current) => {
+        const existingIndex = (current.ingredients || []).findIndex((candidate) => recipeIngredientKey(candidate) === key);
+        if (checked && existingIndex === -1) {
+          return { ...current, ingredients: [...(current.ingredients || []), { ingredientId: item.ingredientId, displayName: item.name, canonicalName: normalizeIngredientName(item.name), status: item.ingredientId ? "resolved" : "pending" }] };
+        }
+        if (!checked && existingIndex !== -1) {
+          return { ...current, ingredients: current.ingredients.filter((_, candidateIndex) => candidateIndex !== existingIndex) };
+        }
+        return current;
+      });
       return { ...prev, ingredients: nextIngredients };
     });
     setRecipeDirty(true);
@@ -295,6 +305,7 @@ export default function DishModal({
         steps: recipe.steps || null,
         baseServings: recipe.servings || recipe.baseServings || null,
         servings: recipe.servings || null,
+        purchaseToggles: Array.from(recipePurchaseTogglesRef.current.values()),
         prepMinutes: recipe.prepMinutes || null,
         cookMinutes: recipe.cookMinutes || null
       })
@@ -309,6 +320,7 @@ export default function DishModal({
     };
     if (result.overridden && nextId) setEditingId(String(nextId));
     setRecipe(mergedDish.recipe || recipe);
+    recipePurchaseTogglesRef.current = new Map();
     setPersistedRecipeHasContent(hasRecipeContent(mergedDish.recipe || recipe));
     setRecipeDirty(false);
     setRecipeEditing(false);

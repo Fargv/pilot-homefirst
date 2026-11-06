@@ -6,17 +6,22 @@ export function recipeIngredientKey(item) {
     : `name:${normalizeIngredientName(item?.name || item?.displayName || "")}`;
 }
 
-export function applyRecipePurchaseSelection(currentIngredients = [], recipeIngredients = [], hasExplicitSelection = false) {
-  if (!hasExplicitSelection) return currentIngredients;
-  const recipeKeys = new Set(recipeIngredients.map(recipeIngredientKey));
-  const next = currentIngredients.filter((item) => !recipeKeys.has(recipeIngredientKey(item)));
-  for (const item of recipeIngredients.filter((entry) => entry.buy === true)) {
-    const existing = currentIngredients.find((entry) => recipeIngredientKey(entry) === recipeIngredientKey(item));
-    next.push(existing || {
-      ingredientId: item.ingredientId,
-      displayName: item.name,
-      canonicalName: normalizeIngredientName(item.name)
-    });
+export function applyRecipePurchaseToggles(currentIngredients = [], recipeIngredients = [], toggles = []) {
+  const next = [...currentIngredients];
+  for (const toggle of toggles) {
+    const key = recipeIngredientKey(toggle);
+    const recipeItem = recipeIngredients.find((item) => recipeIngredientKey(item) === key);
+    if (!recipeItem) continue;
+    const existingIndex = next.findIndex((item) => recipeIngredientKey(item) === key);
+    if (toggle.buy === true && existingIndex === -1) {
+      next.push({
+        ingredientId: recipeItem.ingredientId,
+        displayName: recipeItem.name,
+        canonicalName: normalizeIngredientName(recipeItem.name)
+      });
+    } else if (toggle.buy !== true && existingIndex !== -1) {
+      next.splice(existingIndex, 1);
+    }
   }
   return next;
 }

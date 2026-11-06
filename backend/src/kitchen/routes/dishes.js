@@ -19,7 +19,7 @@ import {
 } from "../utils/catalogScopes.js";
 import { buildManualPlanningDishFilter, getDishHiddenMasterType, resolveDishCatalogForHousehold } from "../utils/dishCatalog.js";
 import { rebuildShoppingList } from "../shoppingService.js";
-import { applyRecipePurchaseSelection } from "../utils/recipePurchaseSelection.js";
+import { applyRecipePurchaseToggles } from "../utils/recipePurchaseSelection.js";
 
 const router = express.Router();
 
@@ -671,7 +671,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       return res.status(404).json({ ok: false, error: "Plato no encontrado." });
     }
 
-    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes } = req.body || {};
+    const { ingredients, steps, servings, baseServings, prepMinutes, cookMinutes, purchaseToggles } = req.body || {};
     const normalizedIngredients = Array.isArray(ingredients)
       ? ingredients
           .filter((item) => item && String(item.name || "").trim())
@@ -701,11 +701,19 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       cookMinutes: normalizedCookMinutes,
     };
 
-    const hasExplicitPurchaseSelection = normalizedIngredients.some((item) => Object.prototype.hasOwnProperty.call(item, "buy"));
+    const normalizedPurchaseToggles = Array.isArray(purchaseToggles)
+      ? purchaseToggles
+        .filter((item) => item && (item.ingredientId || String(item.name || "").trim()))
+        .map((item) => ({
+          ingredientId: item.ingredientId || null,
+          name: String(item.name || "").trim(),
+          buy: item.buy === true
+        }))
+      : [];
 
     if (dish.scope === CATALOG_SCOPES.MASTER) {
       if (isDiod) {
-        dish.ingredients = applyRecipePurchaseSelection(dish.ingredients, normalizedIngredients, hasExplicitPurchaseSelection);
+        dish.ingredients = applyRecipePurchaseToggles(dish.ingredients, normalizedIngredients, normalizedPurchaseToggles);
         dish.recipe = recipeData;
         await dish.save();
         const warning = await rebuildFutureShoppingListsSafe({ householdId: getOptionalHouseholdId(req.user), dishId: dish._id, context: "update-master-recipe" });
@@ -740,7 +748,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
           createdBy: req.kitchenUser._id
         });
       }
-      override.ingredients = applyRecipePurchaseSelection(override.isNew ? dish.ingredients : override.ingredients, normalizedIngredients, hasExplicitPurchaseSelection);
+      override.ingredients = applyRecipePurchaseToggles(override.isNew ? dish.ingredients : override.ingredients, normalizedIngredients, normalizedPurchaseToggles);
       override.recipe = recipeData;
       await override.save();
       await clearHiddenMasterForHousehold({ householdId: requiredHouseholdId, type: getDishHiddenMasterType(dish), masterId: dish._id });
@@ -760,7 +768,7 @@ router.put("/:id/recipe", requireAuth, async (req, res) => {
       }
     }
 
-    dish.ingredients = applyRecipePurchaseSelection(dish.ingredients, normalizedIngredients, hasExplicitPurchaseSelection);
+    dish.ingredients = applyRecipePurchaseToggles(dish.ingredients, normalizedIngredients, normalizedPurchaseToggles);
     dish.recipe = recipeData;
     if (dish.source === "catalog") {
       dish.userModified = true;
