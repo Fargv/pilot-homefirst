@@ -2,8 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Household } from "./models/Household.js";
 import { KitchenUser } from "./models/KitchenUser.js";
+import { KitchenDish } from "./models/KitchenDish.js";
+import { HiddenMaster } from "./models/HiddenMaster.js";
+import { KitchenIngredient } from "./models/KitchenIngredient.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
 import { addPendingDinnerSlotsToUpcomingPlans, createOrGetWeekPlan, resetScheduledMealSlots } from "./weekPlanService.js";
+import { buildAggregatedFromWeek } from "./shoppingService.js";
 import { getWeekStart } from "./utils/dates.js";
 import { getScheduledWeekDates } from "./weeklySchedule.js";
 
@@ -220,7 +224,7 @@ test("reset of a legacy week clears weekday dishes and keeps manual weekend and 
   assert.equal(plan.days.filter((day) => day.mealType === "lunch").length, 6);
 });
 
-test("reset follows a custom weekend agenda, while an empty agenda leaves all slots intact", () => {
+test("reset follows a custom weekend agenda, dinner shopping preference, and preserves other slots", () => {
   const saturday = new Date("2026-10-31T00:00:00.000Z");
   const sunday = new Date("2026-11-01T00:00:00.000Z");
   const weekdayManual = { date: monday, mealType: "dinner", mainDishId: "manual-weekday", servings: 5 };
@@ -228,15 +232,64 @@ test("reset follows a custom weekend agenda, while an empty agenda leaves all sl
   const otherMeal = { date: sunday, mealType: "lunch", mainDishId: "other-meal", servings: 2 };
   const plan = { days: [weekdayManual, saturdayDish, otherMeal], removedSlots: [] };
 
-  resetScheduledMealSlots(plan, "dinner", getScheduledWeekDates(monday, ["sat", "sun"]), ["diner"]);
+  resetScheduledMealSlots(plan, "dinner", getScheduledWeekDates(monday, ["sat", "sun"]), ["diner"], {
+    dinnerIncludeInShopping: true
+  });
   assert.equal(saturdayDish.mainDishId, null);
+  assert.equal(saturdayDish.includeMainIngredients, true);
+  assert.equal(saturdayDish.includeSideIngredients, true);
   const sundayDinner = plan.days.find((day) => day.mealType === "dinner" && day.date.toISOString() === sunday.toISOString());
   assert.ok(sundayDinner);
   assert.equal(sundayDinner.mainDishId, undefined);
+  assert.equal(sundayDinner.includeMainIngredients, true);
+  assert.equal(sundayDinner.includeSideIngredients, true);
   assert.equal(weekdayManual.mainDishId, "manual-weekday");
   assert.equal(otherMeal.mainDishId, "other-meal");
+  assert.equal(otherMeal.includeMainIngredients, undefined);
 
   const snapshot = structuredClone(plan.days);
   resetScheduledMealSlots(plan, "dinner", getScheduledWeekDates(monday, []), ["diner"]);
   assert.deepEqual(plan.days, snapshot);
+});
+
+test("reset disables dinner shopping flags when the household preference is false", () => {
+  const mondayDinner = {
+    date: monday, mealType: "dinner", mainDishId: "manual-dinner",
+    includeMainIngredients: true, includeSideIngredients: true
+  };
+  const plan = { days: [mondayDinner], removedSlots: [] };
+
+  resetScheduledMealSlots(plan, "dinner", [monday], ["diner"], { dinnerIncludeInShopping: false });
+
+  assert.equal(mondayDinner.includeMainIngredients, false);
+  assert.equal(mondayDinner.includeSideIngredients, false);
+});
+
+test("shopping aggregation follows dinner ingredient flags after reset for true and false preferences", async (t) => {
+  const mainDishId = "507f1f77bcf86cd799439011";
+  const sideDishId = "507f1f77bcf86cd799439012";
+  const plan = {
+    days: [{ date: monday, mealType: "dinner", mainDishId, sideDishId, servings: 1 }]
+  };
+  t.mock.method(KitchenWeekPlan, "findOne", async () => plan);
+  // Return in-memory dish records from the catalog resolver's backing query.
+  t.mock.method(KitchenDish, "find", () => ({
+    sort() {
+      return Promise.resolve([
+        { _id: mainDishId, ingredients: [{ canonicalName: "main ingredient", displayName: "Main ingredient", quantity: 1, unit: "unit" }] },
+        { _id: sideDishId, ingredients: [{ canonicalName: "side ingredient", displayName: "Side ingredient", quantity: 1, unit: "unit" }] }
+      ]);
+    }
+  }));
+  t.mock.method(HiddenMaster, "find", () => ({ select() { return []; } }));
+  t.mock.method(KitchenIngredient, "find", () => ({ select() { return { lean: async () => [] }; } }));
+  for (const include of [true, false]) {
+    resetScheduledMealSlots(plan, "dinner", [monday], [], { dinnerIncludeInShopping: include });
+    plan.days[0].mainDishId = mainDishId;
+    plan.days[0].sideDishId = sideDishId;
+    const items = await buildAggregatedFromWeek(monday, "house-1");
+    const names = items.map((item) => item.canonicalName);
+    assert.equal(names.includes("main ingredient"), include);
+    assert.equal(names.includes("side ingredient"), include);
+  }
 });

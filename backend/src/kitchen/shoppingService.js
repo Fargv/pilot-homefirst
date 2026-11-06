@@ -278,7 +278,7 @@ export async function resolveShoppingItemIngredientData(items, effectiveHousehol
   return { changed, resolvedItems };
 }
 
-async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
+export async function buildAggregatedFromWeek(weekStartDate, effectiveHouseholdId) {
   const plan = await KitchenWeekPlan.findOne(
     buildScopedFilter(effectiveHouseholdId, { weekStart: weekStartDate })
   );

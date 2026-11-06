@@ -468,14 +468,16 @@ router.post("/:weekStart/reset", requireAuth, async (req, res) => {
     const members = await loadHouseholdMembers(effectiveHouseholdId);
     const defaultAttendeeIds = buildDefaultAttendeeIds(members, mealType);
     const household = await Household.findById(effectiveHouseholdId)
-      .select("weeklySchedule")
+      .select("weeklySchedule dinnersIncludeInShopping")
       .lean();
     const scheduleField = mealType === "dinner" ? "dinnerDays" : "lunchDays";
     const scheduledDates = getScheduledWeekDates(monday, household?.weeklySchedule?.[scheduleField]);
 
     // Reset dishes/planning on scheduled slots and create any missing slots.
     // Existing manual slots outside the agenda and the other meal are retained.
-    resetScheduledMealSlots(plan, mealType, scheduledDates, defaultAttendeeIds);
+    resetScheduledMealSlots(plan, mealType, scheduledDates, defaultAttendeeIds, {
+      dinnerIncludeInShopping: Boolean(household?.dinnersIncludeInShopping)
+    });
     sortPlanDays(plan);
     await plan.save();
     await hydrateLeftoversDishNames(plan, effectiveHouseholdId);

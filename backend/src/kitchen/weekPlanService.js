@@ -36,7 +36,7 @@ function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch", s
   }));
 }
 
-function resetDayPlanning(day, attendeeIds = []) {
+function resetDayPlanning(day, attendeeIds = [], dinnerIncludeInShopping = false) {
   const isDinner = day.mealType === "dinner";
   day.cookUserId = null;
   day.attendeeIds = [...attendeeIds];
@@ -45,9 +45,9 @@ function resetDayPlanning(day, attendeeIds = []) {
   day.cookTiming = isDinner ? "same_day" : "previous_day";
   day.servings = attendeeIds.length;
   day.mainDishId = null;
-  day.includeMainIngredients = !isDinner;
+  day.includeMainIngredients = isDinner ? dinnerIncludeInShopping : true;
   day.sideDishId = null;
-  day.includeSideIngredients = !isDinner;
+  day.includeSideIngredients = isDinner ? dinnerIncludeInShopping : true;
   day.isLeftovers = false;
   day.leftoversSourceDate = null;
   day.leftoversSourceMealType = null;
@@ -58,7 +58,13 @@ function resetDayPlanning(day, attendeeIds = []) {
   return day;
 }
 
-export function resetScheduledMealSlots(plan, mealType, scheduledDates, attendeeIds = []) {
+export function resetScheduledMealSlots(
+  plan,
+  mealType,
+  scheduledDates,
+  attendeeIds = [],
+  { dinnerIncludeInShopping = false } = {}
+) {
   const existingByDate = new Map(
     (plan.days || [])
       .filter((day) => day.mealType === mealType && day.date)
@@ -69,13 +75,17 @@ export function resetScheduledMealSlots(plan, mealType, scheduledDates, attendee
     const dateKey = formatDateISO(date);
     const existingDay = existingByDate.get(dateKey);
     if (existingDay) {
-      resetDayPlanning(existingDay, attendeeIds);
+      resetDayPlanning(existingDay, attendeeIds, dinnerIncludeInShopping);
       continue;
     }
     if (isRemovedPlanSlot(plan, date, mealType)) continue;
     const [slot] = buildDefaultDays(getWeekStart(date), attendeeIds, mealType, [
       ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][date.getUTCDay()]
     ]);
+    if (mealType === "dinner") {
+      slot.includeMainIngredients = dinnerIncludeInShopping;
+      slot.includeSideIngredients = dinnerIncludeInShopping;
+    }
     plan.days.push(slot);
   }
 
