@@ -36,6 +36,54 @@ function buildDefaultDays(weekStartDate, attendeeIds = [], mealType = "lunch", s
   }));
 }
 
+function resetDayPlanning(day, attendeeIds = []) {
+  const isDinner = day.mealType === "dinner";
+  day.cookUserId = null;
+  day.attendeeIds = [...attendeeIds];
+  day.extraGuests = 0;
+  day.attendeeCount = attendeeIds.length;
+  day.cookTiming = isDinner ? "same_day" : "previous_day";
+  day.servings = attendeeIds.length;
+  day.mainDishId = null;
+  day.includeMainIngredients = !isDinner;
+  day.sideDishId = null;
+  day.includeSideIngredients = !isDinner;
+  day.isLeftovers = false;
+  day.leftoversSourceDate = null;
+  day.leftoversSourceMealType = null;
+  day.leftoversSourceDishId = null;
+  day.leftoversSourceDishName = null;
+  day.ingredientOverrides = [];
+  day.baseIngredientExclusions = [];
+  return day;
+}
+
+export function resetScheduledMealSlots(plan, mealType, scheduledDates, attendeeIds = []) {
+  const existingByDate = new Map(
+    (plan.days || [])
+      .filter((day) => day.mealType === mealType && day.date)
+      .map((day) => [formatDateISO(new Date(day.date)), day])
+  );
+
+  for (const date of scheduledDates) {
+    const dateKey = formatDateISO(date);
+    const existingDay = existingByDate.get(dateKey);
+    if (existingDay) {
+      resetDayPlanning(existingDay, attendeeIds);
+      continue;
+    }
+    if (isRemovedPlanSlot(plan, date, mealType)) continue;
+    const [slot] = buildDefaultDays(getWeekStart(date), attendeeIds, mealType, [
+      ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][date.getUTCDay()]
+    ]);
+    plan.days.push(slot);
+  }
+
+  // Reset applies to the scheduled slots. Manually added slots outside the
+  // household agenda keep their dishes, attendees, and assignments intact.
+  return plan;
+}
+
 function isDuplicateKeyError(error) {
   return error?.code === 11000;
 }
@@ -108,7 +156,11 @@ export async function findWeekPlan(weekStartDate, effectiveHouseholdId) {
   return plan;
 }
 
-export async function addPendingDinnerSlotsToUpcomingPlans(effectiveHouseholdId, fromDate = new Date()) {
+export async function addPendingDinnerSlotsToUpcomingPlans(
+  effectiveHouseholdId,
+  { explicitlyActivated = false, fromDate = new Date() } = {}
+) {
+  if (!explicitlyActivated) return { updatedPlans: 0, createdSlots: 0 };
   const fromWeekStart = getWeekStart(fromDate);
   const household = await Household.findById(effectiveHouseholdId)
     .select("dinnersEnabled dinnersIncludeInShopping weeklySchedule")

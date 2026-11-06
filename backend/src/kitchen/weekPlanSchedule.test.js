@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { Household } from "./models/Household.js";
 import { KitchenUser } from "./models/KitchenUser.js";
 import { KitchenWeekPlan } from "./models/KitchenWeekPlan.js";
-import { addPendingDinnerSlotsToUpcomingPlans, createOrGetWeekPlan } from "./weekPlanService.js";
+import { addPendingDinnerSlotsToUpcomingPlans, createOrGetWeekPlan, resetScheduledMealSlots } from "./weekPlanService.js";
 import { getWeekStart } from "./utils/dates.js";
+import { getScheduledWeekDates } from "./weeklySchedule.js";
 
 const monday = getWeekStart(new Date("2026-10-26T12:00:00.000Z"));
 const isoDays = (plan, mealType) => plan.days
@@ -148,10 +149,12 @@ test("enabling dinners later fills scheduled slots in existing upcoming plans wi
   }));
   mockPlanQueries(t, [plan]);
 
-  const first = await addPendingDinnerSlotsToUpcomingPlans("house-1", monday);
-  const second = await addPendingDinnerSlotsToUpcomingPlans("house-1", monday);
-  assert.deepEqual(first, { updatedPlans: 1, createdSlots: 1 });
-  assert.deepEqual(second, { updatedPlans: 0, createdSlots: 0 });
+  const [first, second] = await Promise.all([
+    addPendingDinnerSlotsToUpcomingPlans("house-1", { explicitlyActivated: true, fromDate: monday }),
+    addPendingDinnerSlotsToUpcomingPlans("house-1", { explicitlyActivated: true, fromDate: monday })
+  ]);
+  assert.equal(first.createdSlots + second.createdSlots, 1);
+  assert.equal(first.updatedPlans + second.updatedPlans, 1);
   assert.equal(plan.days.length, 2);
   assert.deepEqual(isoDays(plan, "dinner").sort(), ["2026-10-26", "2026-10-31"]);
   assert.deepEqual(plan.days.find((day) => day.mainDishId === "manual-dish"), existingSaturday);
@@ -171,15 +174,69 @@ test("backfilling an old plan inherits Monday to Friday and respects disabled or
   }));
   mockPlanQueries(t, plans);
 
-  const inherited = await addPendingDinnerSlotsToUpcomingPlans("house-1", monday);
+  const inherited = await addPendingDinnerSlotsToUpcomingPlans("house-1", { explicitlyActivated: true, fromDate: monday });
   assert.deepEqual(inherited, { updatedPlans: 2, createdSlots: 10 });
   assert.deepEqual(isoDays(plans[0], "dinner"), ["2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30"]);
 
   household = { dinnersEnabled: true, weeklySchedule: { version: 1, dinnerDays: [] } };
-  const empty = await addPendingDinnerSlotsToUpcomingPlans("house-1", monday);
+  const empty = await addPendingDinnerSlotsToUpcomingPlans("house-1", { explicitlyActivated: true, fromDate: monday });
   assert.deepEqual(empty, { updatedPlans: 0, createdSlots: 0 });
 
   household = { dinnersEnabled: false, weeklySchedule: { version: 1, dinnerDays: ["mon"] } };
-  const disabled = await addPendingDinnerSlotsToUpcomingPlans("house-1", monday);
+  const disabled = await addPendingDinnerSlotsToUpcomingPlans("house-1", { explicitlyActivated: true, fromDate: monday });
   assert.deepEqual(disabled, { updatedPlans: 0, createdSlots: 0 });
+});
+
+test("changing the agenda does not backfill dinners without an explicit activation", async (t) => {
+  let reads = 0;
+  const plan = { _id: "plan-a", weekStart: monday, days: [], removedSlots: [] };
+  // No household or plan reads should happen on a schedule-only update path.
+  t.mock.method(Household, "findById", () => { reads += 1; throw new Error("unexpected backfill"); });
+  const result = await addPendingDinnerSlotsToUpcomingPlans("house-1", { fromDate: monday });
+  assert.deepEqual(result, { updatedPlans: 0, createdSlots: 0 });
+  assert.equal(reads, 0);
+  assert.deepEqual(plan.days, []);
+});
+
+test("reset of a legacy week clears weekday dishes and keeps manual weekend and other-meal slots", () => {
+  const manualSaturday = {
+    date: new Date("2026-10-31T00:00:00.000Z"), mealType: "lunch", mainDishId: "manual-sat",
+    attendeeIds: ["manual-member"], servings: 4, cookUserId: "manual-cook"
+  };
+  const mondayLunch = {
+    date: monday, mealType: "lunch", mainDishId: "weekday-dish", attendeeIds: ["manual-member"], servings: 3
+  };
+  const dinnerSlot = { date: monday, mealType: "dinner", mainDishId: "dinner-dish", servings: 2 };
+  const plan = { days: [mondayLunch, manualSaturday, dinnerSlot], removedSlots: [] };
+
+  resetScheduledMealSlots(plan, "lunch", getScheduledWeekDates(monday, undefined), ["default-member"]);
+
+  assert.equal(mondayLunch.mainDishId, null);
+  assert.deepEqual(mondayLunch.attendeeIds, ["default-member"]);
+  assert.equal(plan.days.length, 7);
+  assert.equal(plan.days.find((day) => day.mainDishId === "manual-sat"), manualSaturday);
+  assert.deepEqual(manualSaturday.attendeeIds, ["manual-member"]);
+  assert.equal(plan.days.find((day) => day.mealType === "dinner"), dinnerSlot);
+  assert.equal(plan.days.filter((day) => day.mealType === "lunch").length, 6);
+});
+
+test("reset follows a custom weekend agenda, while an empty agenda leaves all slots intact", () => {
+  const saturday = new Date("2026-10-31T00:00:00.000Z");
+  const sunday = new Date("2026-11-01T00:00:00.000Z");
+  const weekdayManual = { date: monday, mealType: "dinner", mainDishId: "manual-weekday", servings: 5 };
+  const saturdayDish = { date: saturday, mealType: "dinner", mainDishId: "manual-saturday", servings: 4 };
+  const otherMeal = { date: sunday, mealType: "lunch", mainDishId: "other-meal", servings: 2 };
+  const plan = { days: [weekdayManual, saturdayDish, otherMeal], removedSlots: [] };
+
+  resetScheduledMealSlots(plan, "dinner", getScheduledWeekDates(monday, ["sat", "sun"]), ["diner"]);
+  assert.equal(saturdayDish.mainDishId, null);
+  const sundayDinner = plan.days.find((day) => day.mealType === "dinner" && day.date.toISOString() === sunday.toISOString());
+  assert.ok(sundayDinner);
+  assert.equal(sundayDinner.mainDishId, undefined);
+  assert.equal(weekdayManual.mainDishId, "manual-weekday");
+  assert.equal(otherMeal.mainDishId, "other-meal");
+
+  const snapshot = structuredClone(plan.days);
+  resetScheduledMealSlots(plan, "dinner", getScheduledWeekDates(monday, []), ["diner"]);
+  assert.deepEqual(plan.days, snapshot);
 });

@@ -555,7 +555,9 @@ router.patch("/preferences", requireAuth, requireRole("owner"), async (req, res)
     let dinnerBackfill = null;
     if (!Boolean(household.dinnersEnabled) && parsedDinnersEnabled.value) {
       try {
-        dinnerBackfill = await addPendingDinnerSlotsToUpcomingPlans(effectiveHouseholdId);
+        dinnerBackfill = await addPendingDinnerSlotsToUpcomingPlans(effectiveHouseholdId, {
+          explicitlyActivated: true
+        });
       } catch (error) {
         console.error("[kitchen/household] dinner slot backfill failed", {
           householdId: String(effectiveHouseholdId),
