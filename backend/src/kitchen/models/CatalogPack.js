@@ -28,6 +28,7 @@ const DishTemplateSchema = new mongoose.Schema(
     allowRandom: { type: Boolean, default: true },
     dishCategoryId: { type: mongoose.Schema.Types.ObjectId, default: null },
     ingredients: { type: [DishIngredientTemplateSchema], default: [] },
+    personalization: { type: mongoose.Schema.Types.Mixed, default: undefined },
     recipe: {
       ingredients: { type: [RecipeIngredientTemplateSchema], default: [] },
       steps: { type: mongoose.Schema.Types.Mixed, default: null },
