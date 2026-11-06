@@ -2,7 +2,7 @@ import { KitchenDish } from "../models/KitchenDish.js";
 import { CATALOG_SCOPES } from "../utils/catalogScopes.js";
 import { normalizeIngredientName } from "../utils/normalize.js";
 
-const STARTER_MASTER_DISHES = [
+export const STARTER_MASTER_DISHES = [
   {
     name: "Pollo al horno",
     isDinner: false,
