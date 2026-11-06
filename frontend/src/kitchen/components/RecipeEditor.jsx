@@ -817,17 +817,6 @@ export default function RecipeEditor({
     });
   };
 
-  const isLinkedToDish = (item) => {
-    if (!item.ingredientId) return false;
-    const name = (item.name || "").toLowerCase().trim();
-    return name.length > 0 && dishIngredientNames.includes(name);
-  };
-
-  const isNewIngredient = (name) => {
-    if (!name || !dishIngredientNames.length) return false;
-    return !dishIngredientNames.includes(String(name).toLowerCase().trim());
-  };
-
   // ── Read-only view ─────────────────────────────────────────────────────────
 
   const baseServings = getRecipeBaseServings({ baseServings: recipeBaseServings, servings: recipeServings });
@@ -932,7 +921,7 @@ export default function RecipeEditor({
   return (
     <div className="recipe-editor-section">
       {/* Servings + timing row */}
-      <div className="recipe-servings-row" style={{ gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+      <div className="recipe-servings-row">
         <label className="recipe-section-title" htmlFor="recipe-servings">Para</label>
         <input
           id="recipe-servings"
@@ -949,7 +938,7 @@ export default function RecipeEditor({
           }}
         />
         <span className="recipe-section-title">personas</span>
-        <span className="recipe-section-title" style={{ marginLeft: 8 }}>Prep.</span>
+        <span className="recipe-section-title recipe-timing-label">Prep.</span>
         <input
           type="text"
           inputMode="numeric"
@@ -966,7 +955,7 @@ export default function RecipeEditor({
           title="Minutos de preparación"
         />
         <span className="recipe-section-title">min</span>
-        <span className="recipe-section-title" style={{ marginLeft: 4 }}>Cocción</span>
+        <span className="recipe-section-title recipe-timing-label">Cocción</span>
         <input
           type="text"
           inputMode="numeric"
@@ -988,58 +977,33 @@ export default function RecipeEditor({
       <div>
         <p className="recipe-section-title">Ingredientes</p>
         <div className="recipe-ingredient-list">
-          {(recipeIngredients || []).map((item, idx) => {
-            const linked = isLinkedToDish(item);
-
-            if (linked) {
-              return (
-                <div key={idx} className="recipe-ingredient-row recipe-ingredient-row--pill">
-                  <span className="recipe-ingredient-pill">
-                    <span className="recipe-ingredient-pill-dot" />
-                    <span className="recipe-ingredient-pill-name">{item.name}</span>
-                  </span>
-                  <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
-                  <QuantityEditor
-                    qty={getStructuredQty(item.quantity)}
-                    onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
-                  />
-                  <button
-                    type="button"
-                    className="recipe-remove-btn"
-                    onClick={() => removeIngredient(idx)}
-                    aria-label="Eliminar ingrediente"
-                    title="Eliminar"
-                  >
-                    ×
-                  </button>
-                </div>
-              );
-            }
-
-            return (
-              <div key={idx} className="recipe-ingredient-row">
-                <RecipeIngredientInput
-                  item={item}
-                  index={idx}
-                  onUpdateFields={updateIngredient}
-                />
-                <QuantityEditor
-                  qty={getStructuredQty(item.quantity)}
-                  onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
-                />
-                <label className="recipe-buy-control"><input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} /> Comprar</label>
-                <button
-                  type="button"
-                  className="recipe-remove-btn"
-                  onClick={() => removeIngredient(idx)}
-                  aria-label="Eliminar ingrediente"
-                  title="Eliminar"
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
+          {(recipeIngredients || []).map((item, idx) => (
+            <div key={idx} className="recipe-ingredient-row">
+              <RecipeIngredientInput
+                item={item}
+                index={idx}
+                onUpdateFields={updateIngredient}
+              />
+              <QuantityEditor
+                qty={getStructuredQty(item.quantity)}
+                onChange={(newQty) => updateIngredient(idx, "quantity", newQty)}
+              />
+              <label className={`recipe-buy-control${item.buy === true ? " is-checked" : ""}`}>
+                <input type="checkbox" checked={item.buy === true} onChange={(e) => onPurchaseToggle?.(idx, e.target.checked)} />
+                <span className="recipe-buy-check" aria-hidden="true" />
+                <span>Comprar</span>
+              </label>
+              <button
+                type="button"
+                className="recipe-remove-btn"
+                onClick={() => removeIngredient(idx)}
+                aria-label="Eliminar ingrediente"
+                title="Eliminar"
+              >
+                ×
+              </button>
+            </div>
+          ))}
         </div>
         <button type="button" className="recipe-add-ingredient-btn" onClick={addIngredient}>
           + Añadir ingrediente
